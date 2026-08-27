@@ -165,7 +165,7 @@ def _parse_player_line(line: str, current_pos: str, current_tier: int) -> Cheats
         player_name=player_name,
         normalized_name=normalize_player_name(player_name),
         position=pos_found or current_pos or "WR",
-        team=team_found,
+        team=team_found or "",
         tier=current_tier,
         adp=adp_val,
         is_injured=is_inj,

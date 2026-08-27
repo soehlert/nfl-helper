@@ -9,7 +9,7 @@ class CheatsheetEntry(BaseModel):
     player_name: str
     normalized_name: str
     position: str = ""
-    team: str = ""
+    team: str | None = ""
     tier: int = 1
     adp: float | None = None
     is_injured: bool = False

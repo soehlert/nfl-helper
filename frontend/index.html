@@ -1024,10 +1024,15 @@
       const target = document.getElementById('tab-' + tabId);
       if (target) target.classList.add('active');
 
+      try {
+        localStorage.setItem('fantasyWarRoomActiveTab', tabId);
+      } catch (e) {}
+
       if (tabId === 'waivers') {
         fetchWaiverRecommendations();
       }
     }
+
 
 
     
@@ -1779,7 +1784,16 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       fetchCheatsheet();
       initWebSocket();
       autoRefreshInterval = setInterval(fetchDraftState, 4000);
+
+      // Restore active tab from localStorage if available
+      try {
+        const savedTab = localStorage.getItem('fantasyWarRoomActiveTab');
+        if (savedTab && ['lineup', 'waivers', 'draft', 'settings'].includes(savedTab)) {
+          switchTab(savedTab);
+        }
+      } catch (e) {}
     });
+
 
   </script>
 </body>
