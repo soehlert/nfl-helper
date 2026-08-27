@@ -806,10 +806,12 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th style="width: 55px;">Priority</th>
-              <th style="width: 50px;">Pos</th>
-              <th style="width: 55px;">Team</th>
+              <th style="width: 50px;">Priority</th>
+              <th style="width: 45px;">Pos</th>
+              <th style="width: 50px;">Team</th>
               <th>Top Pickup</th>
+              <th style="width: 45px;">Drop Pos</th>
+              <th style="width: 50px;">Drop Team</th>
               <th>Suggested Drop</th>
               <th style="width: 105px;">Net Proj Gain</th>
               <th>Reason</th>
@@ -821,12 +823,15 @@
               <td><span class="pos-tag pos-RB">RB</span></td>
               <td>SF</td>
               <td><strong>Jordan Mason</strong></td>
-              <td>Deshaun Watson CLE - <span class="pos-tag pos-QB">QB</span></td>
+              <td><span class="pos-tag pos-QB">QB</span></td>
+              <td>CLE</td>
+              <td>Deshaun Watson</td>
               <td><span class="delta-pill delta-plus">+14.2 pts</span></td>
               <td class="reason-text">Starting role opportunity (68% snaps) + soft 3-wk schedule (vs LAR, @ NE, vs ARI)</td>
             </tr>
           </tbody>
         </table>
+
 
       </div>
 
@@ -1626,12 +1631,15 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
             const addTeam = pair.add_player.team || 'FA';
             const addName = pair.add_player.name;
 
-            let dropCell = '—';
+            let dropPosHtml = '—';
+            let dropTeam = '—';
+            let dropName = '—';
             if (pair.drop_player) {
               const dropPos = pair.drop_player.position || 'WR';
               const cleanDropPos = dropPos.replace('/', '-');
-              const dropTeam = pair.drop_player.team || '—';
-              dropCell = `${pair.drop_player.name} ${dropTeam} - <span class="pos-tag pos-${cleanDropPos}">${dropPos}</span>`;
+              dropPosHtml = `<span class="pos-tag pos-${cleanDropPos}">${dropPos}</span>`;
+              dropTeam = pair.drop_player.team || '—';
+              dropName = pair.drop_player.name;
             }
 
             const gainStr = pair.net_projected_gain >= 0 ? `+${pair.net_projected_gain.toFixed(1)} pts` : `${pair.net_projected_gain.toFixed(1)} pts`;
@@ -1643,7 +1651,9 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
                 <td><span class="pos-tag pos-${cleanAddPos}">${addPos}</span></td>
                 <td>${addTeam}</td>
                 <td><strong>${addName}</strong></td>
-                <td>${dropCell}</td>
+                <td>${dropPosHtml}</td>
+                <td>${dropTeam}</td>
+                <td>${dropName}</td>
                 <td><span class="delta-pill ${gainClass}">${gainStr}</span></td>
                 <td class="reason-text">${pair.reason}</td>
               </tr>
@@ -1651,6 +1661,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           });
           addDropsTbody.innerHTML = rowsHtml;
         }
+
 
 
         // Render D/ST Streaming Targets
