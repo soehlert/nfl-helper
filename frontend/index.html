@@ -1148,50 +1148,50 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         if (r.includes('Vegas Shootout')) {
           const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
           const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '+10%';
-          shortText = `🔥 Shootout ${pts}`;
+          shortText = `Shootout ${pts}`;
           badgeClass = 'badge-boost';
         } else if (r.includes('Defensive Slugfest')) {
           const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
           const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '-10%';
-          shortText = `🛡️ Slugfest ${pts}`;
+          shortText = `Slugfest ${pts}`;
           badgeClass = 'badge-penalty';
         } else if (r.includes('Heavy Favorite')) {
-          shortText = r.includes('+') ? '🏆 Favorite +1.5' : '🏆 Fav Pass -0.5';
+          shortText = r.includes('+') ? 'Favorite +1.5' : 'Fav Pass -0.5';
           badgeClass = r.includes('+') ? 'badge-boost' : 'badge-penalty';
         } else if (r.includes('Heavy Underdog')) {
-          shortText = '⚡ Underdog +1.0';
+          shortText = 'Underdog +1.0';
           badgeClass = 'badge-boost';
         } else if (r.includes('Indoor Dome')) {
-          shortText = r.includes('Kicker') ? '🏟️ Dome +0.8' : '🏟️ Dome +0.5';
+          shortText = r.includes('Kicker') ? 'Dome +0.8' : 'Dome +0.5';
           badgeClass = 'badge-boost';
         } else if (r.includes('High Wind Storm')) {
           const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
           const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '-15%';
-          shortText = `🌪️ Wind ${pts}`;
+          shortText = `Wind ${pts}`;
           badgeClass = 'badge-penalty';
         } else if (r.includes('Blizzard') || r.includes('Snow')) {
-          shortText = r.includes('+') ? '❄️ Snow Run +1.0' : '❄️ Blizzard -15%';
+          shortText = r.includes('+') ? 'Snow Run +1.0' : 'Blizzard -15%';
           badgeClass = r.includes('+') ? 'badge-boost' : 'badge-penalty';
         } else if (r.includes('Role Demotion')) {
           const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
           const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '-30%';
-          shortText = `📉 Snaps ${pts}`;
+          shortText = `Snaps ${pts}`;
           badgeClass = 'badge-penalty';
         } else if (r.includes('Role Surge')) {
           const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
           const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '+15%';
-          shortText = `📈 Snaps ${pts}`;
+          shortText = `Snaps ${pts}`;
           badgeClass = 'badge-boost';
         } else if (r.includes('Route Participation')) {
-          shortText = r.includes('+') ? '🎯 Routes +1.0' : '🎯 Routes -2.0';
+          shortText = r.includes('+') ? 'Routes +1.0' : 'Routes -2.0';
           badgeClass = r.includes('+') ? 'badge-boost' : 'badge-penalty';
         } else if (r.includes('High-Value Touches')) {
-          shortText = r.includes('1.8') ? '🏈 Goal-Line +1.8' : '🏈 Goal-Line +1.5';
+          shortText = r.includes('1.8') ? 'Goal-Line +1.8' : 'Goal-Line +1.5';
           badgeClass = 'badge-boost';
         } else if (r.includes('Decoy')) {
           const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
           const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '-25%';
-          shortText = `⚠️ Decoy ${pts}`;
+          shortText = `Decoy ${pts}`;
           badgeClass = 'badge-penalty';
         }
 
@@ -1353,10 +1353,16 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       } catch (err) {
         console.log('Lineup optimization synced');
       } finally {
-        if (resolveBtn) resolveBtn.textContent = '⚡ Re-Solve';
+        if (resolveBtn && !randomize) {
+          resolveBtn.textContent = '✅ Lineup Solved';
+          setTimeout(() => {
+            resolveBtn.textContent = '⚡ Re-Solve';
+          }, 900);
+        }
         if (randBtn) randBtn.textContent = '🎲 Randomize Matchups';
       }
     }
+
 
 
 

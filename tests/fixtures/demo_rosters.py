@@ -110,8 +110,10 @@ def get_demo_roster() -> TeamRoster:
         name="Jordan Mason",
         position=Position.RB,
         team="SF",
-        projected_points=13.5,
+        projected_points=8.0,
         is_starter=False,
+        ceiling_points=18.0,
+        floor_points=8.5,
         game_context=GameEnvironment(opponent="@ LAR", spread=-7.5),
         usage=PlayerWeeklyUsage(snap_percentages=[0.45, 0.50, 0.65], goalline_touches_inside_5=2),
     )
@@ -122,6 +124,8 @@ def get_demo_roster() -> TeamRoster:
         team="PIT",
         projected_points=12.0,
         is_starter=False,
+        ceiling_points=24.5,
+        floor_points=4.0,
         game_context=GameEnvironment(opponent="vs IND", over_under=42.0),
     )
     boyd = Player(
@@ -129,10 +133,13 @@ def get_demo_roster() -> TeamRoster:
         name="Tyler Boyd",
         position=Position.WR,
         team="TEN",
-        projected_points=9.8,
+        projected_points=12.0,
         is_starter=False,
-        game_context=GameEnvironment(opponent="vs MIA", over_under=37.0),
+        ceiling_points=14.5,
+        floor_points=10.5,
+        game_context=GameEnvironment(opponent="vs MIA", over_under=44.0),
     )
+
     kirk = Player(
         id="demo_kirk",
         name="Christian Kirk",

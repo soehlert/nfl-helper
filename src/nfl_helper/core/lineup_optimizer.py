@@ -42,8 +42,8 @@ def prepare_player_projections(
     variance_mult = 0.45 if pos == Position.WR else (0.35 if pos in [Position.RB, Position.TE] else 0.25)
     std_dev = adjusted * variance_mult
 
-    floor_pts = max(0.0, round(adjusted - 1.0 * std_dev, 2))
-    ceiling_pts = round(adjusted + 1.5 * std_dev, 2)
+    floor_pts = player.floor_points if player.floor_points > 0.0 else max(0.0, round(adjusted - 1.0 * std_dev, 2))
+    ceiling_pts = player.ceiling_points if player.ceiling_points > 0.0 else round(adjusted + 1.5 * std_dev, 2)
 
     # Attach computed values to player object
     player.adjusted_projected_points = adjusted
