@@ -198,7 +198,8 @@ def build_draft_state(
         avail_by_pos[pos] = pos_avail
         tiers_by_pos[pos] = cluster_position_tiers(pos_avail, pos, cheatsheet_context)
 
-    cliffs = detect_tier_cliffs(tiers_by_pos, picks_until_turn, turn_gap, on_the_clock)
+    cliffs = detect_tier_cliffs(tiers_by_pos, picks_until_turn, turn_gap, on_the_clock, current_pick=overall_pick)
+
     baselines = calculate_vorp_baselines(all_players, total_teams)
     suggestions = generate_draft_suggestions(
         available_players, tiers_by_pos, cliffs, baselines, overall_pick, top_n=len(available_players)
