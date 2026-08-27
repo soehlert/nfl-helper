@@ -40,6 +40,30 @@ class PlayerMatchupScore(BaseModel):
     )
 
 
+class PlayerWeeklyUsage(BaseModel):
+    """Granular playing time velocity, route, and touch quality metrics."""
+
+    snap_counts: list[int] = Field(default_factory=list)
+    snap_percentages: list[float] = Field(default_factory=list)
+    route_participation_pct: float | None = None
+    redzone_touches: int = 0
+    goalline_touches_inside_5: int = 0
+    goalline_share_pct: float | None = None
+    target_share_pct: float | None = None
+
+
+class GameEnvironment(BaseModel):
+    """Vegas odds, stadium environment, and localized weather conditions."""
+
+    opponent: str = ""
+    over_under: float | None = None
+    spread: float | None = None
+    is_dome: bool = False
+    stadium_type: str = "OUTDOOR"
+    wind_mph: float = 0.0
+    weather_condition: str = "CLEAR"
+
+
 class Player(BaseModel):
     """Canonical player model across ESPN and Sleeper platforms."""
 
@@ -60,3 +84,10 @@ class Player(BaseModel):
     cheatsheet_tier: int | None = None
     cheatsheet_rank: int | None = None
     is_starter: bool = False
+    usage: PlayerWeeklyUsage | None = None
+    game_context: GameEnvironment | None = None
+    practice_status: list[str] = Field(default_factory=list)
+    adjusted_projected_points: float = 0.0
+    projection_adjustment_reasons: list[str] = Field(default_factory=list)
+    floor_points: float = 0.0
+    ceiling_points: float = 0.0

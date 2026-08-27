@@ -13,17 +13,19 @@ from nfl_helper.api.draft_poller import poller_registry
 from nfl_helper.api.ws_manager import ws_manager
 from nfl_helper.core.cheatsheet import parse_cheatsheet_content, parse_pdf_cheatsheet
 from nfl_helper.core.draft_engine import build_draft_state
+from nfl_helper.core.lineup_optimizer import solve_optimal_lineup
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import DraftPick, DraftState
 from nfl_helper.models.player import Player, Position
 from nfl_helper.models.roster import (
     AddDropRecommendation,
     LineupSolution,
-    RosterAdjustment,
+    OptimizationStrategy,
     StreamingOption,
     WaiverAnalysis,
 )
 from nfl_helper.models.session import LeagueProfile, PlatformType
+from tests.fixtures.demo_rosters import generate_randomized_roster, get_demo_roster
 
 app = FastAPI(
     title="Fantasy War Room",
@@ -169,42 +171,38 @@ async def get_draft_state(session_id: str | None = None) -> DraftState:
 
 
 @app.get("/api/lineup/optimize", response_model=LineupSolution)
-async def get_lineup_optimization(session_id: str | None = None) -> LineupSolution:
+async def get_lineup_optimization(
+    session_id: str | None = None,
+    platform: PlatformType | None = None,
+    league_id: str | None = None,
+    team_id: str | None = None,
+    swid: str | None = None,
+    espn_s2: str | None = None,
+    strategy: OptimizationStrategy = OptimizationStrategy.BALANCED,
+    randomize: bool = False,
+    demo: bool = False,
+) -> LineupSolution:
     """Solve the mathematically optimal starting lineup using Integer Linear Programming (PuLP)."""
-    qb = Player(id="p_lamar", name="Lamar Jackson", position=Position.QB, team="BAL", projected_points=22.4)
-    rb1 = Player(id="p_cmc", name="Christian McCaffrey", position=Position.RB, team="SF", projected_points=19.8)
-    rb2 = Player(id="p_breece", name="Breece Hall", position=Position.RB, team="NYJ", projected_points=17.5)
-    bench_p = Player(
-        id="p_watson",
-        name="Deshaun Watson",
-        position=Position.QB,
-        team="CLE",
-        projected_points=0.0,
-        injury_status="OUT",
-    )
+    # Live platform connection if real league credentials supplied
+    if platform and league_id and not demo and league_id not in ["12345678", "demo"]:
+        try:
+            profile = LeagueProfile(
+                session_id=session_id or "temp",
+                platform=platform,
+                league_id=league_id,
+                team_id=team_id or "1",
+                swid=swid,
+                espn_s2=espn_s2,
+            )
+            adapter = get_adapter_for_profile(profile)
+            roster = adapter.get_roster(profile.team_id)
+            return solve_optimal_lineup(roster, strategy=strategy)
+        except Exception:
+            pass
 
-    ir_adj = RosterAdjustment(
-        player_name="Deshaun Watson",
-        player_id="p_watson",
-        position="QB",
-        current_slot="BENCH",
-        suggested_slot="IR",
-        reason="Player is ruled OUT; move to IR to open active bench spot.",
-        injury_status="OUT",
-    )
-
-    return LineupSolution(
-        team_id="team_1",
-        optimal_starters=[qb, rb1, rb2],
-        optimal_bench=[bench_p],
-        current_projected_total=122.2,
-        optimal_projected_total=128.6,
-        projected_delta=6.4,
-        start_recommendations=["Start Lamar Jackson (22.4 pts)", "Start Christian McCaffrey (19.8 pts)"],
-        sit_recommendations=["Bench Deshaun Watson"],
-        ir_warnings=[ir_adj],
-        solver_status="Optimal",
-    )
+    # Demo sandbox mode with realistic scenarios
+    roster = generate_randomized_roster() if randomize else get_demo_roster()
+    return solve_optimal_lineup(roster, strategy=strategy)
 
 
 @app.get("/api/waiver/recommendations", response_model=WaiverAnalysis)

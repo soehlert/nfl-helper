@@ -43,6 +43,22 @@ def test_lineup_optimize_endpoint() -> None:
     data = response.json()
     assert "optimal_starters" in data
     assert "projected_delta" in data
+    assert len(data["optimal_starters"]) == 9
+
+
+def test_lineup_optimize_strategy_modes_and_randomizer() -> None:
+    """Verify strategy parameters and randomizer query flags work via API."""
+    res_ceil = client.get("/api/lineup/optimize?strategy=CEILING")
+    assert res_ceil.status_code == 200
+    assert res_ceil.json()["strategy"] == "CEILING"
+
+    res_floor = client.get("/api/lineup/optimize?strategy=FLOOR")
+    assert res_floor.status_code == 200
+    assert res_floor.json()["strategy"] == "FLOOR"
+
+    res_rand = client.get("/api/lineup/optimize?randomize=true")
+    assert res_rand.status_code == 200
+    assert len(res_rand.json()["optimal_starters"]) == 9
 
 
 def test_waiver_recommendations_endpoint() -> None:

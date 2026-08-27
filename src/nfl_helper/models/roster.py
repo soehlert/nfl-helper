@@ -1,8 +1,18 @@
 """Roster management, ILP lineup optimization, and waiver analysis models."""
 
+from enum import StrEnum
+
 from pydantic import BaseModel, Field
 
 from nfl_helper.models.player import Player
+
+
+class OptimizationStrategy(StrEnum):
+    """Tactical optimization mode for start/sit solver."""
+
+    BALANCED = "BALANCED"
+    CEILING = "CEILING"
+    FLOOR = "FLOOR"
 
 
 class RosterSlotRequirement(BaseModel):
@@ -41,6 +51,7 @@ class LineupSolution(BaseModel):
     """Optimal lineup output solved via PuLP Integer Linear Programming."""
 
     team_id: str
+    strategy: OptimizationStrategy = OptimizationStrategy.BALANCED
     optimal_starters: list[Player] = Field(default_factory=list)
     optimal_bench: list[Player] = Field(default_factory=list)
     current_projected_total: float = 0.0
@@ -49,6 +60,7 @@ class LineupSolution(BaseModel):
     start_recommendations: list[str] = Field(default_factory=list)
     sit_recommendations: list[str] = Field(default_factory=list)
     ir_warnings: list[RosterAdjustment] = Field(default_factory=list)
+    anti_correlation_warnings: list[str] = Field(default_factory=list)
     solver_status: str = "Optimal"
 
 

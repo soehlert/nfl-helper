@@ -295,6 +295,21 @@
     }
     .delta-plus { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
 
+    .context-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      padding: 0.12rem 0.38rem;
+      border-radius: 4px;
+      margin: 0.15rem 0.15rem 0 0;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-boost { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .badge-penalty { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-info { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .badge-warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+
     .form-group {
       margin-bottom: 1rem;
     }
@@ -507,151 +522,87 @@
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
           <div>
             <h2 style="font-size: 1.3rem; margin-bottom: 0.25rem;">Integer Linear Programming Lineup Solver (PuLP)</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem;">Mathematically solves optimal active roster against slot constraints and highlights start/sit gains.</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Solves optimal active roster with dynamic slot constraints, usage velocity, Vegas game scripts & weather.</p>
           </div>
-          <div style="display: flex; gap: 1rem; align-items: center;">
+          <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Optimization Strategy</div>
+              <select id="lineup-strategy" class="form-control" style="padding: 0.35rem 0.6rem; font-size: 0.82rem;" onchange="fetchLineupOptimization(false)">
+                <option value="BALANCED">⚖️ Balanced (Adjusted Projections)</option>
+                <option value="CEILING">🚀 High Upside / Ceiling (Underdog Mode)</option>
+                <option value="FLOOR">🛡️ Safe Floor (Favorite Mode)</option>
+              </select>
+            </div>
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Optimal Proj Total</div>
-              <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent-green);" id="optimal-proj-pts">128.6 pts</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-green);" id="optimal-proj-pts">-- pts</div>
             </div>
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Projected Gain</div>
-              <div class="delta-pill delta-plus" id="optimal-proj-delta">+6.4 pts</div>
+              <div class="delta-pill delta-plus" id="optimal-proj-delta">+0.0 pts</div>
             </div>
-            <button class="btn btn-green" onclick="fetchLineupOptimization()">⚡ Re-Solve Lineup</button>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-green" onclick="fetchLineupOptimization(false)">⚡ Re-Solve</button>
+              <button class="btn btn-primary" onclick="fetchLineupOptimization(true)" title="Randomize Vegas spreads, over/unders, weather and snap trends in sandbox mode">🎲 Randomize Matchups</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- IR / Out Warnings -->
-      <div id="lineup-ir-warnings-container">
-        <div class="alert-banner warning">
-          <div>⚠️</div>
-          <div>
-            <div class="alert-title">ROSTER ADJUSTMENT: Move Inactive Player to IR</div>
-            <div class="alert-desc">Deshaun Watson is ruled <strong>OUT</strong>. Move to IR slot to open an active bench roster spot.</div>
-          </div>
+      <!-- Start / Sit Recommendations Banner -->
+      <div id="lineup-start-sit-container" style="display: none; margin-bottom: 1rem;">
+        <div class="card" style="border-left: 4px solid var(--accent-green); padding: 0.9rem 1.1rem;">
+          <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.35rem; color: var(--accent-green);">📋 Actionable Start / Sit Recommendations</div>
+          <div id="lineup-start-sit-list" style="display: flex; flex-direction: column; gap: 0.3rem;"></div>
         </div>
       </div>
+
+      <!-- Anti-Correlation Warnings -->
+      <div id="lineup-anticorr-container" style="display: none; margin-bottom: 1rem;"></div>
+
+      <!-- IR / Out Warnings -->
+      <div id="lineup-ir-warnings-container" style="display: none; margin-bottom: 1rem;"></div>
 
       <div class="grid-2">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">✅ Optimal Starters</div>
-            <span class="badge badge-claimed">Solved</span>
+            <div class="card-title">✅ Optimal Starting Lineup</div>
+            <span id="lineup-status-badge" class="badge badge-claimed">Solved (PuLP)</span>
           </div>
           <table class="data-table">
             <thead>
               <tr>
-                <th>Slot</th>
+                <th style="width: 55px;">Slot</th>
                 <th>Player</th>
-                <th>Team</th>
-                <th>Opponent</th>
-                <th>Proj Pts</th>
+                <th style="width: 55px;">Team</th>
+                <th>Opponent / Environment</th>
+                <th style="width: 85px;">Proj Pts</th>
               </tr>
             </thead>
-            <tbody id="optimal-starters-tbody">
-              <tr>
-                <td><strong>QB</strong></td>
-                <td>Lamar Jackson</td>
-                <td>BAL</td>
-                <td>vs NYG (Rank 28)</td>
-                <td>22.4</td>
-              </tr>
-              <tr>
-                <td><strong>RB1</strong></td>
-                <td>Christian McCaffrey</td>
-                <td>SF</td>
-                <td>@ LAR (Rank 20)</td>
-                <td>19.8</td>
-              </tr>
-              <tr>
-                <td><strong>RB2</strong></td>
-                <td>Breece Hall</td>
-                <td>NYJ</td>
-                <td>vs NE (Rank 22)</td>
-                <td>17.5</td>
-              </tr>
-              <tr>
-                <td><strong>WR1</strong></td>
-                <td>Justin Jefferson</td>
-                <td>MIN</td>
-                <td>@ GB (Rank 18)</td>
-                <td>18.4</td>
-              </tr>
-              <tr>
-                <td><strong>WR2</strong></td>
-                <td>Amon-Ra St. Brown</td>
-                <td>DET</td>
-                <td>vs CHI (Rank 26)</td>
-                <td>17.8</td>
-              </tr>
-              <tr>
-                <td><strong>TE</strong></td>
-                <td>Trey McBride</td>
-                <td>ARI</td>
-                <td>@ SEA (Rank 24)</td>
-                <td>13.2</td>
-              </tr>
-              <tr>
-                <td><strong>FLEX</strong></td>
-                <td>De'Von Achane</td>
-                <td>MIA</td>
-                <td>vs JAX (Rank 29)</td>
-                <td>15.1</td>
-              </tr>
-              <tr>
-                <td><strong>D/ST</strong></td>
-                <td>Ravens D/ST</td>
-                <td>BAL</td>
-                <td>vs NYG (Rank 30)</td>
-                <td>9.0</td>
-              </tr>
-              <tr>
-                <td><strong>K</strong></td>
-                <td>Justin Tucker</td>
-                <td>BAL</td>
-                <td>vs NYG</td>
-                <td>8.4</td>
-              </tr>
-            </tbody>
+            <tbody id="optimal-starters-tbody"></tbody>
           </table>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🪑 Optimal Bench & Swaps</div>
+            <div class="card-title">🪑 Optimal Bench & Adjustments</div>
           </div>
           <table class="data-table">
             <thead>
               <tr>
-                <th>Pos</th>
+                <th style="width: 50px;">Pos</th>
                 <th>Player</th>
-                <th>Status</th>
-                <th>Proj Pts</th>
-                <th>Action</th>
+                <th style="width: 75px;">Status</th>
+                <th style="width: 80px;">Proj Pts</th>
+                <th>Recommendation</th>
               </tr>
             </thead>
-            <tbody id="optimal-bench-tbody">
-              <tr>
-                <td><span class="pos-tag pos-WR">WR</span></td>
-                <td>George Pickens</td>
-                <td>Active</td>
-                <td>11.4</td>
-                <td><span style="color: var(--text-muted);">Keep Bench</span></td>
-              </tr>
-              <tr>
-                <td><span class="pos-tag pos-QB">QB</span></td>
-                <td>Deshaun Watson</td>
-                <td><span style="color: var(--accent-red); font-weight: 700;">OUT</span></td>
-                <td>0.0</td>
-                <td><span style="color: var(--accent-amber); font-weight: 700;">Move to IR</span></td>
-              </tr>
-            </tbody>
+            <tbody id="optimal-bench-tbody"></tbody>
           </table>
         </div>
       </div>
     </div>
+
 
     <!-- TAB 3: 3-WEEK WAIVER & STREAMING -->
     <div id="tab-waivers" class="tab-content">
@@ -1172,19 +1123,167 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       }
     }
 
-    async function fetchLineupOptimization() {
+    function getContextBadgesHtml(reasons) {
+      if (!reasons || reasons.length === 0) return '';
+      let html = '<div style="margin-top: 0.2rem;">';
+      reasons.forEach(r => {
+        let badgeClass = 'badge-info';
+        if (r.includes('+') || r.includes('Shootout') || r.includes('Dome') || r.includes('Surge') || r.includes('Elite') || r.includes('Goal-Line') || r.includes('Favorite')) {
+          badgeClass = 'badge-boost';
+        } else if (r.includes('-') || r.includes('Demotion') || r.includes('Slugfest') || r.includes('Wind') || r.includes('Decoy') || r.includes('Snow')) {
+          badgeClass = 'badge-penalty';
+        }
+        html += `<span class="context-badge ${badgeClass}">${r}</span>`;
+      });
+      html += '</div>';
+      return html;
+    }
+
+    async function fetchLineupOptimization(randomize = false) {
+      const strategyElem = document.getElementById('lineup-strategy');
+      const strategy = strategyElem ? strategyElem.value : 'BALANCED';
+      const platform = document.getElementById('session-platform')?.value || 'espn';
+      const leagueId = document.getElementById('session-league-id')?.value || '12345678';
+      const teamId = document.getElementById('session-team-id')?.value || '1';
+      const swid = document.getElementById('session-swid')?.value || '';
+      const espnS2 = document.getElementById('session-espn-s2')?.value || '';
+
       try {
-        const res = await fetch('/api/lineup/optimize');
+        let url = `/api/lineup/optimize?strategy=${strategy}`;
+        if (randomize) url += '&randomize=true';
+        if (platform) url += `&platform=${platform}`;
+        if (leagueId) url += `&league_id=${leagueId}`;
+        if (teamId) url += `&team_id=${teamId}`;
+        if (swid) url += `&swid=${encodeURIComponent(swid)}`;
+        if (espnS2) url += `&espn_s2=${encodeURIComponent(espnS2)}`;
+
+        const res = await fetch(url);
         if (!res.ok) throw new Error('Lineup fetch failed');
         const data = await res.json();
-        if (data.optimal_projected_total) {
+        
+        if (data.optimal_projected_total !== undefined) {
           document.getElementById('optimal-proj-pts').textContent = data.optimal_projected_total.toFixed(1) + ' pts';
           document.getElementById('optimal-proj-delta').textContent = '+' + data.projected_delta.toFixed(1) + ' pts';
         }
+
+        // Render Start/Sit recommendations
+        const startSitContainer = document.getElementById('lineup-start-sit-container');
+        const startSitList = document.getElementById('lineup-start-sit-list');
+        const allRecs = [...(data.start_recommendations || []), ...(data.sit_recommendations || [])];
+        if (startSitContainer && startSitList) {
+          if (allRecs.length > 0) {
+            startSitContainer.style.display = 'block';
+            startSitList.innerHTML = allRecs.map(r => `
+              <div style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+                <span>${r.startsWith('Start') ? '🟢' : '🔴'}</span>
+                <strong>${r}</strong>
+              </div>
+            `).join('');
+          } else {
+            startSitContainer.style.display = 'none';
+          }
+        }
+
+        // Render Anti-Correlation Warnings
+        const antiCorrContainer = document.getElementById('lineup-anticorr-container');
+        if (antiCorrContainer) {
+          const warnings = data.anti_correlation_warnings || [];
+          if (warnings.length > 0) {
+            antiCorrContainer.style.display = 'block';
+            antiCorrContainer.innerHTML = warnings.map(w => `
+              <div class="alert-banner warning" style="margin-bottom: 0.5rem;">
+                <div style="font-size: 1.1rem;">⚠️</div>
+                <div>
+                  <div class="alert-title">MATCHUP CORRELATION WARNING</div>
+                  <div class="alert-desc">${w}</div>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            antiCorrContainer.style.display = 'none';
+          }
+        }
+
+        // Render IR/Out Warnings
+        const irContainer = document.getElementById('lineup-ir-warnings-container');
+        if (irContainer) {
+          const irs = data.ir_warnings || [];
+          if (irs.length > 0) {
+            irContainer.style.display = 'block';
+            irContainer.innerHTML = irs.map(adj => `
+              <div class="alert-banner warning" style="margin-bottom: 0.5rem;">
+                <div style="font-size: 1.1rem;">⚠️</div>
+                <div>
+                  <div class="alert-title">ROSTER ADJUSTMENT: ${adj.player_name} (${adj.injury_status})</div>
+                  <div class="alert-desc">${adj.reason}</div>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            irContainer.style.display = 'none';
+          }
+        }
+
+        // Render Optimal Starters Table
+        const startersTbody = document.getElementById('optimal-starters-tbody');
+        if (startersTbody && data.optimal_starters) {
+          let rowsHtml = '';
+          data.optimal_starters.forEach((p, idx) => {
+            const posClass = `pos-${p.position || 'WR'}`;
+            const slotName = idx === 0 ? 'QB' : (idx === 1 ? 'RB1' : (idx === 2 ? 'RB2' : (idx === 3 ? 'WR1' : (idx === 4 ? 'WR2' : (idx === 5 ? 'TE' : (idx === 6 ? 'FLEX' : (idx === 7 ? 'K' : 'D/ST')))))));
+            const envStr = p.game_context ? `${p.game_context.opponent || '—'} ${p.game_context.is_dome ? '(Dome)' : ''}` : (p.opponent || '—');
+            const badges = getContextBadgesHtml(p.projection_adjustment_reasons);
+
+            rowsHtml += `
+              <tr>
+                <td><strong>${slotName}</strong></td>
+                <td>
+                  <strong>${p.name}</strong> <span class="pos-tag ${posClass}">${p.position}</span>
+                  ${badges}
+                </td>
+                <td>${p.team || '—'}</td>
+                <td>${envStr}</td>
+                <td><strong>${p.adjusted_projected_points ? p.adjusted_projected_points.toFixed(1) : p.projected_points.toFixed(1)}</strong></td>
+              </tr>
+            `;
+          });
+          startersTbody.innerHTML = rowsHtml;
+        }
+
+        // Render Optimal Bench Table
+        const benchTbody = document.getElementById('optimal-bench-tbody');
+        if (benchTbody && data.optimal_bench) {
+          let benchHtml = '';
+          data.optimal_bench.forEach(p => {
+            const posClass = `pos-${p.position || 'WR'}`;
+            const isInjured = ['OUT', 'IR', 'SUSPENDED'].includes((p.injury_status || '').toUpperCase());
+            const statusTag = isInjured ? `<span style="color: var(--accent-red); font-weight: 700;">${p.injury_status}</span>` : '<span style="color: var(--text-muted);">Active</span>';
+            const badges = getContextBadgesHtml(p.projection_adjustment_reasons);
+            let actionHtml = '<span style="color: var(--text-muted);">Keep Bench</span>';
+            if (isInjured) {
+              actionHtml = '<span style="color: var(--accent-amber); font-weight: 700;">Move to IR</span>';
+            }
+
+            benchHtml += `
+              <tr>
+                <td><span class="pos-tag ${posClass}">${p.position}</span></td>
+                <td>
+                  <strong>${p.name}</strong> (${p.team || '—'})
+                  ${badges}
+                </td>
+                <td>${statusTag}</td>
+                <td>${p.adjusted_projected_points ? p.adjusted_projected_points.toFixed(1) : p.projected_points.toFixed(1)}</td>
+                <td>${actionHtml}</td>
+              </tr>
+            `;
+          });
+          benchTbody.innerHTML = benchHtml;
+        }
       } catch (err) {
-        console.log('Lineup synced');
+        console.log('Lineup optimization synced');
       }
     }
+
 
     async function fetchWaiverRecommendations() {
       try {
@@ -1259,6 +1358,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       }
 
       fetchDraftState();
+      fetchLineupOptimization();
       fetchCheatsheet();
       initWebSocket();
       autoRefreshInterval = setInterval(fetchDraftState, 4000);
