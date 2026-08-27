@@ -238,6 +238,14 @@
       gap: 0.5rem;
     }
 
+    .player-note-tag {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--accent-amber);
+      margin-top: 0.2rem;
+      font-style: italic;
+    }
+
     table.data-table {
       width: 100%;
       border-collapse: collapse;
@@ -306,40 +314,6 @@
       border-color: var(--accent-blue);
     }
 
-    /* Modal */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-    }
-    .modal-overlay.open {
-      display: flex;
-    }
-    .modal {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      width: 100%;
-      max-width: 700px;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 1.5rem;
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.2rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border-color);
-    }
-
     footer {
       background-color: var(--bg-secondary);
       border-top: 1px solid var(--border-color);
@@ -362,7 +336,6 @@
     </div>
     <div class="header-actions">
       <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted);">Team: <strong id="current-team-name" style="color: var(--text-main);">My Squad</strong></span>
-      <button id="admin-settings-btn" class="btn btn-primary" onclick="openSettingsModal()">⚙️ Settings & Invites</button>
     </div>
   </header>
 
@@ -370,6 +343,7 @@
     <button class="tab-btn active" onclick="switchTab('draft')">🎯 Live Draft Board</button>
     <button class="tab-btn" onclick="switchTab('lineup')">⚡ Lineup Optimizer</button>
     <button class="tab-btn" onclick="switchTab('waivers')">🔍 3-Week Waiver & Streaming</button>
+    <button id="admin-settings-tab-btn" class="tab-btn" onclick="switchTab('settings')">⚙️ Settings & Cheatsheets</button>
   </nav>
 
   <main>
@@ -441,14 +415,20 @@
             <tbody id="draft-suggestions-tbody">
               <tr>
                 <td><strong>1</strong></td>
-                <td>Amon-Ra St. Brown</td>
+                <td>
+                  <strong>Amon-Ra St. Brown</strong>
+                  <span class="player-note-tag">📝 Tier 1 WR anchor</span>
+                </td>
                 <td><span class="pos-tag pos-WR">WR</span></td>
                 <td>17.8</td>
                 <td>Tier 1 WR cliff defense; 3 left before 9-pick turn gap</td>
               </tr>
               <tr>
                 <td><strong>2</strong></td>
-                <td>Jonathan Taylor</td>
+                <td>
+                  <strong>Jonathan Taylor</strong>
+                  <span class="player-note-tag">📝 Must target Tier 2 RB</span>
+                </td>
                 <td><span class="pos-tag pos-RB">RB</span></td>
                 <td>16.5</td>
                 <td>Top remaining Tier 2 RB value</td>
@@ -752,20 +732,13 @@
       </div>
     </div>
 
-  </main>
-
-  <!-- MODAL: Settings, Credentials & Magic Invites (Admin only) -->
-  <div id="settings-modal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 style="font-size: 1.15rem;">⚙️ Settings, Credentials & Invites</h3>
-        <button class="btn" onclick="closeSettingsModal()">✕</button>
-      </div>
-
+    <!-- TAB 4: FULL-PAGE SETTINGS & CHEATSHEETS (Admin) -->
+    <div id="tab-settings" class="tab-content">
       <!-- Active League Configuration -->
-      <div class="card" style="margin-bottom: 1rem;">
+      <div class="card">
         <div class="card-header">
-          <div class="card-title" style="font-size: 0.95rem;">🏈 Active League Configuration</div>
+          <div class="card-title">🏈 Active League Configuration</div>
+          <span class="badge badge-admin">Host / Admin</span>
         </div>
         <div class="grid-2">
           <div>
@@ -801,15 +774,15 @@
       </div>
 
       <!-- Magic Invite Generator -->
-      <div class="card" style="margin-bottom: 1rem;">
+      <div class="card">
         <div class="card-header">
-          <div class="card-title" style="font-size: 0.95rem;">🔗 One-Time Magic Invite Link for Friend</div>
-          <span class="badge badge-admin">Admin</span>
+          <div class="card-title">🔗 One-Time Magic Invite Link for Friend</div>
+          <span class="badge badge-admin">Single-Use</span>
         </div>
-        <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 0.75rem;">
-          Generate a single-use invite link for your friend's Sleeper league. Once claimed, they can view their draft/team independently without seeing this Settings modal.
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.85rem;">
+          Generate a single-use invite link for your friend's Sleeper league. Once claimed, they can view their draft/team independently without seeing this Settings tab.
         </p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.85rem;">
           <div class="form-group">
             <label class="form-label">Platform</label>
             <select id="invite-platform" class="form-control">
@@ -828,7 +801,7 @@
         </div>
         <button class="btn btn-primary" onclick="generateMagicLink()">✨ Generate Link</button>
 
-        <div id="invite-output-container" style="margin-top: 0.75rem; display: none;">
+        <div id="invite-output-container" style="margin-top: 0.85rem; display: none;">
           <div style="display: flex; gap: 0.5rem;">
             <input type="text" id="invite-link-output" class="form-control" readonly>
             <button class="btn btn-green" onclick="copyInviteLink()">📋 Copy</button>
@@ -839,23 +812,44 @@
       <!-- Plain-Text / CSV Cheatsheet Ingestion -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title" style="font-size: 0.95rem;">📝 Plain-Text / CSV Cheatsheet Ingestion</div>
-          <button class="btn" style="font-size: 0.75rem;" onclick="loadSampleCheatsheet()">Load Sample</button>
+          <div class="card-title">📝 Plain-Text / CSV / JSON Cheatsheet Ingestion</div>
+          <button class="btn" style="font-size: 0.8rem;" onclick="loadSampleCheatsheet()">Load Sample Cheatsheet</button>
         </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
+          Paste your custom rankings, tiers, injury markers (<code>*</code>), player notes (<code>Player - Note</code>), and macro strategy rules.
+        </p>
         <div class="form-group">
-          <textarea id="cheatsheet-textarea" class="form-control" rows="7" placeholder="Paste your plain-text cheatsheet, OCR table, CSV, or JSON here..."></textarea>
+          <textarea id="cheatsheet-textarea" class="form-control" rows="8" placeholder="Paste your plain-text cheatsheet, OCR table, CSV, or JSON here..."></textarea>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
           <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Ingest & Apply Cheatsheet</button>
-          <span id="cheatsheet-status-msg" style="font-size: 0.82rem; color: var(--accent-green);"></span>
+          <span id="cheatsheet-status-msg" style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;"></span>
         </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-        <button class="btn" onclick="closeSettingsModal()">Close</button>
+      <!-- Parsed Cheatsheet Player Directory -->
+      <div id="cheatsheet-directory-card" class="card" style="display: none;">
+        <div class="card-header">
+          <div class="card-title">📖 Loaded Cheatsheet Player Directory & Notes</div>
+          <span id="directory-count-badge" class="badge badge-claimed">0 Players</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Pos</th>
+              <th>Team</th>
+              <th>Custom Tier</th>
+              <th>ADP</th>
+              <th>Notes / Tags</th>
+            </tr>
+          </thead>
+          <tbody id="cheatsheet-directory-tbody"></tbody>
+        </table>
       </div>
     </div>
-  </div>
+
+  </main>
 
   <footer>
     <div>Live Status: <span style="color: var(--accent-green); font-weight: 600;" id="ws-status">● Auto-Syncing (WebSocket Live)</span></div>
@@ -877,13 +871,6 @@
       });
       const target = document.getElementById('tab-' + tabId);
       if (target) target.classList.add('active');
-    }
-
-    function openSettingsModal() {
-      document.getElementById('settings-modal').classList.add('open');
-    }
-    function closeSettingsModal() {
-      document.getElementById('settings-modal').classList.remove('open');
     }
 
     function toggleCookieFields() {
@@ -916,34 +903,34 @@
 
     function loadSampleCheatsheet() {
       const sample = `QB
-Allen BUF 34.8
+Allen BUF 34.8 - Target early QB advantage
 
 Jackson BAL 69.1
-Burrow CIN 65.5
+Burrow CIN 65.5 - Elite pocket passer
 
 RB
-Gibbs DET 1.1
+Gibbs DET 1.1 - Tier 1 workhorse
 Robinson ATL 2.1
 
 McCaffrey SF 8.7
-Taylor IND 8.9
+Taylor IND 8.9 - Must target Tier 2 RB
 Cook BUF 9.3
 
 Hampton LAC 16.1
 Barkley PHI 16.8
-Achane MIA 16.5
+Achane MIA 16.5 - Explosive upside
 
 WR
 Chase CIN 3.1
 Nacua LAR 4.8
-St Brown DET 5.9
+St Brown DET 5.9 - Tier 1 WR anchor
 Smith-Njigba SEA 5.5
 
 Lamb DAL 11.3
-Jefferson MIN 12.3
+Jefferson MIN 12.3 - Elite WR1 target
 
 TE
-Bowers LV 21.6
+Bowers LV 21.6 - Generational tight end
 McBride ARI 28.4
 Loveland CHI 43.8
 Warren IND 56.3
@@ -961,18 +948,45 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       const rulesList = document.getElementById('cheatsheet-rules-list');
       const statsBadge = document.getElementById('cheatsheet-stats-badge');
 
-      const playerCount = Object.keys(data.entries || {}).length;
+      const entries = Object.values(data.entries || {});
       const rules = data.strategy_rules || [];
 
-      if (playerCount > 0 || rules.length > 0) {
+      if (entries.length > 0 || rules.length > 0) {
         rulesContainer.style.display = 'block';
-        statsBadge.textContent = `${playerCount} Players & Tiers Loaded`;
+        statsBadge.textContent = `${entries.length} Players & Tiers Loaded`;
         
         let rulesHtml = '';
         rules.forEach(rule => {
           rulesHtml += `<div class="strategy-pill"><span>🎯</span> <strong>${rule}</strong></div>`;
         });
         rulesList.innerHTML = rulesHtml || '<div style="font-size: 0.85rem; color: var(--text-muted);">Custom tiers loaded into tactical suggestions.</div>';
+
+        // Render Cheatsheet Directory on Settings Page
+        const dirCard = document.getElementById('cheatsheet-directory-card');
+        const dirTbody = document.getElementById('cheatsheet-directory-tbody');
+        const dirBadge = document.getElementById('directory-count-badge');
+
+        if (dirCard && dirTbody) {
+          dirCard.style.display = 'block';
+          dirBadge.textContent = `${entries.length} Players`;
+          
+          let rowsHtml = '';
+          entries.forEach(e => {
+            const posClass = `pos-${e.position || 'WR'}`;
+            const injTag = e.is_injured ? '<span style="color: var(--accent-red); font-weight: 700;"> (Injured)</span>' : '';
+            const notesText = e.notes ? `<span class="player-note-tag">📝 ${e.notes}</span>` : '<span style="color: var(--text-muted); font-size: 0.8rem;">—</span>';
+            
+            rowsHtml += `<tr>
+              <td><strong>${e.player_name}</strong>${injTag}</td>
+              <td><span class="pos-tag ${posClass}">${e.position || '—'}</span></td>
+              <td>${e.team || '—'}</td>
+              <td><strong>Tier ${e.tier}</strong></td>
+              <td>${e.adp ? e.adp.toFixed(1) : '—'}</td>
+              <td>${notesText}</td>
+            </tr>`;
+          });
+          dirTbody.innerHTML = rowsHtml;
+        }
       }
     }
 
@@ -1081,7 +1095,8 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       if (inviteCode) {
         document.getElementById('role-badge').textContent = 'Guest Session';
         document.getElementById('role-badge').className = 'badge badge-claimed';
-        document.getElementById('admin-settings-btn').style.display = 'none';
+        const adminBtn = document.getElementById('admin-settings-tab-btn');
+        if (adminBtn) adminBtn.style.display = 'none';
         if (platformParam) {
           document.getElementById('platform-badge').textContent = platformParam.toUpperCase();
           document.getElementById('platform-badge').className = 'badge badge-' + platformParam;
