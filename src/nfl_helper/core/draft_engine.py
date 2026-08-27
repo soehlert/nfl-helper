@@ -123,7 +123,7 @@ def generate_draft_suggestions(
     cliff_warnings: list[TierCliffWarning],
     baselines: dict[str, float],
     overall_pick: int,
-    top_n: int = 5,
+    top_n: int = 100,
 ) -> list[DraftSuggestion]:
     """Generate ranked tactical draft suggestions balancing VORP, cliffs, and ADP value."""
     vorp_scores = calculate_vorp(available_players, baselines)

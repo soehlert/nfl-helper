@@ -298,6 +298,28 @@
       background-color: rgba(255, 255, 255, 0.03);
     }
 
+    .pos-filter-btn {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .pos-filter-btn:hover {
+      border-color: var(--accent-blue);
+      color: var(--text-main);
+    }
+    .pos-filter-btn.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+
     .pos-tag {
       font-weight: 700;
       padding: 0.15rem 0.4rem;
@@ -575,40 +597,65 @@
 
       <!-- Row 2: Full-Width Suggestions Table -->
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">Suggestions</div>
-        </div>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width: 45px;">Rank</th>
-              <th style="width: 45px;">Pos</th>
-              <th style="width: 50px;">Team</th>
-              <th>Player</th>
-              <th style="width: 65px;">Tier</th>
-              <th style="width: 75px;">Proj Pts</th>
-              <th style="width: 60px;">ADP</th>
-              <th style="width: 50px;">Bye</th>
-              <th>Reason</th>
-            </tr>
-          </thead>
-          <tbody id="draft-suggestions-tbody">
-            <tr>
-              <td><strong>1</strong></td>
-              <td><span class="pos-tag pos-RB">RB</span></td>
-              <td>NYJ</td>
-              <td><strong>Breece Hall</strong></td>
-              <td>Tier 1</td>
-              <td>18.2</td>
-              <td>5.4</td>
-              <td>Wk 12</td>
-              <td class="reason-text">+4.1 VORP (Tier 1 RB) • High-volume primary role & baseline advantage</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div class="card-title">Available Players & Suggestions</div>
+            <span id="suggestions-count-badge" class="badge badge-claimed" style="font-size: 0.72rem;">100 Players</span>
+          </div>
 
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <!-- Position Filter Pills -->
+            <div class="filter-group" id="draft-pos-filters" style="display: flex; gap: 0.25rem;">
+              <button class="pos-filter-btn active" data-pos="ALL" onclick="filterDraftPosition('ALL')">ALL</button>
+              <button class="pos-filter-btn" data-pos="QB" onclick="filterDraftPosition('QB')">QB</button>
+              <button class="pos-filter-btn" data-pos="RB" onclick="filterDraftPosition('RB')">RB</button>
+              <button class="pos-filter-btn" data-pos="WR" onclick="filterDraftPosition('WR')">WR</button>
+              <button class="pos-filter-btn" data-pos="TE" onclick="filterDraftPosition('TE')">TE</button>
+              <button class="pos-filter-btn" data-pos="K" onclick="filterDraftPosition('K')">K</button>
+              <button class="pos-filter-btn" data-pos="D/ST" onclick="filterDraftPosition('D/ST')">D/ST</button>
+            </div>
+
+            <!-- Search input -->
+            <div style="position: relative;">
+              <input type="text" id="draft-search-input" placeholder="Search player or team..." oninput="handleDraftSearch(event)" style="background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-main); font-size: 0.8rem; padding: 0.35rem 0.65rem 0.35rem 1.6rem; border-radius: 6px; width: 175px;" />
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 7px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+          </div>
+        </div>
+
+        <div style="max-height: 520px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px;">
+          <table class="data-table" id="draft-suggestions-table">
+            <thead style="position: sticky; top: 0; z-index: 2;">
+              <tr>
+                <th style="width: 45px; cursor: pointer;" onclick="sortDraftTable('rank')">Rank <span id="sort-icon-rank">⬍</span></th>
+                <th style="width: 45px; cursor: pointer;" onclick="sortDraftTable('pos')">Pos <span id="sort-icon-pos">⬍</span></th>
+                <th style="width: 50px; cursor: pointer;" onclick="sortDraftTable('team')">Team <span id="sort-icon-team">⬍</span></th>
+                <th style="cursor: pointer;" onclick="sortDraftTable('name')">Player <span id="sort-icon-name">⬍</span></th>
+                <th style="width: 65px; cursor: pointer;" onclick="sortDraftTable('tier')">Tier <span id="sort-icon-tier">⬍</span></th>
+                <th style="width: 75px; cursor: pointer;" onclick="sortDraftTable('pts')">Proj Pts <span id="sort-icon-pts">⬍</span></th>
+                <th style="width: 60px; cursor: pointer;" onclick="sortDraftTable('adp')">ADP <span id="sort-icon-adp">⬍</span></th>
+                <th style="width: 50px; cursor: pointer;" onclick="sortDraftTable('bye')">Bye <span id="sort-icon-bye">⬍</span></th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody id="draft-suggestions-tbody">
+              <tr>
+                <td><strong>1</strong></td>
+                <td><span class="pos-tag pos-RB">RB</span></td>
+                <td>NYJ</td>
+                <td><strong>Breece Hall</strong></td>
+                <td>Tier 1</td>
+                <td>18.2</td>
+                <td>5.4</td>
+                <td>Wk 12</td>
+                <td class="reason-text">+4.1 VORP (Tier 1 RB) • High-volume primary role & baseline advantage</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
+
 
     <!-- TAB 2: LINEUP OPTIMIZER -->
     <div id="tab-lineup" class="tab-content active">
@@ -1246,6 +1293,12 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
 
     let isCliffSimulated = false;
     let isTierRollSimulated = false;
+    let isCliffExpanded = false;
+    let rawDraftSuggestions = [];
+    let currentDraftPosFilter = 'ALL';
+    let currentDraftSearchQuery = '';
+    let currentSortKey = 'rank';
+    let currentSortAsc = true;
 
 
     function toggleSimulateCliff() {
@@ -1265,6 +1318,11 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         btn.textContent = isTierRollSimulated ? 'Reset Simulation' : 'Simulate Tier Roll';
         btn.style.color = isTierRollSimulated ? 'var(--accent-amber)' : 'var(--text-main)';
       }
+      fetchDraftState();
+    }
+
+    function toggleCliffExpanded() {
+      isCliffExpanded = !isCliffExpanded;
       fetchDraftState();
     }
 
@@ -1288,6 +1346,149 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       }
     }
 
+    function filterDraftPosition(pos) {
+      currentDraftPosFilter = pos;
+      document.querySelectorAll('#draft-pos-filters .pos-filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-pos') === pos) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      renderDraftSuggestionsTable();
+    }
+
+    function handleDraftSearch(event) {
+      currentDraftSearchQuery = (event.target.value || '').trim().toLowerCase();
+      renderDraftSuggestionsTable();
+    }
+
+    function sortDraftTable(key) {
+      if (currentSortKey === key) {
+        currentSortAsc = !currentSortAsc;
+      } else {
+        currentSortKey = key;
+        currentSortAsc = true;
+      }
+      updateSortIcons();
+      renderDraftSuggestionsTable();
+    }
+
+    function updateSortIcons() {
+      ['rank', 'pos', 'team', 'name', 'tier', 'pts', 'adp', 'bye'].forEach(k => {
+        const icon = document.getElementById('sort-icon-' + k);
+        if (!icon) return;
+        if (k === currentSortKey) {
+          icon.textContent = currentSortAsc ? '▲' : '▼';
+          icon.style.color = 'var(--accent-blue)';
+        } else {
+          icon.textContent = '⬍';
+          icon.style.color = 'var(--text-muted)';
+        }
+      });
+    }
+
+    function renderDraftSuggestionsTable() {
+      const sugTbody = document.getElementById('draft-suggestions-tbody');
+      const countBadge = document.getElementById('suggestions-count-badge');
+      if (!sugTbody) return;
+
+      let filtered = rawDraftSuggestions.filter(s => {
+        const p = s.player;
+        if (currentDraftPosFilter !== 'ALL') {
+          const posMatch = currentDraftPosFilter === 'D/ST'
+            ? (p.position === 'D/ST' || p.position === 'DST')
+            : (p.position === currentDraftPosFilter);
+          if (!posMatch) return false;
+        }
+        if (currentDraftSearchQuery) {
+          const nameMatch = (p.name || '').toLowerCase().includes(currentDraftSearchQuery);
+          const teamMatch = (p.team || '').toLowerCase().includes(currentDraftSearchQuery);
+          const posMatch = (p.position || '').toLowerCase().includes(currentDraftSearchQuery);
+          if (!nameMatch && !teamMatch && !posMatch) return false;
+        }
+        return true;
+      });
+
+      filtered.sort((a, b) => {
+        let valA, valB;
+        const pA = a.player;
+        const pB = b.player;
+        switch (currentSortKey) {
+          case 'pos':
+            valA = pA.position || '';
+            valB = pB.position || '';
+            break;
+          case 'team':
+            valA = pA.team || '';
+            valB = pB.team || '';
+            break;
+          case 'name':
+            valA = pA.name || '';
+            valB = pB.name || '';
+            break;
+          case 'tier':
+            valA = pA.cheatsheet_tier || pA.tier || 99;
+            valB = pB.cheatsheet_tier || pB.tier || 99;
+            break;
+          case 'pts':
+            valA = pA.projected_points || 0;
+            valB = pB.projected_points || 0;
+            break;
+          case 'adp':
+            valA = pA.adp || 999;
+            valB = pB.adp || 999;
+            break;
+          case 'bye':
+            valA = pA.bye_week || 99;
+            valB = pB.bye_week || 99;
+            break;
+          case 'rank':
+          default:
+            valA = a.rank;
+            valB = b.rank;
+            break;
+        }
+        if (valA < valB) return currentSortAsc ? -1 : 1;
+        if (valA > valB) return currentSortAsc ? 1 : -1;
+        return 0;
+      });
+
+      if (countBadge) {
+        countBadge.textContent = `${filtered.length} Players`;
+      }
+
+      if (filtered.length === 0) {
+        sugTbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">No matching available players found.</td></tr>';
+        return;
+      }
+
+      let sugHtml = '';
+      filtered.forEach(s => {
+        const p = s.player;
+        const cleanPos = (p.position || 'WR').replace('/', '-');
+        const posClass = `pos-${cleanPos}`;
+        const team = p.team || 'FA';
+        const tierStr = `Tier ${p.cheatsheet_tier || p.tier || 1}`;
+        const ptsStr = p.projected_points ? p.projected_points.toFixed(1) : '—';
+        const adpStr = p.adp ? p.adp.toFixed(1) : (p.cheatsheet_rank ? p.cheatsheet_rank.toFixed(0) : '—');
+        const byeStr = p.bye_week ? `Wk ${p.bye_week}` : '—';
+        sugHtml += `
+          <tr>
+            <td><strong>${s.rank}</strong></td>
+            <td><span class="pos-tag ${posClass}">${p.position}</span></td>
+            <td>${team}</td>
+            <td><strong>${p.name}</strong></td>
+            <td>${tierStr}</td>
+            <td>${ptsStr}</td>
+            <td>${adpStr}</td>
+            <td>${byeStr}</td>
+            <td class="reason-text">${s.reason}</td>
+          </tr>`;
+      });
+      sugTbody.innerHTML = sugHtml;
+    }
+
     function renderDraftState(data) {
       if (!data) return;
       if (data.current_pick) {
@@ -1304,7 +1505,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         document.getElementById('snake-turn-gap-val').textContent = data.snake_turn_gap + ' picks';
       }
 
-      // Render Top Cliff Alerts Banner (Only shown when active cliffs exist)
+      // Render Top Cliff Alerts Banner (Capped to top 2 by default with toggle)
       const topCliffWrapper = document.getElementById('top-cliff-alerts-wrapper');
       const topCliffContainer = document.getElementById('top-cliff-alerts-container');
       if (topCliffWrapper && topCliffContainer) {
@@ -1315,9 +1516,10 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
             current_tier: isTierRollSimulated ? 2 : 1,
             players_remaining: 1,
             cliff_type: 'ON_THE_CLOCK_CLIFF',
-            picks_before_next_turn: 12,
+            picks_until_turn: 4,
+            snake_turn_gap: 12,
             cliff_risk: 'CRITICAL',
-            projected_drop_off: 4.2,
+            next_tier_drop_points: 4.2,
             recommended_action: 'Draft remaining Tier RB now before a 4.2 pt drop-off across your 12-pick turn gap.'
           }];
         }
@@ -1327,52 +1529,42 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           topCliffContainer.innerHTML = '';
         } else {
           topCliffWrapper.style.display = 'block';
+          cliffs.sort((a, b) => {
+            const scoreA = (a.cliff_risk === 'CRITICAL' ? 2 : 1) + (a.cliff_type === 'ON_THE_CLOCK_CLIFF' ? 2 : 0);
+            const scoreB = (b.cliff_risk === 'CRITICAL' ? 2 : 1) + (b.cliff_type === 'ON_THE_CLOCK_CLIFF' ? 2 : 0);
+            return scoreB - scoreA;
+          });
+
+          const visibleCliffs = isCliffExpanded ? cliffs : cliffs.slice(0, 2);
           let cliffHtml = '';
-          cliffs.forEach(c => {
+          visibleCliffs.forEach(c => {
             const isWarning = c.cliff_risk === 'MODERATE' || c.cliff_type === 'UPCOMING_TURN_CLIFF';
             const bannerClass = isWarning ? 'alert-banner warning' : 'alert-banner';
             const typeLabel = c.cliff_type === 'ON_THE_CLOCK_CLIFF' ? 'On the Clock Scarcity' : (c.cliff_type === 'UPCOMING_TURN_CLIFF' ? 'Upcoming Turn Scarcity' : 'Depletion Alert');
             cliffHtml += `
-              <div class="${bannerClass}" style="padding: 0.75rem 1rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+              <div class="${bannerClass}" style="padding: 0.6rem 0.9rem; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.2);">
                 <div>
-                  <div class="alert-title" style="font-size: 0.92rem; margin-bottom: 0.15rem;">${typeLabel}: Tier ${c.current_tier} ${c.position} (${c.players_remaining} left)</div>
-                  <div class="alert-desc" style="font-size: 0.82rem; line-height: 1.35;">${c.recommended_action}</div>
+                  <div class="alert-title" style="font-size: 0.88rem; margin-bottom: 0.15rem;">${typeLabel}: Tier ${c.current_tier} ${c.position} (${c.players_remaining} left)</div>
+                  <div class="alert-desc" style="font-size: 0.8rem; line-height: 1.3;">${c.recommended_action}</div>
                 </div>
               </div>`;
           });
+
+          if (cliffs.length > 2) {
+            cliffHtml += `
+              <div style="text-align: center; margin-top: 0.25rem;">
+                <button type="button" class="btn" style="padding: 0.2rem 0.6rem; font-size: 0.75rem; color: var(--accent-amber); border-color: var(--accent-amber);" onclick="toggleCliffExpanded()">
+                  ${isCliffExpanded ? '▲ Show Fewer Alerts' : `▼ +${cliffs.length - 2} More Tier Cliff Alerts`}
+                </button>
+              </div>`;
+          }
           topCliffContainer.innerHTML = cliffHtml;
         }
       }
 
-      // Render Tactical Suggestions
-      const sugTbody = document.getElementById('draft-suggestions-tbody');
-      if (sugTbody && data.top_suggestions) {
-        let sugHtml = '';
-        data.top_suggestions.forEach(s => {
-          const p = s.player;
-          const cleanPos = (p.position || 'WR').replace('/', '-');
-          const posClass = `pos-${cleanPos}`;
-          const team = p.team || 'FA';
-          const tierStr = `Tier ${p.cheatsheet_tier || p.tier || 1}`;
-          const ptsStr = p.projected_points ? p.projected_points.toFixed(1) : '—';
-          const adpStr = p.adp ? p.adp.toFixed(1) : (p.cheatsheet_rank ? p.cheatsheet_rank.toFixed(0) : '—');
-          const byeStr = p.bye_week ? `Wk ${p.bye_week}` : '—';
-          sugHtml += `
-            <tr>
-              <td><strong>${s.rank}</strong></td>
-              <td><span class="pos-tag ${posClass}">${p.position}</span></td>
-              <td>${team}</td>
-              <td><strong>${p.name}</strong></td>
-              <td>${tierStr}</td>
-              <td>${ptsStr}</td>
-              <td>${adpStr}</td>
-              <td>${byeStr}</td>
-              <td class="reason-text">${s.reason}</td>
-            </tr>`;
-        });
-
-        sugTbody.innerHTML = sugHtml;
-      }
+      // Store suggestions and render table with search/pos/sorting
+      rawDraftSuggestions = data.top_suggestions || [];
+      renderDraftSuggestionsTable();
 
       // Render Positional Tier Summary
       const tierTbody = document.getElementById('tier-summary-tbody');
@@ -1398,6 +1590,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         tierTbody.innerHTML = tierHtml;
       }
     }
+
 
     async function fetchDraftState() {
       try {
