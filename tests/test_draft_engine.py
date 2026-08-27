@@ -1,0 +1,224 @@
+"""Unit tests for live draft engine, lookahead math, tier clustering, and cliff alerts."""
+
+import time
+
+from nfl_helper.core.draft_engine import (
+    build_draft_state,
+    calculate_lookahead,
+    calculate_snake_pick_owner,
+    calculate_user_draft_schedule,
+    calculate_vorp,
+    calculate_vorp_baselines,
+    generate_draft_suggestions,
+)
+from nfl_helper.core.tier_calculator import calculate_tier_drop, cluster_position_tiers, detect_tier_cliffs
+from nfl_helper.models.draft import CliffType, DraftPick
+from nfl_helper.models.player import Player, Position
+
+
+def test_snake_pick_owner_math() -> None:
+    """Verify 1-indexed pick owner calculations across odd and even rounds."""
+    # 12-team league
+    # Round 1: slots 1 -> 12
+    assert calculate_snake_pick_owner(1, 12) == 1
+    assert calculate_snake_pick_owner(6, 12) == 6
+    assert calculate_snake_pick_owner(12, 12) == 12
+    # Round 2: slots 12 -> 1
+    assert calculate_snake_pick_owner(13, 12) == 12
+    assert calculate_snake_pick_owner(14, 12) == 11
+    assert calculate_snake_pick_owner(24, 12) == 1
+    # Round 3: slots 1 -> 12
+    assert calculate_snake_pick_owner(25, 12) == 1
+    assert calculate_snake_pick_owner(36, 12) == 12
+
+
+def test_user_draft_schedule() -> None:
+    """Verify schedule generation for 1st, 12th, and middle draft slots."""
+    # Slot 1 in 12-team, 4 rounds
+    s1 = calculate_user_draft_schedule(1, 12, 4)
+    assert s1 == [1, 24, 25, 48]
+
+    # Slot 12 in 12-team, 4 rounds
+    s12 = calculate_user_draft_schedule(12, 12, 4)
+    assert s12 == [12, 13, 36, 37]
+
+    # Slot 6 in 12-team, 4 rounds
+    s6 = calculate_user_draft_schedule(6, 12, 4)
+    assert s6 == [6, 19, 30, 43]
+
+
+def test_snake_lookahead_on_the_clock() -> None:
+    """Verify lookahead math when user is currently on the clock."""
+    # Slot 1 on the clock at pick 1
+    wait, gap, on_clock = calculate_lookahead(1, 1, 12, 16)
+    assert on_clock is True
+    assert wait == 0
+    assert gap == 22  # Picks 2 to 23 are 22 picks
+
+    # Slot 12 on the clock at pick 12 (back-to-back turnaround)
+    wait12, gap12, on_clock12 = calculate_lookahead(12, 12, 12, 16)
+    assert on_clock12 is True
+    assert wait12 == 0
+    assert gap12 == 0  # Next pick is immediately pick 13 (0 opponents)
+
+
+def test_snake_lookahead_waiting_and_turn_gaps() -> None:
+    """Verify lookahead math when user is waiting for upcoming picks."""
+    # Slot 6 when current pick is 1
+    wait, gap, on_clock = calculate_lookahead(1, 6, 12, 16)
+    assert on_clock is False
+    assert wait == 5  # Pick 6 - Pick 1 = 5
+    assert gap == 12  # Pick 19 - Pick 6 - 1 = 12
+
+    # Slot 6 when current pick is 7 (after first pick, before pick 19)
+    wait2, gap2, on_clock2 = calculate_lookahead(7, 6, 12, 16)
+    assert on_clock2 is False
+    assert wait2 == 12  # Pick 19 - Pick 7 = 12
+    assert gap2 == 10  # Pick 30 - Pick 19 - 1 = 10
+
+
+def test_statistical_tier_clustering() -> None:
+    """Verify statistical tier clustering based on point drop-off thresholds."""
+    players = [
+        Player(id="p1", name="Elite 1", position=Position.RB, team="A", projected_points=21.0),
+        Player(id="p2", name="Elite 2", position=Position.RB, team="B", projected_points=20.5),
+        # 2.5 pt drop -> new tier
+        Player(id="p3", name="Tier2 A", position=Position.RB, team="C", projected_points=18.0),
+        Player(id="p4", name="Tier2 B", position=Position.RB, team="D", projected_points=17.5),
+        # 3.0 pt drop -> new tier
+        Player(id="p5", name="Tier3 A", position=Position.RB, team="E", projected_points=14.5),
+    ]
+
+    tiers = cluster_position_tiers(players, "RB")
+    assert len(tiers) == 3
+    assert tiers[0].tier_num == 1
+    assert len(tiers[0].players) == 2
+    assert tiers[0].avg_projected == 20.75
+
+    assert tiers[1].tier_num == 2
+    assert len(tiers[1].players) == 2
+    assert tiers[1].avg_projected == 17.75
+
+    assert tiers[2].tier_num == 3
+    assert len(tiers[2].players) == 1
+
+    drop = calculate_tier_drop(tiers[0], tiers[1])
+    assert drop == 3.0
+
+
+def test_cheatsheet_tier_clustering() -> None:
+    """Verify tier clustering respects custom cheatsheet tiers when attached."""
+    players = [
+        Player(id="p1", name="Player 1", position=Position.WR, team="A", projected_points=18.0, cheatsheet_tier=1),
+        Player(id="p2", name="Player 2", position=Position.WR, team="B", projected_points=17.0, cheatsheet_tier=1),
+        Player(id="p3", name="Player 3", position=Position.WR, team="C", projected_points=16.0, cheatsheet_tier=2),
+    ]
+
+    tiers = cluster_position_tiers(players, "WR")
+    assert len(tiers) == 2
+    assert tiers[0].tier_num == 1
+    assert len(tiers[0].players) == 2
+    assert tiers[1].tier_num == 2
+    assert len(tiers[1].players) == 1
+
+
+def test_tier_cliffs_all_three_scenarios() -> None:
+    """Verify detection of ON_THE_CLOCK_CLIFF, UPCOMING_TURN_CLIFF, and DEPLETED_BEFORE_TURN."""
+    # Scenario 1: ON_THE_CLOCK_CLIFF (User on the clock, only 1 Tier-1 RB left with 12-pick turn gap)
+    t1_rb = [Player(id="rb1", name="CMC", position=Position.RB, team="SF", projected_points=20.0, tier=1)]
+    t2_rb = [Player(id="rb2", name="JT", position=Position.RB, team="IND", projected_points=16.0, tier=2)]
+    tiers_on_clock = {
+        "RB": cluster_position_tiers(t1_rb + t2_rb, "RB"),
+    }
+    cliffs_on_clock = detect_tier_cliffs(tiers_on_clock, picks_until_turn=0, snake_turn_gap=12, is_on_the_clock=True)
+    assert len(cliffs_on_clock) == 1
+    assert cliffs_on_clock[0].cliff_type == CliffType.ON_THE_CLOCK_CLIFF
+    assert cliffs_on_clock[0].cliff_risk == "CRITICAL"
+    assert cliffs_on_clock[0].next_tier_drop_points == 4.0
+
+    # Scenario 2: DEPLETED_BEFORE_TURN (User 4 picks away, only 1 Tier-1 player left)
+    cliffs_depleted = detect_tier_cliffs(tiers_on_clock, picks_until_turn=4, snake_turn_gap=9, is_on_the_clock=False)
+    assert len(cliffs_depleted) == 1
+    assert cliffs_depleted[0].cliff_type == CliffType.DEPLETED_BEFORE_TURN
+    assert cliffs_depleted[0].cliff_risk == "CRITICAL"
+
+    # Scenario 3: UPCOMING_TURN_CLIFF (User 2 picks away, 3 Tier-1 players left, turn gap is 12)
+    t1_wr = [
+        Player(id="wr1", name="Ceedee", position=Position.WR, team="DAL", projected_points=19.0, tier=1),
+        Player(id="wr2", name="Tyreek", position=Position.WR, team="MIA", projected_points=18.5, tier=1),
+        Player(id="wr3", name="JJ", position=Position.WR, team="MIN", projected_points=18.0, tier=1),
+    ]
+    t2_wr = [Player(id="wr4", name="Evans", position=Position.WR, team="TB", projected_points=15.0, tier=2)]
+    tiers_upcoming = {"WR": cluster_position_tiers(t1_wr + t2_wr, "WR")}
+    cliffs_upcoming = detect_tier_cliffs(tiers_upcoming, picks_until_turn=2, snake_turn_gap=12, is_on_the_clock=False)
+    assert len(cliffs_upcoming) == 1
+    assert cliffs_upcoming[0].cliff_type == CliffType.UPCOMING_TURN_CLIFF
+
+
+def test_vorp_and_suggestion_generation() -> None:
+    """Verify baseline replacement calculations and draft suggestions ranking."""
+    players = [
+        Player(id="qb1", name="Josh Allen", position=Position.QB, team="BUF", projected_points=24.0),
+        Player(id="qb2", name="Lamar Jackson", position=Position.QB, team="BAL", projected_points=22.0),
+        Player(id="qb12", name="Goff", position=Position.QB, team="DET", projected_points=17.0),
+        Player(id="rb1", name="Bijan", position=Position.RB, team="ATL", projected_points=19.0),
+        Player(id="rb30", name="Singletary", position=Position.RB, team="NYG", projected_points=10.0),
+    ]
+
+    baselines = calculate_vorp_baselines(players, total_teams=12)
+    vorp_scores = calculate_vorp(players, baselines)
+
+    # Bijan (19.0 - 10.0 = 9.0 VORP) vs Josh Allen (24.0 - 17.0 = 7.0 VORP)
+    assert vorp_scores["rb1"] == 9.0
+    assert vorp_scores["qb1"] == 7.0
+
+    tiers = {"RB": cluster_position_tiers([players[3]], "RB"), "QB": cluster_position_tiers([players[0]], "QB")}
+    suggestions = generate_draft_suggestions(players, tiers, [], baselines, overall_pick=1, top_n=3)
+
+    assert len(suggestions) == 3
+    assert suggestions[0].player.id == "rb1"
+    assert suggestions[0].vorp == 9.0
+
+
+def test_build_draft_state_performance_and_completeness() -> None:
+    """Verify build_draft_state runs completely in < 50ms."""
+    # Generate 150 players
+    mock_players: list[Player] = []
+    positions = ["QB", "RB", "WR", "TE", "K", "D/ST"]
+    for i in range(150):
+        pos = positions[i % len(positions)]
+        pts = round(25.0 - (i * 0.12), 1)
+        mock_players.append(Player(id=f"p_{i}", name=f"Player {i}", position=pos, team="NFL", projected_points=pts))
+
+    picks = [
+        DraftPick(
+            round_num=1,
+            round_pick=1,
+            overall_pick=1,
+            team_id="t1",
+            team_name="Team 1",
+            player_id="p_0",
+            player_name="Player 0",
+            position="QB",
+        )
+    ]
+
+    start_time = time.perf_counter()
+    state = build_draft_state(
+        league_id="test_league",
+        draft_id="draft_123",
+        overall_pick=2,
+        user_draft_slot=6,
+        total_teams=12,
+        total_rounds=16,
+        recent_picks=picks,
+        all_players=mock_players,
+    )
+    elapsed_ms = (time.perf_counter() - start_time) * 1000
+
+    assert state.current_pick == 2
+    assert state.current_round == 1
+    assert state.user_draft_slot == 6
+    assert state.picks_until_user_turn == 4
+    assert len(state.top_suggestions) > 0
+    assert elapsed_ms < 50.0  # Well within the 100ms algorithmic budget

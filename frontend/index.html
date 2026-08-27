@@ -1052,17 +1052,97 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       }
     }
 
+    function renderDraftState(data) {
+      if (!data) return;
+      if (data.current_pick) {
+        document.getElementById('overall-pick-num').textContent = '#' + data.current_pick;
+        document.getElementById('current-round-num').textContent = 'Round ' + data.current_round;
+        const picksUntilElem = document.getElementById('picks-until-turn-val');
+        if (data.is_user_on_the_clock || data.picks_until_user_turn === 0) {
+          picksUntilElem.textContent = 'ON THE CLOCK!';
+          picksUntilElem.style.color = 'var(--accent-green)';
+        } else {
+          picksUntilElem.textContent = data.picks_until_user_turn + ' picks';
+          picksUntilElem.style.color = 'var(--accent-amber)';
+        }
+        document.getElementById('snake-turn-gap-val').textContent = data.snake_turn_gap + ' picks';
+      }
+
+      // Render Cliff Alerts
+      const cliffContainer = document.getElementById('cliff-alerts-container');
+      if (cliffContainer) {
+        const cliffs = data.cliff_warnings || [];
+        if (cliffs.length === 0) {
+          cliffContainer.innerHTML = '';
+        } else {
+          let cliffHtml = '';
+          cliffs.forEach(c => {
+            const isWarning = c.cliff_risk === 'MODERATE' || c.cliff_type === 'UPCOMING_TURN_CLIFF';
+            const bannerClass = isWarning ? 'alert-banner warning' : 'alert-banner';
+            const icon = isWarning ? '⚠️' : '🚨';
+            cliffHtml += `
+              <div class="${bannerClass}">
+                <div>${icon}</div>
+                <div>
+                  <div class="alert-title">${c.cliff_type}: Tier ${c.current_tier} ${c.position} (${c.players_remaining} remaining)</div>
+                  <div class="alert-desc">${c.recommended_action}</div>
+                </div>
+              </div>`;
+          });
+          cliffContainer.innerHTML = cliffHtml;
+        }
+      }
+
+      // Render Tactical Suggestions
+      const sugTbody = document.getElementById('draft-suggestions-tbody');
+      if (sugTbody && data.top_suggestions) {
+        let sugHtml = '';
+        data.top_suggestions.forEach(s => {
+          const p = s.player;
+          const posClass = `pos-${p.position || 'WR'}`;
+          sugHtml += `
+            <tr>
+              <td><strong>${s.rank}</strong></td>
+              <td><strong>${p.name}</strong></td>
+              <td><span class="pos-tag ${posClass}">${p.position}</span></td>
+              <td><strong>Tier ${p.cheatsheet_tier || p.tier || 1}</strong></td>
+              <td>${p.projected_points ? p.projected_points.toFixed(1) : '—'}</td>
+              <td>${s.reason}</td>
+            </tr>`;
+        });
+        sugTbody.innerHTML = sugHtml;
+      }
+
+      // Render Positional Tier Summary
+      const tierTbody = document.getElementById('tier-summary-tbody');
+      if (tierTbody && data.tiers_by_position) {
+        let tierHtml = '';
+        Object.entries(data.tiers_by_position).forEach(([pos, tiers]) => {
+          if (!tiers || tiers.length === 0) return;
+          const topTier = tiers[0];
+          const nextTier = tiers.length > 1 ? tiers[1] : null;
+          const drop = nextTier ? (topTier.avg_projected - nextTier.avg_projected).toFixed(1) : '0.0';
+          const posClass = `pos-${pos}`;
+          const dropColor = parseFloat(drop) >= 3.0 ? 'var(--accent-red)' : 'var(--accent-amber)';
+          tierHtml += `
+            <tr>
+              <td><span class="pos-tag ${posClass}">${pos}</span></td>
+              <td>Tier ${topTier.tier_num}</td>
+              <td><strong>${topTier.count} player${topTier.count === 1 ? '' : 's'}</strong></td>
+              <td>${topTier.avg_projected ? topTier.avg_projected.toFixed(1) : '—'}</td>
+              <td><span style="color: ${dropColor};">-${drop} pts</span></td>
+            </tr>`;
+        });
+        tierTbody.innerHTML = tierHtml;
+      }
+    }
+
     async function fetchDraftState() {
       try {
         const res = await fetch('/api/draft/state');
         if (!res.ok) throw new Error('Draft fetch failed');
         const data = await res.json();
-        if (data.current_pick) {
-          document.getElementById('overall-pick-num').textContent = '#' + data.current_pick;
-          document.getElementById('current-round-num').textContent = 'Round ' + data.current_round;
-          document.getElementById('picks-until-turn-val').textContent = data.picks_until_user_turn + ' picks';
-          document.getElementById('snake-turn-gap-val').textContent = data.snake_turn_gap + ' picks';
-        }
+        renderDraftState(data);
       } catch (err) {
         console.log('Draft synced');
       }
@@ -1102,7 +1182,16 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           document.getElementById('ws-status').style.color = 'var(--accent-green)';
         };
         ws.onmessage = (event) => {
-          fetchDraftState();
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.event === 'draft_update' && msg.data) {
+              renderDraftState(msg.data);
+            } else {
+              fetchDraftState();
+            }
+          } catch (e) {
+            fetchDraftState();
+          }
         };
         ws.onclose = () => {
           document.getElementById('ws-status').textContent = '● Auto-Polling (HTTP)';

@@ -9,9 +9,12 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from nfl_helper.adapters import get_adapter_for_profile
+from nfl_helper.api.draft_poller import poller_registry
+from nfl_helper.api.ws_manager import ws_manager
 from nfl_helper.core.cheatsheet import parse_cheatsheet_content, parse_pdf_cheatsheet
+from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.models.cheatsheet import CheatsheetContext
-from nfl_helper.models.draft import CliffType, DraftState, DraftSuggestion, PlayerTier, TierCliffWarning
+from nfl_helper.models.draft import DraftPick, DraftState
 from nfl_helper.models.player import Player, Position
 from nfl_helper.models.roster import (
     AddDropRecommendation,
@@ -97,47 +100,71 @@ async def get_league_teams(
         ]
 
 
+# Default sample player pool for initial load or exploratory testing
+_SAMPLE_PLAYERS: list[Player] = [
+    Player(id="p_cmc", name="Christian McCaffrey", position=Position.RB, team="SF", projected_points=20.5, tier=1),
+    Player(id="p_breece", name="Breece Hall", position=Position.RB, team="NYJ", projected_points=18.2, tier=1),
+    Player(id="p_bijan", name="Bijan Robinson", position=Position.RB, team="ATL", projected_points=17.8, tier=1),
+    Player(id="p_jt", name="Jonathan Taylor", position=Position.RB, team="IND", projected_points=16.0, tier=2),
+    Player(id="p_saquon", name="Saquon Barkley", position=Position.RB, team="PHI", projected_points=15.8, tier=2),
+    Player(id="p_ceedee", name="CeeDee Lamb", position=Position.WR, team="DAL", projected_points=19.2, tier=1),
+    Player(id="p_tyreek", name="Tyreek Hill", position=Position.WR, team="MIA", projected_points=18.8, tier=1),
+    Player(id="p_amonra", name="Amon-Ra St. Brown", position=Position.WR, team="DET", projected_points=17.8, tier=1),
+    Player(id="p_jj", name="Justin Jefferson", position=Position.WR, team="MIN", projected_points=17.5, tier=1),
+    Player(id="p_chase", name="Ja'Marr Chase", position=Position.WR, team="CIN", projected_points=17.2, tier=1),
+    Player(id="p_ajb", name="A.J. Brown", position=Position.WR, team="PHI", projected_points=16.4, tier=2),
+    Player(id="p_josh", name="Josh Allen", position=Position.QB, team="BUF", projected_points=24.0, tier=1),
+    Player(id="p_lamar", name="Lamar Jackson", position=Position.QB, team="BAL", projected_points=22.4, tier=1),
+    Player(id="p_kelce", name="Travis Kelce", position=Position.TE, team="KC", projected_points=14.5, tier=1),
+    Player(id="p_laporta", name="Sam LaPorta", position=Position.TE, team="DET", projected_points=13.8, tier=1),
+    Player(id="p_mcbride", name="Trey McBride", position=Position.TE, team="ARI", projected_points=12.5, tier=2),
+    Player(id="p_aubrey", name="Brandon Aubrey", position=Position.K, team="DAL", projected_points=9.5, tier=1),
+    Player(id="p_bal_dst", name="Ravens D/ST", position=Position.DST, team="BAL", projected_points=8.5, tier=1),
+]
+
+
 @app.get("/api/draft/state", response_model=DraftState)
 async def get_draft_state(session_id: str | None = None) -> DraftState:
     """Fetch the current snapshot of the draft board with cliff warnings and VORP suggestions."""
-    cliff = TierCliffWarning(
-        position="RB",
-        current_tier=1,
-        players_remaining=1,
-        picks_until_turn=4,
-        snake_turn_gap=9,
-        cliff_risk="CRITICAL",
-        cliff_type=CliffType.DEPLETED_BEFORE_TURN,
-        next_tier_drop_points=3.4,
-        recommended_action="Only 1 Tier-1 RB remains with 4 picks before your turn. Prepare to target Tier 2 RB or pivot to WR.",
-    )
-    sug_player = Player(
-        id="p_amonra",
-        name="Amon-Ra St. Brown",
-        position=Position.WR,
-        team="DET",
-        projected_points=17.8,
-        eligible_slots=["WR", "FLEX"],
-    )
-    suggestion = DraftSuggestion(
-        rank=1,
-        player=sug_player,
-        reason="Tier 1 WR cliff defense; 3 left before 9-pick turn gap",
-        vorp=4.8,
-        is_cliff_defense=True,
-    )
-    tier = PlayerTier(tier_num=1, position="WR", players=[sug_player], avg_projected=17.8, count=3)
+    if session_id:
+        poller = poller_registry.get(session_id)
+        if poller and poller.latest_state:
+            return poller.latest_state
 
-    return DraftState(
+    # Default live calculation using engine
+    mock_picks: list[DraftPick] = [
+        DraftPick(
+            round_num=1,
+            round_pick=1,
+            overall_pick=1,
+            team_id="1",
+            team_name="Team 1",
+            player_id="p_cmc",
+            player_name="Christian McCaffrey",
+            position="RB",
+        ),
+        DraftPick(
+            round_num=1,
+            round_pick=2,
+            overall_pick=2,
+            team_id="2",
+            team_name="Team 2",
+            player_id="p_ceedee",
+            player_name="CeeDee Lamb",
+            position="WR",
+        ),
+    ]
+
+    return build_draft_state(
         league_id="default_league",
-        current_pick=14,
-        current_round=2,
+        draft_id="draft_live",
+        overall_pick=14,
         user_draft_slot=6,
-        picks_until_user_turn=4,
-        snake_turn_gap=9,
-        tiers_by_position={"WR": [tier]},
-        cliff_warnings=[cliff],
-        top_suggestions=[suggestion],
+        total_teams=12,
+        total_rounds=16,
+        recent_picks=mock_picks,
+        all_players=_SAMPLE_PLAYERS,
+        cheatsheet_context=_ACTIVE_CHEATSHEET,
     )
 
 
@@ -254,13 +281,24 @@ async def claim_invite_code(payload: ClaimInviteRequest) -> dict[str, Any]:
 @app.websocket("/ws/draft/{session_id}")
 async def websocket_draft_feed(websocket: WebSocket, session_id: str) -> None:
     """WebSocket connection endpoint for instantaneous live draft updates."""
-    await websocket.accept()
+    await ws_manager.connect(websocket, session_id)
+    poller = poller_registry.get(session_id)
+    if poller and poller.latest_state:
+        await websocket.send_json(
+            {
+                "event": "draft_update",
+                "session_id": session_id,
+                "data": poller.latest_state.model_dump(mode="json"),
+            }
+        )
     try:
         while True:
             data = await websocket.receive_text()
             await websocket.send_json({"event": "ack", "session_id": session_id, "message": data})
     except WebSocketDisconnect:
-        pass
+        ws_manager.disconnect(websocket, session_id)
+    except Exception:
+        ws_manager.disconnect(websocket, session_id)
 
 
 def main() -> None:
