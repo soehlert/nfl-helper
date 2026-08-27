@@ -353,10 +353,27 @@
       padding: 0.55rem 0.8rem;
       color: var(--text-main);
       font-size: 0.9rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .form-control:focus {
       outline: none;
       border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+    select.form-control {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      padding-right: 2.25rem;
+      cursor: pointer;
+    }
+    select.form-control option {
+      background-color: #1a2234;
+      color: #f1f5f9;
+      padding: 0.6rem 0.8rem;
     }
 
     footer {
@@ -385,10 +402,11 @@
   </header>
 
   <nav class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('lineup')">⚡ Lineup Optimizer</button>
-    <button class="tab-btn" onclick="switchTab('waivers')">🔍 3-Week Waiver & Streaming</button>
-    <button class="tab-btn" onclick="switchTab('draft')">🎯 Live Draft Board</button>
+    <button class="tab-btn active" onclick="switchTab('lineup')">Lineup Optimizer</button>
+    <button class="tab-btn" onclick="switchTab('waivers')">3-Week Waiver & Streaming</button>
+    <button class="tab-btn" onclick="switchTab('draft')">Live Draft Board</button>
   </nav>
+
 
   <main>
 
@@ -612,10 +630,11 @@
 
               <!-- PLUS / MINUS (±) -->
               <tr>
-                <td><span class="context-badge badge-boost">Pass Volume</span></td>
+                <td><span class="context-badge badge-info">Pass Volume</span></td>
                 <td><strong style="color: #38bdf8;">&plusmn;1.0 pt</strong></td>
                 <td>Trailing spread increases pass volume; lead reduces late passes</td>
               </tr>
+
 
               <!-- NEGATIVES (-) -->
               <tr>
@@ -1251,8 +1270,9 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           const match = r.match(/\([+-]?\d+\.?\d* pts?\)/);
           const pts = match ? match[0].replace(' pts)', '').replace(' pt)', '').replace('(', '') : '+1.0';
           shortText = `Pass Volume ${pts}`;
-          badgeClass = pts.includes('-') ? 'badge-penalty' : 'badge-boost';
+          badgeClass = 'badge-info';
         } else if (r.includes('Indoor Dome')) {
+
           shortText = r.includes('Kicker') ? 'Dome +0.8' : 'Dome +0.5';
           badgeClass = 'badge-boost';
         } else if (r.includes('High Wind Storm')) {
