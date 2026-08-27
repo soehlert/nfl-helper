@@ -16,7 +16,7 @@ from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.core.lineup_optimizer import solve_optimal_lineup
 from nfl_helper.core.waiver_engine import generate_waiver_recommendations
 from nfl_helper.models.cheatsheet import CheatsheetContext
-from nfl_helper.models.draft import DraftPick, DraftState
+from nfl_helper.models.draft import CliffType, DraftPick, DraftState, TierCliffWarning
 from nfl_helper.models.player import Player, Position
 from nfl_helper.models.roster import (
     LineupSolution,
@@ -125,7 +125,7 @@ _SAMPLE_PLAYERS: list[Player] = [
 
 
 @app.get("/api/draft/state", response_model=DraftState)
-async def get_draft_state(session_id: str | None = None) -> DraftState:
+async def get_draft_state(session_id: str | None = None, simulate_cliff: bool = False) -> DraftState:
     """Fetch the current snapshot of the draft board with cliff warnings and VORP suggestions."""
     if session_id:
         poller = poller_registry.get(session_id)
@@ -156,7 +156,7 @@ async def get_draft_state(session_id: str | None = None) -> DraftState:
         ),
     ]
 
-    return build_draft_state(
+    state = build_draft_state(
         league_id="default_league",
         draft_id="draft_live",
         overall_pick=14,
@@ -167,6 +167,22 @@ async def get_draft_state(session_id: str | None = None) -> DraftState:
         all_players=_SAMPLE_PLAYERS,
         cheatsheet_context=_ACTIVE_CHEATSHEET,
     )
+
+    if simulate_cliff:
+        state.cliff_warnings = [
+            TierCliffWarning(
+                position="RB",
+                current_tier=1,
+                players_remaining=1,
+                cliff_type=CliffType.ON_THE_CLOCK_CLIFF,
+                picks_before_next_turn=12,
+                cliff_risk="CRITICAL",
+                projected_drop_off=4.2,
+                recommended_action="Draft Tier 1 RB (Breece Hall) now. Only 1 player left in Tier 1 before a 4.2 pt drop-off across your 12-pick turn gap.",
+            )
+        ]
+
+    return state
 
 
 @app.get("/api/lineup/optimize", response_model=LineupSolution)

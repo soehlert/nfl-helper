@@ -467,6 +467,11 @@
     <!-- TAB 1: LIVE DRAFT BOARD -->
     <div id="tab-draft" class="tab-content">
 
+      <!-- Top Tier Cliff Alerts Banner (Only shown when active cliffs exist) -->
+      <div id="top-cliff-alerts-wrapper" style="display: none; margin-bottom: 1rem;">
+        <div id="top-cliff-alerts-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+      </div>
+
       <div class="draft-clock-banner">
         <div class="clock-stat">
           <div class="value" id="overall-pick-num">#14</div>
@@ -488,83 +493,84 @@
           <div class="value" id="clock-status-tag" style="color: var(--accent-green);">LIVE FEED</div>
           <div class="label">Auto-Refresh</div>
         </div>
+        <div class="clock-stat" style="display: flex; flex-direction: column; justify-content: center;">
+          <button id="simulate-cliff-btn" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.65rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main);" onclick="toggleSimulateCliff()">Simulate Cliff</button>
+        </div>
       </div>
 
-      <!-- Strategy Guidance Rules from Cheatsheet -->
-      <div id="cheatsheet-rules-container" style="display: none; margin-bottom: 1.25rem;">
-        <div class="card" style="border-left: 4px solid var(--accent-blue);">
-          <div class="card-header" style="margin-bottom: 0.5rem;">
-            <div class="card-title" style="font-size: 0.95rem;">📋 Active Cheatsheet & Strategy Rules</div>
+      <!-- Side-by-Side Cheatsheet Rules & Positional Tier Depletion (Collapsible Row) -->
+      <div class="grid-2" style="margin-bottom: 1.25rem;">
+        <!-- Left: Active Cheatsheet & Strategy Rules -->
+        <div id="cheatsheet-rules-card" class="card" style="border-left: 4px solid var(--accent-blue); padding: 0.85rem 1rem;">
+          <div class="card-header" style="cursor: pointer; margin-bottom: 0.4rem;" onclick="toggleCheatsheetDrawer()">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div class="card-title" style="font-size: 0.95rem;">Active Cheatsheet & Strategy Rules</div>
+              <span id="cheatsheet-toggle-icon" style="font-size: 0.75rem; color: var(--text-muted);">▼</span>
+            </div>
             <span id="cheatsheet-stats-badge" class="badge badge-claimed">0 Players Loaded</span>
           </div>
-          <div id="cheatsheet-rules-list"></div>
-        </div>
-      </div>
-
-      <!-- Row 1: Side-by-Side Tier Depletion & Cliff Alerts -->
-      <div class="grid-2">
-        <!-- Positional Tier Summary -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">📊 Positional Tier Depletion</div>
-            <span style="font-size: 0.75rem; color: var(--accent-green);">● Auto-Syncing</span>
-          </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Pos</th>
-                <th>Current Tier</th>
-                <th>Remaining</th>
-                <th>Avg Pts</th>
-                <th>Next Tier Drop</th>
-              </tr>
-            </thead>
-            <tbody id="tier-summary-tbody">
-              <tr>
-                <td><span class="pos-tag pos-RB">RB</span></td>
-                <td>Tier 1</td>
-                <td><strong>2 players</strong></td>
-                <td>18.0</td>
-                <td><span style="color: var(--accent-amber);">-2.1 pts</span></td>
-              </tr>
-              <tr>
-                <td><span class="pos-tag pos-WR">WR</span></td>
-                <td>Tier 1</td>
-                <td><strong>5 players</strong></td>
-                <td>17.8</td>
-                <td><span style="color: var(--accent-amber);">-1.4 pts</span></td>
-              </tr>
-              <tr>
-                <td><span class="pos-tag pos-TE">TE</span></td>
-                <td>Tier 1</td>
-                <td><strong>3 players</strong></td>
-                <td>14.1</td>
-                <td><span style="color: var(--accent-red);">-1.6 pts</span></td>
-              </tr>
-              <tr>
-                <td><span class="pos-tag pos-QB">QB</span></td>
-                <td>Tier 1</td>
-                <td><strong>2 players</strong></td>
-                <td>23.2</td>
-                <td><span style="color: var(--text-muted);">-0.0 pts</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Tier Cliff Alerts -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">🚨 Tier Cliff Alerts</div>
-            <span id="cliff-count-badge" class="badge badge-claimed">0 Active</span>
-          </div>
-          <div id="cliff-alerts-container" style="display: flex; flex-direction: column; gap: 0.6rem;">
-            <div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem; text-align: center;">
-              ✅ All positional tiers currently stable. No imminent drop-off cliffs detected.
+          <div id="cheatsheet-rules-drawer">
+            <div id="cheatsheet-rules-list">
+              <div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.25rem 0;">No active strategy rules uploaded.</div>
             </div>
           </div>
         </div>
+
+        <!-- Right: Positional Tier Depletion -->
+        <div class="card" style="padding: 0.85rem 1rem;">
+          <div class="card-header" style="cursor: pointer; margin-bottom: 0.4rem;" onclick="toggleTierDepletionDrawer()">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div class="card-title" style="font-size: 0.95rem;">Positional Tier Depletion</div>
+              <span id="tier-depletion-toggle-icon" style="font-size: 0.75rem; color: var(--text-muted);">▼</span>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--accent-green);">● Auto-Syncing</span>
+          </div>
+          <div id="tier-depletion-drawer">
+            <table class="data-table" style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">Pos</th>
+                  <th>Current Tier</th>
+                  <th>Remaining</th>
+                  <th>Avg Pts</th>
+                  <th>Next Tier Drop</th>
+                </tr>
+              </thead>
+              <tbody id="tier-summary-tbody">
+                <tr>
+                  <td><span class="pos-tag pos-RB">RB</span></td>
+                  <td>Tier 1</td>
+                  <td><strong>2 players</strong></td>
+                  <td>18.0</td>
+                  <td><span style="color: var(--accent-amber);">-2.1 pts</span></td>
+                </tr>
+                <tr>
+                  <td><span class="pos-tag pos-WR">WR</span></td>
+                  <td>Tier 1</td>
+                  <td><strong>5 players</strong></td>
+                  <td>17.8</td>
+                  <td><span style="color: var(--accent-amber);">-1.4 pts</span></td>
+                </tr>
+                <tr>
+                  <td><span class="pos-tag pos-TE">TE</span></td>
+                  <td>Tier 1</td>
+                  <td><strong>3 players</strong></td>
+                  <td>14.1</td>
+                  <td><span style="color: var(--accent-red);">-1.6 pts</span></td>
+                </tr>
+                <tr>
+                  <td><span class="pos-tag pos-QB">QB</span></td>
+                  <td>Tier 1</td>
+                  <td><strong>2 players</strong></td>
+                  <td>23.2</td>
+                  <td><span style="color: var(--text-muted);">-0.0 pts</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
 
       <!-- Row 2: Full-Width Suggestions Table -->
       <div class="card">
@@ -1232,6 +1238,38 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       }
     }
 
+    let isCliffSimulated = false;
+
+    function toggleSimulateCliff() {
+      isCliffSimulated = !isCliffSimulated;
+      const btn = document.getElementById('simulate-cliff-btn');
+      if (btn) {
+        btn.textContent = isCliffSimulated ? 'Clear Cliff' : 'Simulate Cliff';
+        btn.style.color = isCliffSimulated ? 'var(--accent-red)' : 'var(--text-main)';
+      }
+      fetchDraftState();
+    }
+
+    function toggleCheatsheetDrawer() {
+      const drawer = document.getElementById('cheatsheet-rules-drawer');
+      const icon = document.getElementById('cheatsheet-toggle-icon');
+      if (drawer) {
+        const isHidden = drawer.style.display === 'none';
+        drawer.style.display = isHidden ? 'block' : 'none';
+        if (icon) icon.textContent = isHidden ? '▼' : '▶';
+      }
+    }
+
+    function toggleTierDepletionDrawer() {
+      const drawer = document.getElementById('tier-depletion-drawer');
+      const icon = document.getElementById('tier-depletion-toggle-icon');
+      if (drawer) {
+        const isHidden = drawer.style.display === 'none';
+        drawer.style.display = isHidden ? 'block' : 'none';
+        if (icon) icon.textContent = isHidden ? '▼' : '▶';
+      }
+    }
+
     function renderDraftState(data) {
       if (!data) return;
       if (data.current_pick) {
@@ -1248,18 +1286,16 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         document.getElementById('snake-turn-gap-val').textContent = data.snake_turn_gap + ' picks';
       }
 
-      // Render Cliff Alerts
-      const cliffContainer = document.getElementById('cliff-alerts-container');
-      const cliffBadge = document.getElementById('cliff-count-badge');
-      if (cliffContainer) {
+      // Render Top Cliff Alerts Banner (Only shown when active cliffs exist)
+      const topCliffWrapper = document.getElementById('top-cliff-alerts-wrapper');
+      const topCliffContainer = document.getElementById('top-cliff-alerts-container');
+      if (topCliffWrapper && topCliffContainer) {
         const cliffs = data.cliff_warnings || [];
-        if (cliffBadge) {
-          cliffBadge.textContent = `${cliffs.length} Active`;
-          cliffBadge.className = cliffs.length > 0 ? 'badge badge-espn' : 'badge badge-claimed';
-        }
         if (cliffs.length === 0) {
-          cliffContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1.5rem 1rem; text-align: center;">✅ All positional tiers currently stable. No imminent drop-off cliffs detected.</div>';
+          topCliffWrapper.style.display = 'none';
+          topCliffContainer.innerHTML = '';
         } else {
+          topCliffWrapper.style.display = 'block';
           let cliffHtml = '';
           cliffs.forEach(c => {
             const isWarning = c.cliff_risk === 'MODERATE' || c.cliff_type === 'UPCOMING_TURN_CLIFF';
@@ -1267,15 +1303,15 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
             const icon = isWarning ? '⚠️' : '🚨';
             const typeLabel = c.cliff_type === 'ON_THE_CLOCK_CLIFF' ? 'On the Clock Scarcity' : (c.cliff_type === 'UPCOMING_TURN_CLIFF' ? 'Upcoming Turn Scarcity' : 'Depletion Alert');
             cliffHtml += `
-              <div class="${bannerClass}" style="margin-bottom: 0.5rem; padding: 0.65rem 0.85rem;">
-                <div style="font-size: 1.1rem; line-height: 1.2;">${icon}</div>
+              <div class="${bannerClass}" style="padding: 0.75rem 1rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+                <div style="font-size: 1.25rem; line-height: 1.2;">${icon}</div>
                 <div>
-                  <div class="alert-title" style="font-size: 0.85rem; margin-bottom: 0.15rem;">${typeLabel}: Tier ${c.current_tier} ${c.position} (${c.players_remaining} left)</div>
-                  <div class="alert-desc" style="font-size: 0.78rem; line-height: 1.35;">${c.recommended_action}</div>
+                  <div class="alert-title" style="font-size: 0.92rem; margin-bottom: 0.15rem;">${typeLabel}: Tier ${c.current_tier} ${c.position} (${c.players_remaining} left)</div>
+                  <div class="alert-desc" style="font-size: 0.82rem; line-height: 1.35;">${c.recommended_action}</div>
                 </div>
               </div>`;
           });
-          cliffContainer.innerHTML = cliffHtml;
+          topCliffContainer.innerHTML = cliffHtml;
         }
       }
 
@@ -1325,7 +1361,11 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
 
     async function fetchDraftState() {
       try {
-        const res = await fetch('/api/draft/state');
+        let url = '/api/draft/state';
+        if (isCliffSimulated) {
+          url += '?simulate_cliff=true';
+        }
+        const res = await fetch(url);
         if (!res.ok) throw new Error('Draft fetch failed');
         const data = await res.json();
         renderDraftState(data);
@@ -1333,6 +1373,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         console.log('Draft synced');
       }
     }
+
 
     function getContextBadgesHtml(reasons) {
       if (!reasons || reasons.length === 0) return '';
