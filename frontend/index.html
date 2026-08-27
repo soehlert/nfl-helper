@@ -332,9 +332,10 @@
     .badge-penalty { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
     .badge-info { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
     .badge-warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-
+    .reason-text { color: var(--text-muted) !important; font-size: 0.85rem; font-weight: normal; }
 
     .form-group {
+
       margin-bottom: 1rem;
     }
     .form-label {
@@ -805,23 +806,28 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th style="width: 60px;">Priority</th>
-              <th>Top Pickup (Free Agent)</th>
+              <th style="width: 55px;">Priority</th>
+              <th style="width: 50px;">Pos</th>
+              <th style="width: 55px;">Team</th>
+              <th>Top Pickup</th>
               <th>Suggested Drop</th>
-              <th style="width: 110px;">Net Proj Gain</th>
+              <th style="width: 105px;">Net Proj Gain</th>
               <th>Reason</th>
             </tr>
           </thead>
           <tbody id="waiver-add-drops-tbody">
             <tr>
               <td><strong>1</strong></td>
-              <td><strong>Jordan Mason</strong> SF - <span class="pos-tag pos-RB">RB</span></td>
+              <td><span class="pos-tag pos-RB">RB</span></td>
+              <td>SF</td>
+              <td><strong>Jordan Mason</strong></td>
               <td>Deshaun Watson CLE - <span class="pos-tag pos-QB">QB</span></td>
               <td><span class="delta-pill delta-plus">+14.2 pts</span></td>
-              <td style="color: var(--text-muted);">Starting role opportunity (68% snaps) + soft 3-wk schedule (vs LAR, @ NE, vs ARI)</td>
+              <td class="reason-text">Starting role opportunity (68% snaps) + soft 3-wk schedule (vs LAR, @ NE, vs ARI)</td>
             </tr>
           </tbody>
         </table>
+
       </div>
 
       <div class="grid-2">
@@ -1012,7 +1018,12 @@
       });
       const target = document.getElementById('tab-' + tabId);
       if (target) target.classList.add('active');
+
+      if (tabId === 'waivers') {
+        fetchWaiverRecommendations();
+      }
     }
+
 
     
     function onTeamSelectChange() {
@@ -1613,7 +1624,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
             const addPos = pair.add_player.position || pair.position || 'WR';
             const cleanAddPos = addPos.replace('/', '-');
             const addTeam = pair.add_player.team || 'FA';
-            const addCell = `<strong>${pair.add_player.name}</strong> ${addTeam} - <span class="pos-tag pos-${cleanAddPos}">${addPos}</span>`;
+            const addName = pair.add_player.name;
 
             let dropCell = '—';
             if (pair.drop_player) {
@@ -1629,15 +1640,18 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
             rowsHtml += `
               <tr>
                 <td><strong>${idx + 1}</strong></td>
-                <td>${addCell}</td>
+                <td><span class="pos-tag pos-${cleanAddPos}">${addPos}</span></td>
+                <td>${addTeam}</td>
+                <td><strong>${addName}</strong></td>
                 <td>${dropCell}</td>
                 <td><span class="delta-pill ${gainClass}">${gainStr}</span></td>
-                <td style="color: var(--text-muted);">${pair.reason}</td>
+                <td class="reason-text">${pair.reason}</td>
               </tr>
             `;
           });
           addDropsTbody.innerHTML = rowsHtml;
         }
+
 
         // Render D/ST Streaming Targets
         const dstTbody = document.getElementById('waiver-dst-tbody');
@@ -1750,10 +1764,12 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
 
       fetchDraftState();
       fetchLineupOptimization();
+      fetchWaiverRecommendations();
       fetchCheatsheet();
       initWebSocket();
       autoRefreshInterval = setInterval(fetchDraftState, 4000);
     });
+
   </script>
 </body>
 </html>
