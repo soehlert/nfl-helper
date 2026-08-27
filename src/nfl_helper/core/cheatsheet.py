@@ -196,10 +196,26 @@ def _parse_strategy_rule(line: str) -> tuple[DraftRoundTarget | None, Positional
     elif any(norm_line.upper().startswith(f"{pos} -") for pos in ("TE", "QB", "RB", "WR")):
         pos = norm_line[:2].upper()
         top_n = 4 if "top 4" in norm_line.lower() else None
-        target_tiers = [2, 3, 4] if "tiers 2-4" in norm_line.lower() else []
+        target_tiers = []
+        tier_range_match = re.search(r"tiers?\s+(\d+)\s*-\s*(\d+)", norm_line, re.IGNORECASE)
+        if tier_range_match:
+            t_start, t_end = int(tier_range_match.group(1)), int(tier_range_match.group(2))
+            target_tiers = list(range(t_start, t_end + 1))
+        elif "tier 3" in norm_line.lower() and "tier 4" in norm_line.lower():
+            target_tiers = [3, 4]
+        elif "tier 1" in norm_line.lower():
+            target_tiers = [1]
+
+        target_rounds = []
+        rnd_match = re.search(r"rounds?\s+(\d+)(?:\s*-\s*(\d+))?", norm_line, re.IGNORECASE)
+        if rnd_match:
+            r_start = int(rnd_match.group(1))
+            r_end = int(rnd_match.group(2)) if rnd_match.group(2) else r_start
+            target_rounds = list(range(r_start, r_end + 1))
+
         pos_target = PositionalStrategyRule(
             position=pos,
-            target_rounds=[3, 4, 5] if "3-5" in norm_line else [],
+            target_rounds=target_rounds,
             target_tiers=target_tiers,
             top_n_target=top_n,
             rule_description=norm_line,
@@ -240,6 +256,34 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
         if pos_header and len(line.split()) <= 3 and not re.search(r"\d", line):
             current_pos = pos_header
             current_tier = 1
+            continue
+
+        # Check for continuation lines (e.g. 'or take 2 from tiers 2-4', 'or get Allen in round 4')
+        is_continuation = (
+            bool(context.strategy_rules)
+            and not pos_header
+            and (
+                line.lower().startswith("or ")
+                or line.lower().startswith("and ")
+                or line.startswith("- ")
+                or line.startswith("• ")
+                or (raw_line.startswith(" ") and not _clean_position_header(line))
+            )
+        )
+        if is_continuation:
+            combined = f"{context.strategy_rules[-1]} {line}"
+            context.strategy_rules[-1] = combined
+            rnd_rule, pos_rule = _parse_strategy_rule(combined)
+            if rnd_rule:
+                if context.round_targets:
+                    context.round_targets[-1] = rnd_rule
+                else:
+                    context.round_targets.append(rnd_rule)
+            if pos_rule:
+                if context.positional_strategy:
+                    context.positional_strategy[-1] = pos_rule
+                else:
+                    context.positional_strategy.append(pos_rule)
             continue
 
         if any(line.startswith(prefix) for prefix in ("Rounds", "TE -", "QB -", "RB -", "WR -", "* =", "Strategy:")):
