@@ -174,13 +174,23 @@
       display: grid;
       grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
       gap: 1.25rem;
-      align-items: start;
+      align-items: stretch;
+    }
+    .grid-lineup > .card {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0;
+    }
+    .grid-lineup > .card .data-table {
+      flex: 1;
     }
     @media (max-width: 1100px) {
       .grid-lineup {
         grid-template-columns: 1fr;
       }
     }
+
 
 
     /* Live Draft Banner */
@@ -297,8 +307,9 @@
     .pos-RB { background: #10b981; color: #fff; }
     .pos-WR { background: #8b5cf6; color: #fff; }
     .pos-TE { background: #f59e0b; color: #000; }
-    .pos-DST { background: #64748b; color: #fff; }
+    .pos-DST, .pos-D-ST { background: #64748b; color: #fff; }
     .pos-K { background: #ec4899; color: #fff; }
+
 
     .delta-pill {
       font-weight: 700;
@@ -541,9 +552,9 @@
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Optimization Strategy</div>
               <select id="lineup-strategy" class="form-control" style="padding: 0.35rem 0.6rem; font-size: 0.82rem;" onchange="fetchLineupOptimization(false)">
-                <option value="BALANCED">⚖️ Balanced (Adjusted Projections)</option>
-                <option value="CEILING">🚀 High Upside / Ceiling (Underdog Mode)</option>
-                <option value="FLOOR">🛡️ Safe Floor (Favorite Mode)</option>
+                <option value="BALANCED">Balanced (Adjusted Projections)</option>
+                <option value="CEILING">High Upside / Ceiling (Underdog Mode)</option>
+                <option value="FLOOR">Safe Floor (Favorite Mode)</option>
               </select>
             </div>
             <div>
@@ -554,19 +565,86 @@
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Projected Gain</div>
               <div class="delta-pill delta-plus" id="optimal-proj-delta">+0.0 pts</div>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-              <button id="lineup-resolve-btn" class="btn btn-green" onclick="fetchLineupOptimization(false)">⚡ Re-Solve</button>
-              <button id="lineup-randomize-btn" class="btn btn-primary" onclick="fetchLineupOptimization(true)" title="Randomize Vegas spreads, over/unders, weather and snap trends in sandbox mode">🎲 Randomize Matchups</button>
+            <div>
+              <button id="lineup-randomize-btn" class="btn btn-primary" onclick="fetchLineupOptimization(true)" title="Randomize Vegas spreads, over/unders, weather and snap trends in sandbox mode">Randomize Matchups</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Start / Sit Recommendations Banner -->
-      <div id="lineup-start-sit-container" style="display: none; margin-bottom: 1rem;">
-        <div class="card" style="border-left: 4px solid var(--accent-green); padding: 0.9rem 1.1rem;">
-          <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.35rem; color: var(--accent-green);">📋 Actionable Start / Sit Recommendations</div>
-          <div id="lineup-start-sit-list" style="display: flex; flex-direction: column; gap: 0.3rem;"></div>
+      <!-- 2-COLUMN TOP ROW: LINEUP CHANGES (LEFT) & CONTEXT ADJUSTMENTS LEGEND (RIGHT) -->
+      <div class="grid-2" style="margin-bottom: 1.25rem; align-items: stretch;">
+        <!-- Left: Lineup Changes -->
+        <div id="lineup-start-sit-container" class="card" style="border-left: 4px solid var(--accent-green); height: 100%; margin-bottom: 0;">
+          <div class="card-header" style="margin-bottom: 0.5rem; padding-bottom: 0.35rem;">
+            <div class="card-title" style="color: var(--accent-green); font-size: 0.95rem;">Lineup Changes to Match Optimal Lineup</div>
+          </div>
+          <div id="lineup-start-sit-list" style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem;">
+            <div style="color: var(--text-muted);">Current starters already match optimal lineup.</div>
+          </div>
+        </div>
+
+        <!-- Right: Context Adjustments Legend -->
+        <div class="card" style="height: 100%; margin-bottom: 0;">
+          <div class="card-header" style="margin-bottom: 0.5rem; padding-bottom: 0.35rem;">
+            <div class="card-title" style="font-size: 0.95rem;">Context Adjustments Key</div>
+          </div>
+          <table class="data-table" style="font-size: 0.78rem;">
+            <thead>
+              <tr>
+                <th style="width: 105px;">Badge</th>
+                <th style="width: 75px;">Impact</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="context-badge badge-boost">Shootout</span></td>
+                <td><strong style="color: #4ade80;">+10%</strong></td>
+                <td>High Vegas total (&ge; 49.5) indicates elevated scoring pace</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-penalty">Slugfest</span></td>
+                <td><strong style="color: #f87171;">-10%</strong></td>
+                <td>Low Vegas total (&le; 38.5) indicates defensive battle</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-boost">Rush Volume</span></td>
+                <td><strong style="color: #4ade80;">+1.5 pts</strong></td>
+                <td>Team favored by &ge; 6.5 projects high rushing volume</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-boost">Pass Volume</span></td>
+                <td><strong style="color: #38bdf8;">&plusmn;1.0 pt</strong></td>
+                <td>Trailing spread increases pass volume; lead reduces late passes</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-boost">Dome</span></td>
+                <td><strong style="color: #4ade80;">+0.8 / +0.5</strong></td>
+                <td>Indoor stadium guarantees zero wind or precipitation</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-penalty">Wind</span></td>
+                <td><strong style="color: #f87171;">-15%</strong></td>
+                <td>High sustained wind (&gt; 18 mph) disrupts passing and kicking</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-penalty">Snaps</span></td>
+                <td><strong style="color: #f87171;">-30%</strong></td>
+                <td>Significant drop in rolling snap share percentage</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-boost">Goal-Line</span></td>
+                <td><strong style="color: #4ade80;">+1.8 pts</strong></td>
+                <td>Dominates inside-the-5 goal-line touches (&ge; 60% share)</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-penalty">Decoy</span></td>
+                <td><strong style="color: #f87171;">-25%</strong></td>
+                <td>Limited practice (DNP &rarr; LP) indicates snap restriction risk</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -579,7 +657,7 @@
       <div class="grid-lineup">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">✅ Optimal Starting Lineup</div>
+            <div class="card-title">Optimal Starting Lineup</div>
             <span id="lineup-status-badge" class="badge badge-claimed">Solved (PuLP)</span>
           </div>
           <table class="data-table">
@@ -598,7 +676,7 @@
 
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🪑 Optimal Bench & Adjustments</div>
+            <div class="card-title">Optimal Bench & Adjustments</div>
           </div>
           <table class="data-table">
             <thead>
@@ -608,7 +686,7 @@
                 <th style="width: 55px;">Team</th>
                 <th style="width: 65px;">Status</th>
                 <th style="width: 75px;">Proj Pts</th>
-                <th>Recommendation</th>
+                <th>Adjustment</th>
               </tr>
             </thead>
             <tbody id="optimal-bench-tbody"></tbody>
@@ -616,6 +694,7 @@
         </div>
       </div>
     </div>
+
 
 
 
@@ -1155,12 +1234,16 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '-10%';
           shortText = `Slugfest ${pts}`;
           badgeClass = 'badge-penalty';
-        } else if (r.includes('Heavy Favorite')) {
-          shortText = r.includes('+') ? 'Favorite +1.5' : 'Fav Pass -0.5';
-          badgeClass = r.includes('+') ? 'badge-boost' : 'badge-penalty';
-        } else if (r.includes('Heavy Underdog')) {
-          shortText = 'Underdog +1.0';
-          badgeClass = 'badge-boost';
+        } else if (r.includes('Rush Volume')) {
+          const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
+          const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '+1.5';
+          shortText = `Rush Volume ${pts}`;
+          badgeClass = pts.includes('-') ? 'badge-penalty' : 'badge-boost';
+        } else if (r.includes('Pass Volume')) {
+          const match = r.match(/\([+-]?\d+\.?\d* pts?\)/);
+          const pts = match ? match[0].replace(' pts)', '').replace(' pt)', '').replace('(', '') : '+1.0';
+          shortText = `Pass Volume ${pts}`;
+          badgeClass = pts.includes('-') ? 'badge-penalty' : 'badge-boost';
         } else if (r.includes('Indoor Dome')) {
           shortText = r.includes('Kicker') ? 'Dome +0.8' : 'Dome +0.5';
           badgeClass = 'badge-boost';
@@ -1195,7 +1278,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           badgeClass = 'badge-penalty';
         }
 
-        html += `<span class="context-badge ${badgeClass}" title="${r}">${shortText}</span>`;
+        html += `<span class="context-badge ${badgeClass}">${shortText}</span>`;
       });
       html += '</div>';
       return html;
@@ -1210,12 +1293,9 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       const swid = document.getElementById('session-swid')?.value || '';
       const espnS2 = document.getElementById('session-espn-s2')?.value || '';
 
-      const resolveBtn = document.getElementById('lineup-resolve-btn');
       const randBtn = document.getElementById('lineup-randomize-btn');
       if (randomize && randBtn) {
-        randBtn.textContent = '🎲 Randomizing...';
-      } else if (!randomize && resolveBtn) {
-        resolveBtn.textContent = '⚡ Solving...';
+        randBtn.textContent = 'Randomizing...';
       }
 
       try {
@@ -1237,20 +1317,23 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         }
 
         // Render Start/Sit recommendations
-        const startSitContainer = document.getElementById('lineup-start-sit-container');
         const startSitList = document.getElementById('lineup-start-sit-list');
         const allRecs = [...(data.start_recommendations || []), ...(data.sit_recommendations || [])];
-        if (startSitContainer && startSitList) {
+        if (startSitList) {
           if (allRecs.length > 0) {
-            startSitContainer.style.display = 'block';
-            startSitList.innerHTML = allRecs.map(r => `
-              <div style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
-                <span>${r.startsWith('Start') ? '🟢' : '🔴'}</span>
-                <strong>${r}</strong>
-              </div>
-            `).join('');
+            startSitList.innerHTML = allRecs.map(r => {
+              const action = r.startsWith('Start') ? 'START' : 'BENCH';
+              const detail = r.replace(/^Start\s+/i, '').replace(/^Sit\s+/i, '');
+              const color = action === 'START' ? 'var(--accent-green)' : 'var(--accent-red)';
+              return `
+                <div style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+                  <strong style="color: ${color}; min-width: 55px;">${action}:</strong>
+                  <span>${detail}</span>
+                </div>
+              `;
+            }).join('');
           } else {
-            startSitContainer.style.display = 'none';
+            startSitList.innerHTML = '<div style="color: var(--text-muted);">Current starters already match optimal lineup.</div>';
           }
         }
 
@@ -1299,7 +1382,6 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         if (startersTbody && data.optimal_starters) {
           let rowsHtml = '';
           data.optimal_starters.forEach((p, idx) => {
-            const posClass = `pos-${p.position || 'WR'}`;
             const slotName = p.assigned_slot || (idx === 0 ? 'QB' : 'FLEX');
             const envStr = p.game_context ? `${p.game_context.opponent || '—'} ${p.game_context.is_dome ? '(Dome)' : ''}` : (p.opponent || '—');
             const badges = getContextBadgesHtml(p.projection_adjustment_reasons);
@@ -1308,7 +1390,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
               <tr>
                 <td><strong>${slotName}</strong></td>
                 <td>
-                  <strong>${p.name}</strong> <span class="pos-tag ${posClass}">${p.position}</span>
+                  <strong>${p.name}</strong>
                   ${badges}
                 </td>
                 <td>${p.team || '—'}</td>
@@ -1325,11 +1407,12 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         if (benchTbody && data.optimal_bench) {
           let benchHtml = '';
           data.optimal_bench.forEach(p => {
-            const posClass = `pos-${p.position || 'WR'}`;
+            const cleanPos = (p.position || 'WR').replace('/', '-');
+            const posClass = `pos-${cleanPos}`;
             const isInjured = ['OUT', 'IR', 'SUSPENDED'].includes((p.injury_status || '').toUpperCase());
             const statusTag = isInjured ? `<span style="color: var(--accent-red); font-weight: 700;">${p.injury_status}</span>` : '<span style="color: var(--text-muted);">Active</span>';
             const badges = getContextBadgesHtml(p.projection_adjustment_reasons);
-            let actionHtml = '<span style="color: var(--text-muted);">Keep Bench</span>';
+            let actionHtml = '<span style="color: var(--text-muted);">Bench</span>';
             if (isInjured) {
               actionHtml = '<span style="color: var(--accent-amber); font-weight: 700;">Move to IR</span>';
             }
@@ -1353,15 +1436,10 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       } catch (err) {
         console.log('Lineup optimization synced');
       } finally {
-        if (resolveBtn && !randomize) {
-          resolveBtn.textContent = '✅ Lineup Solved';
-          setTimeout(() => {
-            resolveBtn.textContent = '⚡ Re-Solve';
-          }, 900);
-        }
-        if (randBtn) randBtn.textContent = '🎲 Randomize Matchups';
+        if (randBtn) randBtn.textContent = 'Randomize Matchups';
       }
     }
+
 
 
 

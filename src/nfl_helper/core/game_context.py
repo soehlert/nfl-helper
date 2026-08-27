@@ -29,27 +29,24 @@ def calculate_game_context_adjustments(player: Player) -> tuple[float, list[str]
         if ctx.spread <= -6.5:
             if player.position == Position.RB:
                 delta += 1.5
-                reasons.append("Heavy Favorite: Leading Game Script (+1.5 pts)")
+                reasons.append("Rush Volume (+1.5 pts)")
             elif player.position == Position.QB:
                 delta -= 0.5
-                reasons.append("Heavy Favorite: Clock-Killing Script (-0.5 pt)")
+                reasons.append("Pass Volume (-0.5 pt)")
 
         # Heavy Underdog (>= +6.5): Trailing pass-heavy script
         elif ctx.spread >= 6.5:
-            if player.position == Position.QB:
+            if player.position in [Position.QB, Position.WR, Position.TE]:
                 delta += 1.0
-                reasons.append("Heavy Underdog: Trailing Pass Volume (+1.0 pt)")
-            elif player.position in [Position.WR, Position.TE]:
-                delta += 1.0
-                reasons.append("Heavy Underdog: Trailing Target Volume (+1.0 pt)")
+                reasons.append("Pass Volume (+1.0 pt)")
             elif player.position == Position.RB:
                 is_pass_catching = bool(player.usage and (player.usage.target_share_pct or 0) >= 0.12)
                 if is_pass_catching:
                     delta += 1.2
-                    reasons.append("Trailing Pass-Catching RB (+1.2 pts)")
+                    reasons.append("Pass Volume (+1.2 pts)")
                 else:
                     delta -= 1.5
-                    reasons.append("Trailing Negative Rush Script (-1.5 pts)")
+                    reasons.append("Rush Volume (-1.5 pts)")
 
     # 3. Dome / Indoor Stadium Bonus
     is_indoor = ctx.is_dome or ctx.stadium_type.upper() in ["DOME", "RETRACTABLE_CLOSED"]

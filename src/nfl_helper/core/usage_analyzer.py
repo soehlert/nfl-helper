@@ -45,13 +45,14 @@ def calculate_usage_adjustments(player: Player) -> tuple[float, list[str]]:
             reasons.append(f"Role Surge: Snaps increased to {int(recent_snap * 100)}% ({bonus:+.1f} pts)")
 
     # 3. Route Participation % for WRs and TEs
-    if usage.route_participation_pct is not None and player.position in [Position.WR, Position.TE]:
-        if usage.route_participation_pct >= 0.85:
-            delta += 1.0
-            reasons.append("Elite Route Participation >=85% (+1.0 pt)")
-        elif usage.route_participation_pct < 0.50 and player.projected_points > 5.0:
-            delta -= 2.0
-            reasons.append("Low Route Participation <50% (-2.0 pts)")
+    if (
+        usage.route_participation_pct is not None
+        and player.position in [Position.WR, Position.TE]
+        and usage.route_participation_pct < 0.55
+        and player.projected_points > 5.0
+    ):
+        delta -= 2.0
+        reasons.append("Low Route Participation <55% (-2.0 pts)")
 
     # 4. High-Value Touches (Goal-Line inside the 5-yard line)
     if usage.goalline_share_pct is not None and usage.goalline_share_pct >= 0.60:

@@ -42,19 +42,30 @@ def test_snap_share_surge_triggers_role_surge() -> None:
 
 
 def test_route_participation_and_hvt_bonuses() -> None:
-    """Verify route participation and goal-line share bonuses."""
-    wr = Player(
+    """Verify route participation penalty and goal-line share bonuses."""
+    wr_low = Player(
         id="p3",
-        name="Justin Jefferson",
+        name="Low Route WR",
         position=Position.WR,
         team="MIN",
-        projected_points=18.0,
-        usage=PlayerWeeklyUsage(route_participation_pct=0.92, goalline_share_pct=0.70),
+        projected_points=12.0,
+        usage=PlayerWeeklyUsage(route_participation_pct=0.45),
     )
-    delta, reasons = calculate_usage_adjustments(wr)
-    assert delta >= 2.8
-    assert any("Route Participation" in r for r in reasons)
-    assert any("High-Value Touches" in r for r in reasons)
+    delta_route, reasons_route = calculate_usage_adjustments(wr_low)
+    assert delta_route == -2.0
+    assert any("Low Route Participation" in r for r in reasons_route)
+
+    rb_hvt = Player(
+        id="p4",
+        name="Goal Line RB",
+        position=Position.RB,
+        team="SF",
+        projected_points=12.0,
+        usage=PlayerWeeklyUsage(goalline_share_pct=0.70),
+    )
+    delta_hvt, reasons_hvt = calculate_usage_adjustments(rb_hvt)
+    assert delta_hvt >= 1.8
+    assert any("High-Value Touches" in r for r in reasons_hvt)
 
 
 def test_decoy_risk_detection_on_limited_practice() -> None:
@@ -112,7 +123,7 @@ def test_point_spread_game_script_effects() -> None:
     )
     delta_rb, reasons_rb = calculate_game_context_adjustments(fav_rb)
     assert delta_rb >= 1.5
-    assert any("Heavy Favorite" in r for r in reasons_rb)
+    assert any("Rush Volume" in r for r in reasons_rb)
 
     dog_qb = Player(
         id="p8",
@@ -124,7 +135,7 @@ def test_point_spread_game_script_effects() -> None:
     )
     delta_qb, reasons_qb = calculate_game_context_adjustments(dog_qb)
     assert delta_qb >= 1.0
-    assert any("Heavy Underdog" in r for r in reasons_qb)
+    assert any("Pass Volume" in r for r in reasons_qb)
 
 
 def test_dome_climate_bonus_and_wind_penalty() -> None:
