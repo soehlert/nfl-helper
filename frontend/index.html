@@ -1247,10 +1247,13 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         } else {
           const errJson = await res.json().catch(() => ({}));
           const detail = errJson.detail || 'Failed to parse text.';
+          document.getElementById('cheatsheet-status-msg').textContent = `Failed: ${detail}`;
+        }
       } catch (err) {
         document.getElementById('cheatsheet-status-msg').textContent = `Upload error: ${err.message}`;
       }
     }
+
 
     let isCliffSimulated = false;
     let isTierRollSimulated = false;
