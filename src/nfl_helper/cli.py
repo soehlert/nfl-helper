@@ -4,6 +4,7 @@ import argparse
 import random
 import string
 import sys
+import urllib.parse
 
 import uvicorn
 
@@ -19,12 +20,26 @@ def build_invite_url(
     platform: str,
     league_id: str,
     team_id: str,
+    swid: str | None = None,
+    espn_s2: str | None = None,
     base_url: str = "http://127.0.0.1:8000",
 ) -> tuple[str, str]:
-    """Construct full single-use invite magic link URL."""
+    """Construct full single-use invite magic link URL with optional pre-configured credentials."""
     code = generate_invite_code(platform)
     clean_base = base_url.rstrip("/")
-    url = f"{clean_base}/?invite={code}&platform={platform}&league={league_id}&team={team_id}"
+    params = {
+        "invite": code,
+        "platform": platform,
+        "league": league_id,
+        "team": team_id,
+    }
+    if swid:
+        params["swid"] = swid
+    if espn_s2:
+        params["espn_s2"] = espn_s2
+
+    query_str = urllib.parse.urlencode(params)
+    url = f"{clean_base}/?{query_str}"
     return code, url
 
 
@@ -34,14 +49,20 @@ def create_invite_command(args: argparse.Namespace) -> None:
         platform=args.platform,
         league_id=args.league_id,
         team_id=args.team_id,
+        swid=args.swid,
+        espn_s2=args.espn_s2,
         base_url=args.base_url,
     )
     print("=" * 60)
     print("🏈 FANTASY WAR ROOM - SINGLE-USE MAGIC INVITE CREATED")
     print("=" * 60)
-    print(f"Platform  : {args.platform.upper()}")
-    print(f"League ID : {args.league_id}")
-    print(f"Team ID   : {args.team_id}")
+    print(f"Platform   : {args.platform.upper()}")
+    print(f"League ID  : {args.league_id}")
+    print(f"Team ID    : {args.team_id}")
+    if args.swid:
+        print(f"ESPN SWID  : {args.swid[:8]}... (Pre-configured)")
+    if args.espn_s2:
+        print(f"ESPN S2    : {args.espn_s2[:8]}... (Pre-configured)")
     print(f"Invite Code: {code}")
     print("-" * 60)
     print("Share this private magic link with your friend:")
@@ -63,17 +84,17 @@ def main(argv: list[str] | None = None) -> None:
     )
     subparsers = parser.add_subparsers(dest="subcommand", help="Available commands")
 
-    # create-invite subcommand
     invite_parser = subparsers.add_parser("create-invite", help="Generate single-use magic invite link for a friend")
     invite_parser.add_argument(
         "--platform", choices=["sleeper", "espn"], default="sleeper", help="League platform (sleeper or espn)"
     )
     invite_parser.add_argument("--league-id", required=True, help="Friend's league ID")
     invite_parser.add_argument("--team-id", required=True, help="Friend's team ID")
+    invite_parser.add_argument("--swid", default=None, help="Optional ESPN SWID cookie for private leagues")
+    invite_parser.add_argument("--espn-s2", default=None, help="Optional ESPN espn_s2 cookie for private leagues")
     invite_parser.add_argument("--base-url", default="http://127.0.0.1:8000", help="Base application URL")
     invite_parser.set_defaults(func=create_invite_command)
 
-    # serve subcommand
     serve_parser = subparsers.add_parser("serve", help="Start local web application server")
     serve_parser.add_argument("--host", default="127.0.0.1", help="Host address to bind")
     serve_parser.add_argument("--port", type=int, default=8000, help="Port to bind")

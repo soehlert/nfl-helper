@@ -14,8 +14,8 @@ def test_generate_invite_code_format() -> None:
     assert len(espn_code) == 9
 
 
-def test_build_invite_url() -> None:
-    """Verify magic invite link URL construction."""
+def test_build_invite_url_sleeper() -> None:
+    """Verify Sleeper magic invite link URL construction."""
     code, url = build_invite_url(
         platform="sleeper",
         league_id="987654321",
@@ -28,10 +28,41 @@ def test_build_invite_url() -> None:
     assert "team=3" in url
 
 
+def test_build_invite_url_espn_with_credentials() -> None:
+    """Verify ESPN magic invite link URL with optional pre-configured cookies."""
+    code, url = build_invite_url(
+        platform="espn",
+        league_id="12345678",
+        team_id="1",
+        swid="{MY-SWID-123}",
+        espn_s2="AECb_secret_cookie",
+        base_url="http://localhost:8000",
+    )
+    assert f"invite={code}" in url
+    assert "platform=espn" in url
+    assert "swid=%7BMY-SWID-123%7D" in url or "swid={MY-SWID-123}" in url
+    assert "espn_s2=AECb_secret_cookie" in url
+
+
 def test_cli_create_invite_execution(capsys) -> None:
     """Verify CLI create-invite subcommand prints magic link."""
-    main(["create-invite", "--platform", "sleeper", "--league-id", "12345", "--team-id", "1"])
+    main(
+        [
+            "create-invite",
+            "--platform",
+            "espn",
+            "--league-id",
+            "12345",
+            "--team-id",
+            "1",
+            "--swid",
+            "{ABC}",
+            "--espn-s2",
+            "XYZ",
+        ]
+    )
     captured = capsys.readouterr()
     assert "MAGIC INVITE CREATED" in captured.out
-    assert "Platform  : SLEEPER" in captured.out
-    assert "League ID : 12345" in captured.out
+    assert "Platform   : ESPN" in captured.out
+    assert "League ID  : 12345" in captured.out
+    assert "ESPN SWID" in captured.out

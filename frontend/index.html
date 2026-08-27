@@ -1088,6 +1088,14 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           document.getElementById('session-team-id').value = teamParam;
           document.getElementById('current-team-name').textContent = 'Team ' + teamParam;
         }
+        const swidParam = params.get('swid');
+        const espnS2Param = params.get('espn_s2');
+        if (swidParam) {
+          document.getElementById('session-swid').value = swidParam;
+        }
+        if (espnS2Param) {
+          document.getElementById('session-espn-s2').value = espnS2Param;
+        }
       }
 
       fetchDraftState();
