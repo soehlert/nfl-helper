@@ -97,14 +97,23 @@ def _build_suggestion_reason(
 ) -> str:
     """Generate concise deterministic justification for draft recommendation."""
     reasons: list[str] = []
-    if cliff:
-        reasons.append(f"Tier {cliff.current_tier} Scarcity ({cliff.players_remaining} left)")
-    if adp_delta >= 3.0:
-        reasons.append(f"Value Steal (+{round(adp_delta, 1)} past ADP)")
-    elif vorp > 0:
-        reasons.append(f"+{vorp:.1f} VORP over baseline")
+    tier_label = f"Tier {player.cheatsheet_tier or player.tier or 1} {player.position}"
+    if vorp > 0:
+        reasons.append(f"+{vorp:.1f} VORP ({tier_label})")
     else:
-        reasons.append(f"Top {player.position} ({player.projected_points:.1f} pts)")
+        reasons.append(f"{tier_label} ({player.projected_points:.1f} pts)")
+
+    if cliff:
+        reasons.append(f"Tier {cliff.current_tier} scarcity ({cliff.players_remaining} left)")
+    if adp_delta >= 3.0:
+        reasons.append(f"+{round(adp_delta, 1)} picks past ADP")
+    elif player.cheatsheet_notes:
+        reasons.append(player.cheatsheet_notes)
+    elif player.position in ("RB", "WR") and vorp >= 3.0:
+        reasons.append("High-volume primary role & baseline advantage")
+    elif player.position == "QB" and vorp >= 3.0:
+        reasons.append("Elite passing/rushing upside")
+
     return " • ".join(reasons)
 
 

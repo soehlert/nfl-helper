@@ -581,12 +581,14 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th style="width: 50px;">Rank</th>
+              <th style="width: 45px;">Rank</th>
               <th style="width: 45px;">Pos</th>
               <th style="width: 50px;">Team</th>
               <th>Player</th>
-              <th style="width: 75px;">Tier</th>
-              <th style="width: 85px;">Proj Pts</th>
+              <th style="width: 65px;">Tier</th>
+              <th style="width: 75px;">Proj Pts</th>
+              <th style="width: 60px;">ADP</th>
+              <th style="width: 50px;">Bye</th>
               <th>Reason</th>
             </tr>
           </thead>
@@ -598,26 +600,13 @@
               <td><strong>Breece Hall</strong></td>
               <td>Tier 1</td>
               <td>18.2</td>
-              <td class="reason-text">Top Positional Value • +2.4 VORP over baseline</td>
-            </tr>
-            <tr>
-              <td><strong>2</strong></td>
-              <td><strong>Tyreek Hill</strong></td>
-              <td><span class="pos-tag pos-WR">WR</span></td>
-              <td><strong>Tier 1</strong></td>
-              <td>18.8</td>
-              <td>Top Positional Value • +2.4 VORP over baseline</td>
-            </tr>
-            <tr>
-              <td><strong>3</strong></td>
-              <td><strong>Bijan Robinson</strong></td>
-              <td><span class="pos-tag pos-RB">RB</span></td>
-              <td><strong>Tier 1</strong></td>
-              <td>17.8</td>
-              <td>Top Positional Value • +2.0 VORP over baseline</td>
+              <td>5.4</td>
+              <td>Wk 12</td>
+              <td class="reason-text">+4.1 VORP (Tier 1 RB) • High-volume primary role & baseline advantage</td>
             </tr>
           </tbody>
         </table>
+
       </div>
     </div>
 
@@ -1366,6 +1355,8 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           const team = p.team || 'FA';
           const tierStr = `Tier ${p.cheatsheet_tier || p.tier || 1}`;
           const ptsStr = p.projected_points ? p.projected_points.toFixed(1) : '—';
+          const adpStr = p.adp ? p.adp.toFixed(1) : (p.cheatsheet_rank ? p.cheatsheet_rank.toFixed(0) : '—');
+          const byeStr = p.bye_week ? `Wk ${p.bye_week}` : '—';
           sugHtml += `
             <tr>
               <td><strong>${s.rank}</strong></td>
@@ -1374,9 +1365,12 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
               <td><strong>${p.name}</strong></td>
               <td>${tierStr}</td>
               <td>${ptsStr}</td>
+              <td>${adpStr}</td>
+              <td>${byeStr}</td>
               <td class="reason-text">${s.reason}</td>
             </tr>`;
         });
+
         sugTbody.innerHTML = sugHtml;
       }
 

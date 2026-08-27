@@ -24,8 +24,9 @@ def _cluster_by_cheatsheet(players: list[Player], position: str) -> list[PlayerT
     unranked: list[Player] = []
 
     for p in players:
-        if p.cheatsheet_tier is not None and p.cheatsheet_tier > 0:
-            grouped[p.cheatsheet_tier].append(p)
+        tier_val = p.cheatsheet_tier if (p.cheatsheet_tier is not None and p.cheatsheet_tier > 0) else p.tier
+        if tier_val is not None and tier_val > 0:
+            grouped[tier_val].append(p)
         else:
             unranked.append(p)
 
@@ -102,7 +103,7 @@ def cluster_position_tiers(
     if not pos_players:
         return []
 
-    # Only use cheatsheet tiering for this position if players at this position actually have cheatsheet tiers
+    # Use explicit cheatsheet tiering if players at this position have cheatsheet tiers
     has_cheatsheet_tiers = any(p.cheatsheet_tier is not None and p.cheatsheet_tier > 0 for p in pos_players)
     if has_cheatsheet_tiers:
         return _cluster_by_cheatsheet(pos_players, position)

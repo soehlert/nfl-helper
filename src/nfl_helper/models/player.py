@@ -92,3 +92,5 @@ class Player(BaseModel):
     floor_points: float = 0.0
     ceiling_points: float = 0.0
     assigned_slot: str | None = None
+    adp: float | None = None
+    bye_week: int | None = None

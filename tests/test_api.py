@@ -27,13 +27,27 @@ def test_root_serves_html() -> None:
 
 
 def test_draft_state_endpoint() -> None:
-    """Verify draft state endpoint returns expected schema."""
+    """Verify draft state endpoint returns expected schema, cliff alerts, and tier rolls."""
     response = client.get("/api/draft/state")
     assert response.status_code == 200
     data = response.json()
     assert "league_id" in data
     assert "cliff_warnings" in data
     assert "tiers_by_position" in data
+
+    # Test simulate_cliff query parameter
+    res_cliff = client.get("/api/draft/state?simulate_cliff=true")
+    assert res_cliff.status_code == 200
+    cliff_data = res_cliff.json()
+    assert len(cliff_data["cliff_warnings"]) > 0
+    assert cliff_data["cliff_warnings"][0]["position"] == "RB"
+
+    # Test simulate_tier_roll query parameter
+    res_roll = client.get("/api/draft/state?simulate_tier_roll=true")
+    assert res_roll.status_code == 200
+    roll_data = res_roll.json()
+    assert roll_data["tiers_by_position"]["QB"][0]["tier_num"] == 2
+    assert roll_data["tiers_by_position"]["RB"][0]["tier_num"] == 2
 
 
 def test_lineup_optimize_endpoint() -> None:
