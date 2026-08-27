@@ -10,9 +10,9 @@ from nfl_helper.models.player import Player
 # Positional starter depth multipliers for baseline VORP calculation
 _STARTER_DEPTH: dict[str, float] = {
     "QB": 1.0,
-    "RB": 2.5,
-    "WR": 3.5,
-    "TE": 1.2,
+    "RB": 2.25,
+    "WR": 2.75,
+    "TE": 1.0,
     "K": 1.0,
     "D/ST": 1.0,
 }
@@ -129,6 +129,12 @@ def generate_draft_suggestions(
     vorp_scores = calculate_vorp(available_players, baselines)
     cliff_by_pos = {w.position: w for w in cliff_warnings}
 
+    top_tier_info: dict[str, tuple[int, int]] = {}
+    for pos, pos_tiers in tiers_by_pos.items():
+        if pos_tiers:
+            top_t = pos_tiers[0]
+            top_tier_info[pos] = (top_t.tier_num, len(top_t.players))
+
     scored_players: list[tuple[float, Player, float, bool, TierCliffWarning | None, float]] = []
 
     for p in available_players:
@@ -140,10 +146,18 @@ def generate_draft_suggestions(
         if is_cliff_defense:
             score += 3.5 if cliff.cliff_risk == "CRITICAL" else 2.0
 
-        if p.cheatsheet_tier == 1:
+        p_tier = p.cheatsheet_tier or p.tier or 1
+        if p_tier == 1:
             score += 1.5
-        elif p.cheatsheet_tier == 2:
+        elif p_tier == 2:
             score += 0.8
+
+        # Positional Scarcity Weighting: if player is in top active tier and only 1-2 players remain
+        pos_info = top_tier_info.get(str(p.position))
+        if pos_info:
+            top_num, remaining_in_top = pos_info
+            if p_tier == top_num and remaining_in_top <= 2:
+                score += 2.0 if remaining_in_top == 1 else 1.2
 
         adp_delta = 0.0
         if p.cheatsheet_rank:
