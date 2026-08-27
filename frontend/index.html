@@ -225,6 +225,19 @@
       color: #cbd5e1;
     }
 
+    .strategy-pill {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid var(--accent-blue);
+      color: var(--text-main);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
     table.data-table {
       width: 100%;
       border-collapse: collapse;
@@ -383,6 +396,17 @@
         <div class="clock-stat">
           <div class="value" id="clock-status-tag" style="color: var(--accent-green);">LIVE FEED</div>
           <div class="label">Auto-Refresh</div>
+        </div>
+      </div>
+
+      <!-- Strategy Guidance Rules from Cheatsheet -->
+      <div id="cheatsheet-rules-container" style="display: none; margin-bottom: 1.25rem;">
+        <div class="card" style="border-left: 4px solid var(--accent-blue);">
+          <div class="card-header" style="margin-bottom: 0.5rem;">
+            <div class="card-title" style="font-size: 0.95rem;">📋 Active Cheatsheet & Macro Strategy Guidance</div>
+            <span id="cheatsheet-stats-badge" class="badge badge-claimed">0 Players Loaded</span>
+          </div>
+          <div id="cheatsheet-rules-list"></div>
         </div>
       </div>
 
@@ -756,10 +780,6 @@
               <label class="form-label">League ID</label>
               <input type="text" id="session-league-id" class="form-control" value="12345678">
             </div>
-            <div class="form-group">
-              <label class="form-label">Season Year</label>
-              <input type="number" id="session-year" class="form-control" value="2024">
-            </div>
           </div>
           <div>
             <div class="form-group">
@@ -816,17 +836,19 @@
         </div>
       </div>
 
-      <!-- Plain-Text Cheatsheet Ingestion -->
+      <!-- Plain-Text / CSV Cheatsheet Ingestion -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title" style="font-size: 0.95rem;">📝 Plain-Text Cheatsheet Ingestion</div>
+          <div class="card-title" style="font-size: 0.95rem;">📝 Plain-Text / CSV Cheatsheet Ingestion</div>
+          <button class="btn" style="font-size: 0.75rem;" onclick="loadSampleCheatsheet()">Load Sample</button>
         </div>
         <div class="form-group">
-          <textarea id="cheatsheet-textarea" class="form-control" rows="5" placeholder="Justin Jefferson - Elite WR1 target
-Breece Hall - Must draft Tier 1 RB
-Jordan Mason - High priority handcuff..."></textarea>
+          <textarea id="cheatsheet-textarea" class="form-control" rows="7" placeholder="Paste your plain-text cheatsheet, OCR table, CSV, or JSON here..."></textarea>
         </div>
-        <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Save Cheatsheet</button>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Ingest & Apply Cheatsheet</button>
+          <span id="cheatsheet-status-msg" style="font-size: 0.82rem; color: var(--accent-green);"></span>
+        </div>
       </div>
 
       <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
@@ -892,6 +914,103 @@ Jordan Mason - High priority handcuff..."></textarea>
       });
     }
 
+    function loadSampleCheatsheet() {
+      const sample = `QB
+Allen BUF 34.8
+
+Jackson BAL 69.1
+Burrow CIN 65.5
+
+RB
+Gibbs DET 1.1
+Robinson ATL 2.1
+
+McCaffrey SF 8.7
+Taylor IND 8.9
+Cook BUF 9.3
+
+Hampton LAC 16.1
+Barkley PHI 16.8
+Achane MIA 16.5
+
+WR
+Chase CIN 3.1
+Nacua LAR 4.8
+St Brown DET 5.9
+Smith-Njigba SEA 5.5
+
+Lamb DAL 11.3
+Jefferson MIN 12.3
+
+TE
+Bowers LV 21.6
+McBride ARI 28.4
+Loveland CHI 43.8
+Warren IND 56.3
+
+Rounds 1-2 - Only RB/WR at least 1 RB
+TE - Target the top 4 in rounds 3-5 or take 2 from tiers 2-4
+QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
+* = injured a while`;
+      document.getElementById('cheatsheet-textarea').value = sample;
+    }
+
+    function renderCheatsheetContext(data) {
+      if (!data) return;
+      const rulesContainer = document.getElementById('cheatsheet-rules-container');
+      const rulesList = document.getElementById('cheatsheet-rules-list');
+      const statsBadge = document.getElementById('cheatsheet-stats-badge');
+
+      const playerCount = Object.keys(data.entries || {}).length;
+      const rules = data.strategy_rules || [];
+
+      if (playerCount > 0 || rules.length > 0) {
+        rulesContainer.style.display = 'block';
+        statsBadge.textContent = `${playerCount} Players & Tiers Loaded`;
+        
+        let rulesHtml = '';
+        rules.forEach(rule => {
+          rulesHtml += `<div class="strategy-pill"><span>🎯</span> <strong>${rule}</strong></div>`;
+        });
+        rulesList.innerHTML = rulesHtml || '<div style="font-size: 0.85rem; color: var(--text-muted);">Custom tiers loaded into tactical suggestions.</div>';
+      }
+    }
+
+    async function fetchCheatsheet() {
+      try {
+        const res = await fetch('/api/cheatsheet');
+        if (res.ok) {
+          const data = await res.json();
+          renderCheatsheetContext(data);
+        }
+      } catch (e) {
+        console.log('Cheatsheet fetch error');
+      }
+    }
+
+    async function submitCheatsheet() {
+      const text = document.getElementById('cheatsheet-textarea').value;
+      if (!text.trim()) {
+        alert('Please enter cheatsheet notes or table.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/cheatsheet/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const pCount = Object.keys(data.entries || {}).length;
+          document.getElementById('cheatsheet-status-msg').textContent = `✅ Successfully loaded ${pCount} players & ${data.strategy_rules?.length || 0} strategy rules!`;
+          renderCheatsheetContext(data);
+        }
+      } catch (err) {
+        alert('Failed to upload cheatsheet.');
+      }
+    }
+
     async function fetchDraftState() {
       try {
         const res = await fetch('/api/draft/state');
@@ -931,26 +1050,6 @@ Jordan Mason - High priority handcuff..."></textarea>
       }
     }
 
-    async function submitCheatsheet() {
-      const text = document.getElementById('cheatsheet-textarea').value;
-      if (!text.trim()) {
-        alert('Please enter cheatsheet notes.');
-        return;
-      }
-      try {
-        const res = await fetch('/api/cheatsheet/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
-        });
-        if (res.ok) {
-          alert('Cheatsheet saved & ingested!');
-        }
-      } catch (err) {
-        alert('Cheatsheet stored.');
-      }
-    }
-
     function initWebSocket() {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/ws/draft/default_session`;
@@ -980,7 +1079,6 @@ Jordan Mason - High priority handcuff..."></textarea>
       const platformParam = params.get('platform');
 
       if (inviteCode) {
-        // Guest mode - hide admin settings button
         document.getElementById('role-badge').textContent = 'Guest Session';
         document.getElementById('role-badge').className = 'badge badge-claimed';
         document.getElementById('admin-settings-btn').style.display = 'none';
@@ -991,6 +1089,7 @@ Jordan Mason - High priority handcuff..."></textarea>
       }
 
       fetchDraftState();
+      fetchCheatsheet();
       initWebSocket();
       autoRefreshInterval = setInterval(fetchDraftState, 4000);
     });

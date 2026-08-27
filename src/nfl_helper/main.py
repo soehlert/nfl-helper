@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
+from nfl_helper.core.cheatsheet import parse_cheatsheet_content
+from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import CliffType, DraftState, DraftSuggestion, PlayerTier, TierCliffWarning
 from nfl_helper.models.player import Player, Position
 from nfl_helper.models.roster import (
@@ -35,9 +37,12 @@ app.add_middleware(
 
 FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "frontend" / "index.html"
 
+# In-memory storage for active cheatsheet context
+_ACTIVE_CHEATSHEET: CheatsheetContext | None = None
+
 
 class CheatsheetUploadRequest(BaseModel):
-    """Request model for plain-text cheatsheet ingestion."""
+    """Request model for plain-text / CSV / JSON cheatsheet ingestion."""
 
     text: str
 
@@ -179,14 +184,19 @@ async def get_waiver_recommendations(session_id: str | None = None) -> WaiverAna
     )
 
 
-@app.post("/api/cheatsheet/upload")
-async def upload_cheatsheet(payload: CheatsheetUploadRequest) -> dict[str, Any]:
-    """Ingest plain-text cheatsheet notes to contextualize player rankings."""
-    return {
-        "status": "success",
-        "message": "Cheatsheet received and queued for ingestion",
-        "lines": len(payload.text.splitlines()),
-    }
+@app.post("/api/cheatsheet/upload", response_model=CheatsheetContext)
+async def upload_cheatsheet(payload: CheatsheetUploadRequest) -> CheatsheetContext:
+    """Ingest and parse plain-text, CSV, or JSON cheatsheet, storing active context."""
+    global _ACTIVE_CHEATSHEET
+    context = parse_cheatsheet_content(payload.text)
+    _ACTIVE_CHEATSHEET = context
+    return context
+
+
+@app.get("/api/cheatsheet", response_model=CheatsheetContext | None)
+async def get_current_cheatsheet() -> CheatsheetContext | None:
+    """Fetch currently active cheatsheet tiers, rules, and parsed entries."""
+    return _ACTIVE_CHEATSHEET
 
 
 @app.post("/api/sessions/claim")

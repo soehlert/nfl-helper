@@ -50,3 +50,27 @@ def test_waiver_recommendations_endpoint() -> None:
     data = response.json()
     assert "positional_weaknesses" in data
     assert "top_add_drop_pairs" in data
+
+
+def test_cheatsheet_upload_and_get_endpoints() -> None:
+    """Verify cheatsheet upload parsing and subsequent retrieval."""
+    cheatsheet_text = """
+QB
+Allen BUF 34.8
+
+RB
+Gibbs DET 1.1
+
+Rounds 1-2 - Only RB/WR at least 1 RB
+"""
+    res = client.post("/api/cheatsheet/upload", json={"text": cheatsheet_text})
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data["entries"]) >= 2
+    assert len(data["strategy_rules"]) >= 1
+
+    get_res = client.get("/api/cheatsheet")
+    assert get_res.status_code == 200
+    get_data = get_res.json()
+    assert get_data is not None
+    assert len(get_data["entries"]) >= 2
