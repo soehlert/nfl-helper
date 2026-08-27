@@ -818,7 +818,7 @@
               <td><strong>Jordan Mason</strong> SF - <span class="pos-tag pos-RB">RB</span></td>
               <td>Deshaun Watson CLE - <span class="pos-tag pos-QB">QB</span></td>
               <td><span class="delta-pill delta-plus">+14.2 pts</span></td>
-              <td><strong style="color: var(--accent-green);">Starting role opportunity (68% snaps) + soft 3-wk schedule (vs LAR, @ NE, vs ARI)</strong></td>
+              <td style="color: var(--text-muted);">Starting role opportunity (68% snaps) + soft 3-wk schedule (vs LAR, @ NE, vs ARI)</td>
             </tr>
           </tbody>
         </table>
@@ -843,18 +843,19 @@
               <tr>
                 <td><strong>Seahawks D/ST (SEA)</strong></td>
                 <td>vs DEN</td>
-                <td><span class="badge badge-claimed">Rank 31</span></td>
+                <td>31</td>
                 <td style="color: var(--text-muted);">Facing 31st ranked scoring offense (O/U 38.5) • High sack upside</td>
                 <td><strong>8.8</strong></td>
               </tr>
               <tr>
                 <td><strong>Chargers D/ST (LAC)</strong></td>
                 <td>vs CAR</td>
-                <td><span class="badge badge-claimed">Rank 32</span></td>
+                <td>32</td>
                 <td style="color: var(--text-muted);">Opponent allows league-worst sack rate (12.4%) • Favorable spread</td>
                 <td><strong>8.5</strong></td>
               </tr>
             </tbody>
+
           </table>
         </div>
 
@@ -1631,7 +1632,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
                 <td>${addCell}</td>
                 <td>${dropCell}</td>
                 <td><span class="delta-pill ${gainClass}">${gainStr}</span></td>
-                <td><strong style="color: var(--accent-green);">${pair.reason}</strong></td>
+                <td style="color: var(--text-muted);">${pair.reason}</td>
               </tr>
             `;
           });
@@ -1648,7 +1649,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
               <tr>
                 <td><strong>${stream.player.name} (${teamStr})</strong></td>
                 <td>${stream.week_matchup || '—'}</td>
-                <td><span class="badge badge-claimed">Rank ${stream.opponent_rank}</span></td>
+                <td>${stream.opponent_rank}</td>
                 <td style="color: var(--text-muted);">${stream.reason || 'Favorable defensive matchup'}</td>
                 <td><strong>${stream.projected_points.toFixed(1)}</strong></td>
               </tr>
@@ -1656,6 +1657,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           });
           dstTbody.innerHTML = dstHtml;
         }
+
 
         // Render Kicker Streaming Targets
         const kickerTbody = document.getElementById('waiver-kicker-tbody');
