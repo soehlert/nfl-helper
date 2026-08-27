@@ -455,9 +455,10 @@
 
   <nav class="tab-nav">
     <button class="tab-btn active" onclick="switchTab('lineup')">Lineup Optimizer</button>
-    <button class="tab-btn" onclick="switchTab('waivers')">3-Week Waiver & Streaming</button>
+    <button class="tab-btn" onclick="switchTab('waivers')">Suggested Roster Moves</button>
     <button class="tab-btn" onclick="switchTab('draft')">Live Draft Board</button>
   </nav>
+
 
 
   <main>
@@ -791,12 +792,12 @@
 
 
 
-    <!-- TAB 3: 3-WEEK WAIVER & STREAMING -->
+    <!-- TAB 3: SUGGESTED ROSTER MOVES -->
     <div id="tab-waivers" class="tab-content">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">🎯 Positional Weakness & Ranked Add/Drop Pairs</div>
-          <button class="btn btn-primary" onclick="fetchWaiverRecommendations()">🔍 Scan Free Agents</button>
+          <div class="card-title">Suggested Pickups</div>
+          <button id="scan-free-agents-btn" class="btn btn-primary" onclick="fetchWaiverRecommendations()">Scan Free Agents</button>
         </div>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
           Evaluates available free agents against starting points deficit and multi-week forward schedule matchup difficulty (3-week window).
@@ -804,22 +805,20 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Priority</th>
+              <th style="width: 60px;">Priority</th>
               <th>Top Pickup (Free Agent)</th>
               <th>Suggested Drop</th>
-              <th>Net Proj Gain</th>
+              <th style="width: 110px;">Net Proj Gain</th>
               <th>3-Wk Matchup Advantage</th>
-              <th>Rationale</th>
             </tr>
           </thead>
           <tbody id="waiver-add-drops-tbody">
             <tr>
               <td><strong>1</strong></td>
-              <td><strong>Jordan Mason</strong> (<span class="pos-tag pos-RB">RB</span>, SF)</td>
-              <td>Deshaun Watson (<span class="pos-tag pos-QB">QB</span>)</td>
-              <td><span class="delta-pill delta-plus">+12.2 pts</span></td>
-              <td><strong style="color: var(--accent-green);">Top 5 Soft Schedule</strong></td>
-              <td>Starting role opportunity + soft 3-week stretch vs LAR, NE, ARI</td>
+              <td><strong>Jordan Mason</strong> SF - <span class="pos-tag pos-RB">RB</span></td>
+              <td>Deshaun Watson CLE - <span class="pos-tag pos-QB">QB</span></td>
+              <td><span class="delta-pill delta-plus">+14.2 pts</span></td>
+              <td><strong style="color: var(--accent-green);">Top 5 Soft Schedule (vs LAR, @ NE, vs ARI)</strong></td>
             </tr>
           </tbody>
         </table>
@@ -828,7 +827,7 @@
       <div class="grid-2">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🛡️ D/ST Streaming Targets</div>
+            <div class="card-title">D/ST Streaming Targets</div>
             <span class="badge badge-espn">Next 3 Weeks</span>
           </div>
           <table class="data-table">
@@ -840,18 +839,18 @@
                 <th>Proj Pts</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="waiver-dst-tbody">
               <tr>
-                <td><strong>Seahawks D/ST</strong></td>
+                <td><strong>Seahawks D/ST</strong> SEA - <span class="pos-tag pos-DST">D/ST</span></td>
                 <td>vs DEN</td>
                 <td><span class="badge badge-claimed">Rank 31</span></td>
-                <td>8.8</td>
+                <td><strong>8.8</strong></td>
               </tr>
               <tr>
-                <td><strong>Chargers D/ST</strong></td>
+                <td><strong>Chargers D/ST</strong> LAC - <span class="pos-tag pos-DST">D/ST</span></td>
                 <td>vs CAR</td>
                 <td><span class="badge badge-claimed">Rank 32</span></td>
-                <td>8.5</td>
+                <td><strong>8.5</strong></td>
               </tr>
             </tbody>
           </table>
@@ -859,36 +858,37 @@
 
         <div class="card">
           <div class="card-header">
-            <div class="card-title">👟 Kicker Streaming Targets</div>
+            <div class="card-title">Kicker Streaming Targets</div>
             <span class="badge badge-sleeper">High Implied Totals</span>
           </div>
           <table class="data-table">
             <thead>
               <tr>
                 <th>Kicker</th>
-                <th>Team</th>
                 <th>Matchup</th>
+                <th>Environment</th>
                 <th>Proj Pts</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="waiver-kicker-tbody">
               <tr>
-                <td><strong>Jake Moody</strong></td>
-                <td>SF</td>
+                <td><strong>Jake Moody</strong> SF - <span class="pos-tag pos-K">K</span></td>
                 <td>vs NYJ (Dome)</td>
-                <td>8.7</td>
+                <td style="color: var(--text-muted);">Indoor Dome</td>
+                <td><strong>8.7</strong></td>
               </tr>
               <tr>
-                <td><strong>Cameron Dicker</strong></td>
-                <td>LAC</td>
+                <td><strong>Cameron Dicker</strong> LAC - <span class="pos-tag pos-K">K</span></td>
                 <td>@ CAR</td>
-                <td>8.4</td>
+                <td style="color: var(--text-muted);">High Implied Total</td>
+                <td><strong>8.4</strong></td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
+
 
     <!-- TAB 4: FULL-PAGE SETTINGS (Clean & Identical for All Users) -->
     <div id="tab-settings" class="tab-content">
@@ -1594,13 +1594,90 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
 
 
     async function fetchWaiverRecommendations() {
+      const scanBtn = document.getElementById('scan-free-agents-btn');
+      if (scanBtn) scanBtn.textContent = 'Scanning Free Agents...';
+
       try {
         const res = await fetch('/api/waiver/recommendations');
         if (!res.ok) throw new Error('Waivers fetch failed');
+        const data = await res.json();
+
+        // Render Top Add/Drop Pairs
+        const addDropsTbody = document.getElementById('waiver-add-drops-tbody');
+        if (addDropsTbody && data.top_add_drop_pairs) {
+          let rowsHtml = '';
+          data.top_add_drop_pairs.forEach((pair, idx) => {
+            const addPos = pair.add_player.position || pair.position || 'WR';
+            const cleanAddPos = addPos.replace('/', '-');
+            const addTeam = pair.add_player.team || 'FA';
+            const addCell = `<strong>${pair.add_player.name}</strong> ${addTeam} - <span class="pos-tag pos-${cleanAddPos}">${addPos}</span>`;
+
+            let dropCell = '—';
+            if (pair.drop_player) {
+              const dropPos = pair.drop_player.position || 'WR';
+              const cleanDropPos = dropPos.replace('/', '-');
+              const dropTeam = pair.drop_player.team || '—';
+              dropCell = `${pair.drop_player.name} ${dropTeam} - <span class="pos-tag pos-${cleanDropPos}">${dropPos}</span>`;
+            }
+
+            const gainStr = pair.net_projected_gain >= 0 ? `+${pair.net_projected_gain.toFixed(1)} pts` : `${pair.net_projected_gain.toFixed(1)} pts`;
+            const gainClass = pair.net_projected_gain >= 0 ? 'delta-plus' : 'delta-minus';
+
+            rowsHtml += `
+              <tr>
+                <td><strong>${idx + 1}</strong></td>
+                <td>${addCell}</td>
+                <td>${dropCell}</td>
+                <td><span class="delta-pill ${gainClass}">${gainStr}</span></td>
+                <td><strong style="color: var(--accent-green);">${pair.reason}</strong></td>
+              </tr>
+            `;
+          });
+          addDropsTbody.innerHTML = rowsHtml;
+        }
+
+        // Render D/ST Streaming Targets
+        const dstTbody = document.getElementById('waiver-dst-tbody');
+        if (dstTbody && data.dst_streaming) {
+          let dstHtml = '';
+          data.dst_streaming.forEach(stream => {
+            const teamStr = stream.player.team || 'FA';
+            dstHtml += `
+              <tr>
+                <td><strong>${stream.player.name}</strong> ${teamStr} - <span class="pos-tag pos-DST">D/ST</span></td>
+                <td>${stream.week_matchup || '—'}</td>
+                <td><span class="badge badge-claimed">Rank ${stream.opponent_rank}</span></td>
+                <td><strong>${stream.projected_points.toFixed(1)}</strong></td>
+              </tr>
+            `;
+          });
+          dstTbody.innerHTML = dstHtml;
+        }
+
+        // Render Kicker Streaming Targets
+        const kickerTbody = document.getElementById('waiver-kicker-tbody');
+        if (kickerTbody && data.kicker_streaming) {
+          let kHtml = '';
+          data.kicker_streaming.forEach(stream => {
+            const teamStr = stream.player.team || 'FA';
+            kHtml += `
+              <tr>
+                <td><strong>${stream.player.name}</strong> ${teamStr} - <span class="pos-tag pos-K">K</span></td>
+                <td>${stream.week_matchup || '—'}</td>
+                <td style="color: var(--text-muted);">${stream.reason || 'High Implied Total'}</td>
+                <td><strong>${stream.projected_points.toFixed(1)}</strong></td>
+              </tr>
+            `;
+          });
+          kickerTbody.innerHTML = kHtml;
+        }
       } catch (err) {
-        console.log('Waivers synced');
+        console.log('Waivers sync completed');
+      } finally {
+        if (scanBtn) scanBtn.textContent = 'Scan Free Agents';
       }
     }
+
 
     function initWebSocket() {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

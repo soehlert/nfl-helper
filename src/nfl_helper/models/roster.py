@@ -34,6 +34,13 @@ class TeamRoster(BaseModel):
     bench: list[Player] = Field(default_factory=list)
     ir: list[Player] = Field(default_factory=list)
 
+    @property
+    def all_players(self) -> list[Player]:
+        """Return combined list of all rostered players."""
+        if self.players:
+            return self.players
+        return self.starters + self.bench + self.ir
+
 
 class RosterAdjustment(BaseModel):
     """Recommendation to move an injured or inactive player to IR/bench."""

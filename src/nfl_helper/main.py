@@ -14,14 +14,13 @@ from nfl_helper.api.ws_manager import ws_manager
 from nfl_helper.core.cheatsheet import parse_cheatsheet_content, parse_pdf_cheatsheet
 from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.core.lineup_optimizer import solve_optimal_lineup
+from nfl_helper.core.waiver_engine import generate_waiver_recommendations
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import DraftPick, DraftState
 from nfl_helper.models.player import Player, Position
 from nfl_helper.models.roster import (
-    AddDropRecommendation,
     LineupSolution,
     OptimizationStrategy,
-    StreamingOption,
     WaiverAnalysis,
 )
 from nfl_helper.models.session import LeagueProfile, PlatformType
@@ -208,34 +207,32 @@ async def get_lineup_optimization(
 @app.get("/api/waiver/recommendations", response_model=WaiverAnalysis)
 async def get_waiver_recommendations(session_id: str | None = None) -> WaiverAnalysis:
     """Analyze team positional weaknesses and return ranked add/drop pairs and streaming options."""
-    pickup = Player(id="fa_jmason", name="Jordan Mason", position=Position.RB, team="SF", projected_points=14.2)
-    drop = Player(id="bench_drop", name="Deshaun Watson", position=Position.QB, team="CLE", projected_points=0.0)
+    roster = get_demo_roster()
 
-    add_drop = AddDropRecommendation(
-        add_player=pickup,
-        drop_player=drop,
-        position="RB",
-        net_projected_gain=14.2,
-        matchup_advantage_3wk=4.5,
-        reason="Starting role opportunity + soft 3-week schedule vs LAR, NE, ARI",
-    )
-    dst_stream = StreamingOption(
-        player=Player(id="dst_sea", name="Seahawks D/ST", position=Position.DST, team="SEA", projected_points=8.8),
-        position="D/ST",
-        week_matchup="vs DEN",
-        opponent_rank=31,
-        projected_points=8.8,
-        tier=1,
-        reason="Top streaming defense facing 31st ranked offense",
-    )
+    free_agents: list[Player] = [
+        Player(id="fa_jmason", name="Jordan Mason", position=Position.RB, team="SF", projected_points=14.2),
+        Player(id="fa_tboyd", name="Tyler Boyd", position=Position.WR, team="TEN", projected_points=12.8),
+        Player(id="fa_bucky", name="Bucky Irving", position=Position.RB, team="TB", projected_points=12.5),
+        Player(id="fa_qjohnston", name="Quentin Johnston", position=Position.WR, team="LAC", projected_points=12.1),
+        Player(id="fa_csteele", name="Carson Steele", position=Position.RB, team="KC", projected_points=11.6),
+        Player(
+            id="fa_jwhittington", name="Jordan Whittington", position=Position.WR, team="LAR", projected_points=11.2
+        ),
+        Player(id="fa_braelon", name="Braelon Allen", position=Position.RB, team="NYJ", projected_points=10.9),
+        Player(id="fa_tconklin", name="Tyler Conklin", position=Position.TE, team="NYJ", projected_points=10.4),
+        Player(id="fa_drobinson", name="Demarcus Robinson", position=Position.WR, team="LAR", projected_points=10.1),
+        Player(id="fa_kherbert", name="Khalil Herbert", position=Position.RB, team="CHI", projected_points=9.8),
+        Player(id="fa_gsmith", name="Geno Smith", position=Position.QB, team="SEA", projected_points=16.5),
+        Player(id="fa_adarnold", name="Sam Darnold", position=Position.QB, team="MIN", projected_points=16.1),
+        Player(id="dst_sea", name="Seahawks D/ST", position=Position.DST, team="SEA", projected_points=8.8),
+        Player(id="dst_lac", name="Chargers D/ST", position=Position.DST, team="LAC", projected_points=8.5),
+        Player(id="dst_tb", name="Buccaneers D/ST", position=Position.DST, team="TB", projected_points=8.2),
+        Player(id="k_jmoody", name="Jake Moody", position=Position.K, team="SF", projected_points=8.7),
+        Player(id="k_cdicker", name="Cameron Dicker", position=Position.K, team="LAC", projected_points=8.4),
+        Player(id="k_cboswell", name="Chris Boswell", position=Position.K, team="PIT", projected_points=8.1),
+    ]
 
-    return WaiverAnalysis(
-        team_id="team_1",
-        positional_weaknesses={"RB": 3.5, "QB": 0.0},
-        top_add_drop_pairs=[add_drop],
-        dst_streaming=[dst_stream],
-        kicker_streaming=[],
-    )
+    return generate_waiver_recommendations(roster, free_agents, max_recommendations=15)
 
 
 @app.post("/api/cheatsheet/upload", response_model=CheatsheetContext)
