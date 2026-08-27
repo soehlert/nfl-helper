@@ -385,15 +385,16 @@
   </header>
 
   <nav class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('draft')">🎯 Live Draft Board</button>
-    <button class="tab-btn" onclick="switchTab('lineup')">⚡ Lineup Optimizer</button>
+    <button class="tab-btn active" onclick="switchTab('lineup')">⚡ Lineup Optimizer</button>
     <button class="tab-btn" onclick="switchTab('waivers')">🔍 3-Week Waiver & Streaming</button>
+    <button class="tab-btn" onclick="switchTab('draft')">🎯 Live Draft Board</button>
   </nav>
 
   <main>
 
     <!-- TAB 1: LIVE DRAFT BOARD -->
-    <div id="tab-draft" class="tab-content active">
+    <div id="tab-draft" class="tab-content">
+
       <div class="draft-clock-banner">
         <div class="clock-stat">
           <div class="value" id="overall-pick-num">#14</div>
@@ -541,7 +542,7 @@
     </div>
 
     <!-- TAB 2: LINEUP OPTIMIZER -->
-    <div id="tab-lineup" class="tab-content">
+    <div id="tab-lineup" class="tab-content active">
       <div class="card" style="background: linear-gradient(135deg, #182234 0%, #111a28 100%);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
           <div>
@@ -571,71 +572,77 @@
             </div>
           </div>
         </div>
+
+        <!-- EMBEDDED COLLAPSIBLE BADGE DEFINITIONS (INSIDE SAME CARD) -->
+        <div id="badge-definitions-drawer" style="display: none; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <div style="font-weight: 700; font-size: 0.95rem;">Projection Badge Definitions & Impact Rules</div>
+            <button onclick="toggleBadgeDefinitions()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem;">✕ Close</button>
+          </div>
+          <table class="data-table" style="font-size: 0.78rem;">
+            <thead>
+              <tr>
+                <th style="width: 110px;">Badge</th>
+                <th style="width: 110px;">Impact</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- POSITIVES (+) -->
+              <tr>
+                <td><span class="context-badge badge-boost">Goal-Line</span></td>
+                <td><strong style="color: #4ade80;">+1.8 pts</strong></td>
+                <td>Dominates inside-the-5 goal-line touches (&ge; 60% share)</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-boost">Rush Volume</span></td>
+                <td><strong style="color: #4ade80;">+1.5 pts</strong></td>
+                <td>Team favored by &ge; 6.5 projects elevated rushing volume</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-boost">Shootout</span></td>
+                <td><strong style="color: #4ade80;">+10%</strong></td>
+                <td>High Vegas game total (&ge; 49.5) indicates elevated scoring pace</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-boost">Dome</span></td>
+                <td><strong style="color: #4ade80;">+0.8 / +0.5</strong></td>
+                <td>Indoor stadium climate bonus (+0.8 Kicker, +0.5 QB/WR/TE) with zero wind or weather</td>
+              </tr>
+
+              <!-- PLUS / MINUS (±) -->
+              <tr>
+                <td><span class="context-badge badge-boost">Pass Volume</span></td>
+                <td><strong style="color: #38bdf8;">&plusmn;1.0 pt</strong></td>
+                <td>Trailing spread increases pass volume; lead reduces late passes</td>
+              </tr>
+
+              <!-- NEGATIVES (-) -->
+              <tr>
+                <td><span class="context-badge badge-penalty">Slugfest</span></td>
+                <td><strong style="color: #f87171;">-10%</strong></td>
+                <td>Low Vegas game total (&le; 38.5) indicates defensive battle</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-penalty">Wind</span></td>
+                <td><strong style="color: #f87171;">-15%</strong></td>
+                <td>High sustained wind (&gt; 18 mph) disrupts passing and kicking</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-penalty">Decoy</span></td>
+                <td><strong style="color: #f87171;">-25%</strong></td>
+                <td>Limited practice (DNP &rarr; LP) indicates snap restriction risk</td>
+              </tr>
+              <tr>
+                <td><span class="context-badge badge-penalty">Snaps</span></td>
+                <td><strong style="color: #f87171;">-30%</strong></td>
+                <td>Significant drop in rolling snap share percentage (role demotion)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <!-- COLLAPSIBLE BADGE DEFINITIONS DRAWER -->
-      <div id="badge-definitions-drawer" class="card" style="display: none; margin-bottom: 1.25rem;">
-        <div class="card-header" style="margin-bottom: 0.5rem; padding-bottom: 0.35rem; display: flex; justify-content: space-between; align-items: center;">
-          <div class="card-title" style="font-size: 0.95rem;">Projection Badge Definitions & Impact Rules</div>
-          <button onclick="toggleBadgeDefinitions()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem;">✕ Close</button>
-        </div>
-        <table class="data-table" style="font-size: 0.78rem;">
-          <thead>
-            <tr>
-              <th style="width: 110px;">Badge</th>
-              <th style="width: 80px;">Impact</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="context-badge badge-boost">Shootout</span></td>
-              <td><strong style="color: #4ade80;">+10%</strong></td>
-              <td>High Vegas game total (&ge; 49.5) indicates elevated scoring pace</td>
-            </tr>
-            <tr>
-              <td><span class="context-badge badge-penalty">Slugfest</span></td>
-              <td><strong style="color: #f87171;">-10%</strong></td>
-              <td>Low Vegas game total (&le; 38.5) indicates defensive battle</td>
-            </tr>
-            <tr>
-              <td><span class="context-badge badge-boost">Rush Volume</span></td>
-              <td><strong style="color: #4ade80;">+1.5 pts</strong></td>
-              <td>Team favored by &ge; 6.5 projects high rushing volume</td>
-            </tr>
-            <tr>
-              <td><span class="context-badge badge-boost">Pass Volume</span></td>
-              <td><strong style="color: #38bdf8;">&plusmn;1.0 pt</strong></td>
-              <td>Trailing spread increases pass volume; lead reduces late passes</td>
-            </tr>
-            <tr>
-              <td><span class="context-badge badge-boost">Dome</span></td>
-              <td><strong style="color: #4ade80;">+0.8 / +0.5</strong></td>
-              <td>Indoor stadium guarantees zero wind or precipitation</td>
-            </tr>
-            <tr>
-              <td><span class="context-badge badge-penalty">Wind</span></td>
-              <td><strong style="color: #f87171;">-15%</strong></td>
-              <td>High sustained wind (&gt; 18 mph) disrupts passing and kicking</td>
-            </tr>
-            <tr>
-              <td><span class="context-badge badge-penalty">Snaps</span></td>
-              <td><strong style="color: #f87171;">-30%</strong></td>
-              <td>Significant drop in rolling snap share percentage</td>
-            </tr>
-            <tr>
-              <td><span class="context-badge badge-boost">Goal-Line</span></td>
-              <td><strong style="color: #4ade80;">+1.8 pts</strong></td>
-              <td>Dominates inside-the-5 goal-line touches (&ge; 60% share)</td>
-            </tr>
-            <tr>
-              <td><span class="context-badge badge-penalty">Decoy</span></td>
-              <td><strong style="color: #f87171;">-25%</strong></td>
-              <td>Limited practice (DNP &rarr; LP) indicates snap restriction risk</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
 
       <!-- LINEUP CHANGES TABLE CARD -->
       <div id="lineup-start-sit-container" class="card" style="border-left: 4px solid var(--accent-green); padding: 0.85rem 1.1rem; margin-bottom: 1.25rem;">
