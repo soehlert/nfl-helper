@@ -123,7 +123,7 @@ def generate_draft_suggestions(
     cliff_warnings: list[TierCliffWarning],
     baselines: dict[str, float],
     overall_pick: int,
-    top_n: int = 100,
+    top_n: int = 150,
 ) -> list[DraftSuggestion]:
     """Generate ranked tactical draft suggestions balancing VORP, cliffs, and ADP value."""
     vorp_scores = calculate_vorp(available_players, baselines)
@@ -200,7 +200,9 @@ def build_draft_state(
 
     cliffs = detect_tier_cliffs(tiers_by_pos, picks_until_turn, turn_gap, on_the_clock)
     baselines = calculate_vorp_baselines(all_players, total_teams)
-    suggestions = generate_draft_suggestions(available_players, tiers_by_pos, cliffs, baselines, overall_pick, top_n=5)
+    suggestions = generate_draft_suggestions(
+        available_players, tiers_by_pos, cliffs, baselines, overall_pick, top_n=len(available_players)
+    )
 
     current_round = (overall_pick - 1) // total_teams + 1
     is_complete = overall_pick > (total_teams * total_rounds)
