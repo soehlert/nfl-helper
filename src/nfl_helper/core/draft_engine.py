@@ -3,19 +3,29 @@
 import math
 import re
 
-from nfl_helper.core.tier_calculator import cluster_position_tiers, detect_tier_cliffs
+from nfl_helper.core.tier_calculator import calculate_tier_drop, cluster_position_tiers, detect_tier_cliffs
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import DraftPick, DraftState, DraftSuggestion, PlayerTier, TierCliffWarning
 from nfl_helper.models.player import Player
 
 # Positional starter depth multipliers for baseline VORP calculation
 _STARTER_DEPTH: dict[str, float] = {
-    "QB": 1.0,
+    "QB": 1.5,
     "RB": 2.25,
     "WR": 2.75,
-    "TE": 1.0,
+    "TE": 1.25,
     "K": 1.0,
     "D/ST": 1.0,
+}
+
+# Positional starting demand weights for single-QB / 1-TE format (1 QB vs 5-6 RB/WR)
+_POS_DEMAND_WEIGHT: dict[str, float] = {
+    "RB": 1.0,
+    "WR": 1.0,
+    "QB": 0.65,
+    "TE": 0.75,
+    "K": 0.35,
+    "D/ST": 0.35,
 }
 
 
@@ -82,11 +92,13 @@ def calculate_vorp_baselines(all_players: list[Player], total_teams: int) -> dic
 
 
 def calculate_vorp(available_players: list[Player], baselines: dict[str, float]) -> dict[str, float]:
-    """Calculate VORP score for each available player against cached baselines."""
+    """Calculate VORP score for each available player against cached baselines weighted by roster demand."""
     vorp_map: dict[str, float] = {}
     for p in available_players:
         base = baselines.get(str(p.position), 0.0)
-        vorp_map[p.id] = round(max(0.0, p.projected_points - base), 2)
+        demand_weight = _POS_DEMAND_WEIGHT.get(str(p.position), 1.0)
+        raw_vorp = max(0.0, p.projected_points - base)
+        vorp_map[p.id] = round(raw_vorp * demand_weight, 2)
     return vorp_map
 
 
@@ -167,22 +179,47 @@ def _build_suggestion_reason(
     vorp: float,
     cliff: TierCliffWarning | None,
     adp_delta: float,
+    overall_pick: int,
+    top_tier_info: dict[str, tuple[int, int, float]],
     rule_note: str | None = None,
 ) -> str:
-    """Generate concise deterministic justification for draft recommendation."""
+    """Generate concise, factual, and informative multi-part justification for draft recommendation."""
     reasons: list[str] = []
-    tier_label = f"Tier {player.cheatsheet_tier or player.tier or 1} {player.position}"
-    if vorp > 0:
-        reasons.append(f"+{vorp:.1f} VORP ({tier_label})")
-    else:
-        reasons.append(f"{tier_label} ({player.projected_points:.1f} pts)")
+    p_tier = player.cheatsheet_tier or player.tier or 1
 
+    # 1. VORP & Tier tag
+    if vorp > 0:
+        reasons.append(f"+{vorp:.1f} VORP (Tier {p_tier} {player.position})")
+    else:
+        reasons.append(f"Tier {p_tier} {player.position} ({player.projected_points:.1f} pts)")
+
+    # 2. Strategy Rule context if active
     if rule_note:
         reasons.append(rule_note)
+
+    # 3. Positional Scarcity / Tier State
+    pos_info = top_tier_info.get(str(player.position))
+    if pos_info:
+        top_num, remaining_in_top, tier_drop = pos_info
+        if p_tier == top_num:
+            if remaining_in_top <= 2 and tier_drop >= 1.2:
+                reasons.append(f"Tier {top_num} Scarcity ({remaining_in_top} left before -{tier_drop:.1f} pt drop)")
+            elif remaining_in_top > 2:
+                reasons.append(f"{remaining_in_top} Tier {top_num} available")
+
+    # 4. Cliff Defense if active
     if cliff:
-        reasons.append(f"Tier {cliff.current_tier} scarcity ({cliff.players_remaining} left)")
-    if adp_delta >= 3.0:
-        reasons.append(f"+{round(adp_delta, 1)} pick discount past ADP")
+        reasons.append(f"Cliff Defense ({cliff.players_remaining} left)")
+
+    # 5. ADP Value
+    if player.adp:
+        discount = overall_pick - player.adp
+        if discount >= 2.0:
+            reasons.append(f"+{discount:.1f} pick discount vs {player.adp:.1f} ADP")
+        elif discount <= -3.0:
+            reasons.append(f"ADP {player.adp:.1f} (-{abs(discount):.1f} reach)")
+        else:
+            reasons.append(f"ADP {player.adp:.1f}")
     elif player.cheatsheet_notes:
         reasons.append(player.cheatsheet_notes)
 
@@ -204,11 +241,13 @@ def generate_draft_suggestions(
     cliff_by_pos = {w.position: w for w in cliff_warnings}
     current_round = (overall_pick - 1) // total_teams + 1
 
-    top_tier_info: dict[str, tuple[int, int]] = {}
+    top_tier_info: dict[str, tuple[int, int, float]] = {}
     for pos, pos_tiers in tiers_by_pos.items():
         if pos_tiers:
             top_t = pos_tiers[0]
-            top_tier_info[pos] = (top_t.tier_num, len(top_t.players))
+            next_t = pos_tiers[1] if len(pos_tiers) > 1 else None
+            t_drop = calculate_tier_drop(top_t, next_t)
+            top_tier_info[pos] = (top_t.tier_num, len(top_t.players), t_drop)
 
     scored_players: list[tuple[float, Player, float, bool, TierCliffWarning | None, float, str | None]] = []
 
@@ -230,8 +269,8 @@ def generate_draft_suggestions(
         # Positional Scarcity Weighting: if player is in top active tier and only 1-2 players remain
         pos_info = top_tier_info.get(str(p.position))
         if pos_info:
-            top_num, remaining_in_top = pos_info
-            if p_tier == top_num and remaining_in_top <= 2:
+            top_num, remaining_in_top, tier_drop = pos_info
+            if p_tier == top_num and remaining_in_top <= 2 and tier_drop >= 1.2:
                 score += 2.0 if remaining_in_top == 1 else 1.2
 
         # Strategy Rules Adjustment
@@ -250,7 +289,9 @@ def generate_draft_suggestions(
 
     suggestions: list[DraftSuggestion] = []
     for rank, (_, player, vorp, is_cliff, cliff, adp_delta, r_note) in enumerate(scored_players[:top_n], start=1):
-        reason = _build_suggestion_reason(player, vorp, cliff if is_cliff else None, adp_delta, r_note)
+        reason = _build_suggestion_reason(
+            player, vorp, cliff if is_cliff else None, adp_delta, overall_pick, top_tier_info, r_note
+        )
         suggestions.append(
             DraftSuggestion(
                 rank=rank,

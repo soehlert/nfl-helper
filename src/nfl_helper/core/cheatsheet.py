@@ -258,17 +258,25 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
             current_tier = 1
             continue
 
-        # Check for continuation lines (e.g. 'or take 2 from tiers 2-4', 'or get Allen in round 4')
+        # Strategy rule headers
+        if any(
+            line.startswith(prefix)
+            for prefix in ("Rounds", "TE -", "QB -", "RB -", "WR -", "K -", "DST -", "D/ST -", "* =", "Strategy:")
+        ):
+            context.strategy_rules.append(line)
+            rnd_rule, pos_rule = _parse_strategy_rule(line)
+            if rnd_rule:
+                context.round_targets.append(rnd_rule)
+            if pos_rule:
+                context.positional_strategy.append(pos_rule)
+            continue
+
+        # Strict continuation lines (only 'or ...' / 'and ...' that are not player lines)
         is_continuation = (
             bool(context.strategy_rules)
             and not pos_header
-            and (
-                line.lower().startswith("or ")
-                or line.lower().startswith("and ")
-                or line.startswith("- ")
-                or line.startswith("• ")
-                or (raw_line.startswith(" ") and not _clean_position_header(line))
-            )
+            and (line.lower().startswith("or ") or line.lower().startswith("and "))
+            and not any(f" {team} " in f" {line} " for team in NFL_TEAMS)
         )
         if is_continuation:
             combined = f"{context.strategy_rules[-1]} {line}"
@@ -284,15 +292,6 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
                     context.positional_strategy[-1] = pos_rule
                 else:
                     context.positional_strategy.append(pos_rule)
-            continue
-
-        if any(line.startswith(prefix) for prefix in ("Rounds", "TE -", "QB -", "RB -", "WR -", "* =", "Strategy:")):
-            context.strategy_rules.append(line)
-            rnd_rule, pos_rule = _parse_strategy_rule(line)
-            if rnd_rule:
-                context.round_targets.append(rnd_rule)
-            if pos_rule:
-                context.positional_strategy.append(pos_rule)
             continue
 
         entry = _parse_player_line(line, current_pos, current_tier)
