@@ -548,7 +548,7 @@
             <h2 style="font-size: 1.3rem; margin-bottom: 0.25rem;">Integer Linear Programming Lineup Solver (PuLP)</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem;">Solves optimal active roster with dynamic slot constraints, usage velocity, Vegas game scripts & weather.</p>
           </div>
-          <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Optimization Strategy</div>
               <select id="lineup-strategy" class="form-control" style="padding: 0.35rem 0.6rem; font-size: 0.82rem;" onchange="fetchLineupOptimization(false)">
@@ -565,86 +565,85 @@
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Projected Gain</div>
               <div class="delta-pill delta-plus" id="optimal-proj-delta">+0.0 pts</div>
             </div>
-            <div>
+            <div style="display: flex; gap: 0.4rem;">
               <button id="lineup-randomize-btn" class="btn btn-primary" onclick="fetchLineupOptimization(true)" title="Randomize Vegas spreads, over/unders, weather and snap trends in sandbox mode">Randomize Matchups</button>
+              <button type="button" class="btn btn-secondary" onclick="toggleBadgeDefinitions()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main);">Badge Definitions</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 2-COLUMN TOP ROW: LINEUP CHANGES (LEFT) & CONTEXT ADJUSTMENTS LEGEND (RIGHT) -->
-      <div class="grid-2" style="margin-bottom: 1.25rem; align-items: stretch;">
-        <!-- Left: Lineup Changes -->
-        <div id="lineup-start-sit-container" class="card" style="border-left: 4px solid var(--accent-green); height: 100%; margin-bottom: 0;">
-          <div class="card-header" style="margin-bottom: 0.5rem; padding-bottom: 0.35rem;">
-            <div class="card-title" style="color: var(--accent-green); font-size: 0.95rem;">Lineup Changes to Match Optimal Lineup</div>
-          </div>
-          <div id="lineup-start-sit-list" style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem;">
-            <div style="color: var(--text-muted);">Current starters already match optimal lineup.</div>
-          </div>
+      <!-- COLLAPSIBLE BADGE DEFINITIONS DRAWER -->
+      <div id="badge-definitions-drawer" class="card" style="display: none; margin-bottom: 1.25rem;">
+        <div class="card-header" style="margin-bottom: 0.5rem; padding-bottom: 0.35rem; display: flex; justify-content: space-between; align-items: center;">
+          <div class="card-title" style="font-size: 0.95rem;">Projection Badge Definitions & Impact Rules</div>
+          <button onclick="toggleBadgeDefinitions()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem;">✕ Close</button>
         </div>
+        <table class="data-table" style="font-size: 0.78rem;">
+          <thead>
+            <tr>
+              <th style="width: 110px;">Badge</th>
+              <th style="width: 80px;">Impact</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="context-badge badge-boost">Shootout</span></td>
+              <td><strong style="color: #4ade80;">+10%</strong></td>
+              <td>High Vegas game total (&ge; 49.5) indicates elevated scoring pace</td>
+            </tr>
+            <tr>
+              <td><span class="context-badge badge-penalty">Slugfest</span></td>
+              <td><strong style="color: #f87171;">-10%</strong></td>
+              <td>Low Vegas game total (&le; 38.5) indicates defensive battle</td>
+            </tr>
+            <tr>
+              <td><span class="context-badge badge-boost">Rush Volume</span></td>
+              <td><strong style="color: #4ade80;">+1.5 pts</strong></td>
+              <td>Team favored by &ge; 6.5 projects high rushing volume</td>
+            </tr>
+            <tr>
+              <td><span class="context-badge badge-boost">Pass Volume</span></td>
+              <td><strong style="color: #38bdf8;">&plusmn;1.0 pt</strong></td>
+              <td>Trailing spread increases pass volume; lead reduces late passes</td>
+            </tr>
+            <tr>
+              <td><span class="context-badge badge-boost">Dome</span></td>
+              <td><strong style="color: #4ade80;">+0.8 / +0.5</strong></td>
+              <td>Indoor stadium guarantees zero wind or precipitation</td>
+            </tr>
+            <tr>
+              <td><span class="context-badge badge-penalty">Wind</span></td>
+              <td><strong style="color: #f87171;">-15%</strong></td>
+              <td>High sustained wind (&gt; 18 mph) disrupts passing and kicking</td>
+            </tr>
+            <tr>
+              <td><span class="context-badge badge-penalty">Snaps</span></td>
+              <td><strong style="color: #f87171;">-30%</strong></td>
+              <td>Significant drop in rolling snap share percentage</td>
+            </tr>
+            <tr>
+              <td><span class="context-badge badge-boost">Goal-Line</span></td>
+              <td><strong style="color: #4ade80;">+1.8 pts</strong></td>
+              <td>Dominates inside-the-5 goal-line touches (&ge; 60% share)</td>
+            </tr>
+            <tr>
+              <td><span class="context-badge badge-penalty">Decoy</span></td>
+              <td><strong style="color: #f87171;">-25%</strong></td>
+              <td>Limited practice (DNP &rarr; LP) indicates snap restriction risk</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- Right: Context Adjustments Legend -->
-        <div class="card" style="height: 100%; margin-bottom: 0;">
-          <div class="card-header" style="margin-bottom: 0.5rem; padding-bottom: 0.35rem;">
-            <div class="card-title" style="font-size: 0.95rem;">Context Adjustments Key</div>
+      <!-- SLIM LINEUP CHANGES BANNER -->
+      <div id="lineup-start-sit-container" class="card" style="border-left: 4px solid var(--accent-green); padding: 0.65rem 1rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <strong style="color: var(--accent-green); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em;">Lineup Changes:</strong>
+          <div id="lineup-start-sit-list" style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; font-size: 0.85rem;">
+            <span style="color: var(--text-muted);">Current starters already match optimal lineup.</span>
           </div>
-          <table class="data-table" style="font-size: 0.78rem;">
-            <thead>
-              <tr>
-                <th style="width: 105px;">Badge</th>
-                <th style="width: 75px;">Impact</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><span class="context-badge badge-boost">Shootout</span></td>
-                <td><strong style="color: #4ade80;">+10%</strong></td>
-                <td>High Vegas total (&ge; 49.5) indicates elevated scoring pace</td>
-              </tr>
-              <tr>
-                <td><span class="context-badge badge-penalty">Slugfest</span></td>
-                <td><strong style="color: #f87171;">-10%</strong></td>
-                <td>Low Vegas total (&le; 38.5) indicates defensive battle</td>
-              </tr>
-              <tr>
-                <td><span class="context-badge badge-boost">Rush Volume</span></td>
-                <td><strong style="color: #4ade80;">+1.5 pts</strong></td>
-                <td>Team favored by &ge; 6.5 projects high rushing volume</td>
-              </tr>
-              <tr>
-                <td><span class="context-badge badge-boost">Pass Volume</span></td>
-                <td><strong style="color: #38bdf8;">&plusmn;1.0 pt</strong></td>
-                <td>Trailing spread increases pass volume; lead reduces late passes</td>
-              </tr>
-              <tr>
-                <td><span class="context-badge badge-boost">Dome</span></td>
-                <td><strong style="color: #4ade80;">+0.8 / +0.5</strong></td>
-                <td>Indoor stadium guarantees zero wind or precipitation</td>
-              </tr>
-              <tr>
-                <td><span class="context-badge badge-penalty">Wind</span></td>
-                <td><strong style="color: #f87171;">-15%</strong></td>
-                <td>High sustained wind (&gt; 18 mph) disrupts passing and kicking</td>
-              </tr>
-              <tr>
-                <td><span class="context-badge badge-penalty">Snaps</span></td>
-                <td><strong style="color: #f87171;">-30%</strong></td>
-                <td>Significant drop in rolling snap share percentage</td>
-              </tr>
-              <tr>
-                <td><span class="context-badge badge-boost">Goal-Line</span></td>
-                <td><strong style="color: #4ade80;">+1.8 pts</strong></td>
-                <td>Dominates inside-the-5 goal-line touches (&ge; 60% share)</td>
-              </tr>
-              <tr>
-                <td><span class="context-badge badge-penalty">Decoy</span></td>
-                <td><strong style="color: #f87171;">-25%</strong></td>
-                <td>Limited practice (DNP &rarr; LP) indicates snap restriction risk</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
 
@@ -694,6 +693,7 @@
         </div>
       </div>
     </div>
+
 
 
 
@@ -1284,6 +1284,13 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       return html;
     }
 
+    function toggleBadgeDefinitions() {
+      const drawer = document.getElementById('badge-definitions-drawer');
+      if (drawer) {
+        drawer.style.display = drawer.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
     async function fetchLineupOptimization(randomize = false) {
       const strategyElem = document.getElementById('lineup-strategy');
       const strategy = strategyElem ? strategyElem.value : 'BALANCED';
@@ -1326,16 +1333,17 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
               const detail = r.replace(/^Start\s+/i, '').replace(/^Sit\s+/i, '');
               const color = action === 'START' ? 'var(--accent-green)' : 'var(--accent-red)';
               return `
-                <div style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
-                  <strong style="color: ${color}; min-width: 55px;">${action}:</strong>
+                <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                  <strong style="color: ${color};">${action}:</strong>
                   <span>${detail}</span>
                 </div>
               `;
-            }).join('');
+            }).join('<span style="color: var(--text-muted); margin: 0 0.3rem;">•</span>');
           } else {
-            startSitList.innerHTML = '<div style="color: var(--text-muted);">Current starters already match optimal lineup.</div>';
+            startSitList.innerHTML = '<span style="color: var(--text-muted);">Current starters already match optimal lineup.</span>';
           }
         }
+
 
         // Render Anti-Correlation Warnings
         const antiCorrContainer = document.getElementById('lineup-anticorr-container');
