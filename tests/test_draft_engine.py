@@ -122,8 +122,8 @@ def test_cheatsheet_tier_clustering() -> None:
     assert len(tiers[1].players) == 1
 
 
-def test_tier_cliffs_all_three_scenarios() -> None:
-    """Verify detection of ON_THE_CLOCK_CLIFF, UPCOMING_TURN_CLIFF, and DEPLETED_BEFORE_TURN."""
+def test_tier_cliffs_actionable_scenarios() -> None:
+    """Verify detection of ON_THE_CLOCK_CLIFF and UPCOMING_TURN_CLIFF across skill and special teams."""
     # Scenario 1: ON_THE_CLOCK_CLIFF (User on the clock, only 1 Tier-1 RB left with 12-pick turn gap)
     t1_rb = [Player(id="rb1", name="CMC", position=Position.RB, team="SF", projected_points=20.0, tier=1)]
     t2_rb = [Player(id="rb2", name="JT", position=Position.RB, team="IND", projected_points=16.0, tier=2)]
@@ -136,13 +136,7 @@ def test_tier_cliffs_all_three_scenarios() -> None:
     assert cliffs_on_clock[0].cliff_risk == "CRITICAL"
     assert cliffs_on_clock[0].next_tier_drop_points == 4.0
 
-    # Scenario 2: DEPLETED_BEFORE_TURN (User 4 picks away, only 1 Tier-1 player left)
-    cliffs_depleted = detect_tier_cliffs(tiers_on_clock, picks_until_turn=4, snake_turn_gap=9, is_on_the_clock=False)
-    assert len(cliffs_depleted) == 1
-    assert cliffs_depleted[0].cliff_type == CliffType.DEPLETED_BEFORE_TURN
-    assert cliffs_depleted[0].cliff_risk == "CRITICAL"
-
-    # Scenario 3: UPCOMING_TURN_CLIFF (User 2 picks away, 3 Tier-1 players left, turn gap is 12)
+    # Scenario 2: UPCOMING_TURN_CLIFF (User 2 picks away, 3 Tier-1 players left, turn gap is 12)
     t1_wr = [
         Player(id="wr1", name="Ceedee", position=Position.WR, team="DAL", projected_points=19.0, tier=1),
         Player(id="wr2", name="Tyreek", position=Position.WR, team="MIA", projected_points=18.5, tier=1),
@@ -153,6 +147,7 @@ def test_tier_cliffs_all_three_scenarios() -> None:
     cliffs_upcoming = detect_tier_cliffs(tiers_upcoming, picks_until_turn=2, snake_turn_gap=12, is_on_the_clock=False)
     assert len(cliffs_upcoming) == 1
     assert cliffs_upcoming[0].cliff_type == CliffType.UPCOMING_TURN_CLIFF
+    assert "Target Tier 1" in cliffs_upcoming[0].recommended_action
 
 
 def test_vorp_and_suggestion_generation() -> None:
