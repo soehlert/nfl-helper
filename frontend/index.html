@@ -545,29 +545,29 @@
       <div class="card" style="background: linear-gradient(135deg, #182234 0%, #111a28 100%);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h2 style="font-size: 1.3rem; margin-bottom: 0.25rem;">Integer Linear Programming Lineup Solver (PuLP)</h2>
+            <h2 style="font-size: 1.3rem; margin-bottom: 0.25rem;">Projected Upside Lineup Planner (PULP)</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem;">Solves optimal active roster with dynamic slot constraints, usage velocity, Vegas game scripts & weather.</p>
           </div>
-          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: wrap;">
             <div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Optimization Strategy</div>
-              <select id="lineup-strategy" class="form-control" style="padding: 0.35rem 0.6rem; font-size: 0.82rem;" onchange="fetchLineupOptimization(false)">
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem; font-weight: 600;">Optimization Strategy</div>
+              <select id="lineup-strategy" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem; height: 38px;" onchange="fetchLineupOptimization(false)">
                 <option value="BALANCED">Balanced (Adjusted Projections)</option>
                 <option value="CEILING">High Upside / Ceiling (Underdog Mode)</option>
                 <option value="FLOOR">Safe Floor (Favorite Mode)</option>
               </select>
             </div>
             <div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Optimal Proj Total</div>
-              <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-green);" id="optimal-proj-pts">-- pts</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem; font-weight: 600;">Optimal Proj Total</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-green); height: 38px; display: flex; align-items: center;" id="optimal-proj-pts">-- pts</div>
             </div>
             <div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Projected Gain</div>
-              <div class="delta-pill delta-plus" id="optimal-proj-delta">+0.0 pts</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem; font-weight: 600;">Projected Gain</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-green); height: 38px; display: flex; align-items: center;" id="optimal-proj-delta">+0.0 pts</div>
             </div>
-            <div style="display: flex; gap: 0.4rem;">
-              <button id="lineup-randomize-btn" class="btn btn-primary" onclick="fetchLineupOptimization(true)" title="Randomize Vegas spreads, over/unders, weather and snap trends in sandbox mode">Randomize Matchups</button>
-              <button type="button" class="btn btn-secondary" onclick="toggleBadgeDefinitions()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main);">Badge Definitions</button>
+            <div style="display: flex; gap: 0.5rem; height: 38px; align-items: center;">
+              <button id="lineup-randomize-btn" class="btn btn-primary" style="height: 38px; padding: 0.45rem 0.9rem;" onclick="fetchLineupOptimization(true)" title="Randomize Vegas spreads, over/unders, weather and snap trends in sandbox mode">Randomize Matchups</button>
+              <button type="button" class="btn btn-secondary" style="height: 38px; padding: 0.45rem 0.9rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main);" onclick="toggleBadgeDefinitions()">Badge Definitions</button>
             </div>
           </div>
         </div>
@@ -637,15 +637,16 @@
         </table>
       </div>
 
-      <!-- SLIM LINEUP CHANGES BANNER -->
-      <div id="lineup-start-sit-container" class="card" style="border-left: 4px solid var(--accent-green); padding: 0.65rem 1rem; margin-bottom: 1.25rem;">
-        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-          <strong style="color: var(--accent-green); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em;">Lineup Changes:</strong>
-          <div id="lineup-start-sit-list" style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; font-size: 0.85rem;">
-            <span style="color: var(--text-muted);">Current starters already match optimal lineup.</span>
-          </div>
+      <!-- LINEUP CHANGES TABLE CARD -->
+      <div id="lineup-start-sit-container" class="card" style="border-left: 4px solid var(--accent-green); padding: 0.85rem 1.1rem; margin-bottom: 1.25rem;">
+        <div class="card-header" style="margin-bottom: 0.4rem; padding-bottom: 0.3rem;">
+          <div class="card-title" style="color: var(--accent-green); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em;">Lineup Changes to Match Optimal Lineup</div>
+        </div>
+        <div id="lineup-start-sit-list">
+          <div style="color: var(--text-muted); font-size: 0.85rem;">Current starters already match optimal lineup.</div>
         </div>
       </div>
+
 
       <!-- Anti-Correlation Warnings -->
       <div id="lineup-anticorr-container" style="display: none; margin-bottom: 1rem;"></div>
@@ -1325,24 +1326,41 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
 
         // Render Start/Sit recommendations
         const startSitList = document.getElementById('lineup-start-sit-list');
-        const allRecs = [...(data.start_recommendations || []), ...(data.sit_recommendations || [])];
+        const startRecs = data.start_recommendations || [];
+        const sitRecs = data.sit_recommendations || [];
         if (startSitList) {
-          if (allRecs.length > 0) {
-            startSitList.innerHTML = allRecs.map(r => {
-              const action = r.startsWith('Start') ? 'START' : 'BENCH';
-              const detail = r.replace(/^Start\s+/i, '').replace(/^Sit\s+/i, '');
-              const color = action === 'START' ? 'var(--accent-green)' : 'var(--accent-red)';
-              return `
-                <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
-                  <strong style="color: ${color};">${action}:</strong>
-                  <span>${detail}</span>
-                </div>
+          if (startRecs.length > 0 || sitRecs.length > 0) {
+            let tableHtml = `
+              <table class="data-table" style="font-size: 0.85rem; margin-top: 0.25rem;">
+                <thead>
+                  <tr>
+                    <th style="width: 45%;">Action to Take (Start)</th>
+                    <th style="width: 45%;">Replaces (Bench)</th>
+                    <th style="width: 10%; text-align: right;">Net Gain</th>
+                  </tr>
+                </thead>
+                <tbody>
+            `;
+            const maxRows = Math.max(startRecs.length, sitRecs.length);
+            for (let i = 0; i < maxRows; i++) {
+              const startText = startRecs[i] ? startRecs[i].replace(/^Start\s+/i, '') : '—';
+              const sitText = sitRecs[i] ? sitRecs[i].replace(/^Sit\s+/i, '') : '—';
+              const deltaStr = data.projected_delta ? `+${data.projected_delta.toFixed(1)} pts` : '—';
+              tableHtml += `
+                <tr>
+                  <td><strong style="color: var(--accent-green); margin-right: 0.35rem;">START:</strong> <strong>${startText}</strong></td>
+                  <td><strong style="color: var(--accent-red); margin-right: 0.35rem;">BENCH:</strong> <strong>${sitText}</strong></td>
+                  <td style="text-align: right;"><strong style="color: var(--accent-green);">${deltaStr}</strong></td>
+                </tr>
               `;
-            }).join('<span style="color: var(--text-muted); margin: 0 0.3rem;">•</span>');
+            }
+            tableHtml += `</tbody></table>`;
+            startSitList.innerHTML = tableHtml;
           } else {
-            startSitList.innerHTML = '<span style="color: var(--text-muted);">Current starters already match optimal lineup.</span>';
+            startSitList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.25rem 0;">Current starters already match optimal lineup.</div>';
           }
         }
+
 
 
         // Render Anti-Correlation Warnings
