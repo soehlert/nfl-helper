@@ -22,10 +22,10 @@ _STARTER_DEPTH: dict[str, float] = {
 _POS_DEMAND_WEIGHT: dict[str, float] = {
     "RB": 1.0,
     "WR": 1.0,
-    "QB": 0.65,
-    "TE": 0.75,
-    "K": 0.35,
-    "D/ST": 0.35,
+    "QB": 0.45,
+    "TE": 0.65,
+    "K": 0.25,
+    "D/ST": 0.25,
 }
 
 
@@ -260,18 +260,20 @@ def generate_draft_suggestions(
         if is_cliff_defense:
             score += 3.5 if cliff.cliff_risk == "CRITICAL" else 2.0
 
+        demand_weight = _POS_DEMAND_WEIGHT.get(str(p.position), 1.0)
         p_tier = p.cheatsheet_tier or p.tier or 1
         if p_tier == 1:
-            score += 1.5
+            score += 1.5 * demand_weight
         elif p_tier == 2:
-            score += 0.8
+            score += 0.8 * demand_weight
 
         # Positional Scarcity Weighting: if player is in top active tier and only 1-2 players remain
         pos_info = top_tier_info.get(str(p.position))
         if pos_info:
             top_num, remaining_in_top, tier_drop = pos_info
             if p_tier == top_num and remaining_in_top <= 2 and tier_drop >= 1.2:
-                score += 2.0 if remaining_in_top == 1 else 1.2
+                scarcity_val = 2.0 if remaining_in_top == 1 else 1.2
+                score += scarcity_val * demand_weight
 
         # Strategy Rules Adjustment
         rule_delta, rule_note = _evaluate_strategy_rule_adjustments(p, cheatsheet_context, current_round)
