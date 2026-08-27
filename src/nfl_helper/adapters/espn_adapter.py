@@ -1,10 +1,9 @@
 """ESPN fantasy football league adapter wrapping espn-api."""
 
-from typing import Any
-
 from espn_api.football import League
 
 from nfl_helper.adapters.base import BaseLeagueAdapter
+from nfl_helper.core.season_utils import get_current_nfl_season_year
 from nfl_helper.models.draft import DraftPick, DraftState
 from nfl_helper.models.player import InjuryStatus, Player, Position
 from nfl_helper.models.roster import TeamRoster
@@ -21,23 +20,30 @@ class ESPNAdapter(BaseLeagueAdapter):
     def _get_league(self) -> League:
         """Instantiate or return cached ESPN League client."""
         if self._league is None:
+            season_year = self.profile.season_year or get_current_nfl_season_year()
             self._league = League(
                 league_id=int(self.profile.league_id),
-                year=self.profile.season_year,
+                year=season_year,
                 espn_s2=self.profile.espn_s2,
                 swid=self.profile.swid,
             )
         return self._league
 
-    def _map_player(self, espn_player: Any, is_starter: bool = False) -> Player:
+    def _map_player(self, espn_player: object, is_starter: bool = False) -> Player:
         """Convert an espn-api Player object to canonical Player model."""
         pos_str = str(getattr(espn_player, "position", "")).upper()
+        if not pos_str:
+            raise ValueError(f"Missing position on ESPN player: {getattr(espn_player, 'name', 'Unknown')}")
+
+        # Map position enum explicitly without arbitrary fallback
         try:
             pos_enum = Position(pos_str)
-        except ValueError:
-            pos_enum = Position.FLEX if "FLEX" in pos_str else Position.WR
+        except ValueError as err:
+            raise ValueError(
+                f"Unrecognized ESPN position '{pos_str}' for player {getattr(espn_player, 'name', '')}"
+            ) from err
 
-        raw_injury = str(getattr(espn_player, "injuryStatus", "ACTIVE")).upper()
+        raw_injury = str(getattr(espn_player, "injuryStatus", "ACTIVE") or "ACTIVE").upper()
         try:
             injury_enum = InjuryStatus(raw_injury)
         except ValueError:
@@ -71,11 +77,7 @@ class ESPNAdapter(BaseLeagueAdapter):
     def get_roster(self, team_id: str) -> TeamRoster:
         """Fetch full team roster and starters for a specific ESPN team ID."""
         league = self._get_league()
-        target_team = None
-        for team in league.teams:
-            if str(team.team_id) == str(team_id):
-                target_team = team
-                break
+        target_team = next((team for team in league.teams if str(team.team_id) == str(team_id)), None)
 
         if not target_team:
             return TeamRoster(team_id=team_id, team_name=f"Team {team_id}")
@@ -85,18 +87,18 @@ class ESPNAdapter(BaseLeagueAdapter):
         bench: list[Player] = []
         ir: list[Player] = []
 
-        for p in getattr(target_team, "roster", []):
-            slot = str(getattr(p, "lineupSlot", "BE")).upper()
+        for raw_player in getattr(target_team, "roster", []):
+            slot = str(getattr(raw_player, "lineupSlot", "BE")).upper()
             is_start = slot not in ["BE", "BENCH", "IR"]
-            canon_p = self._map_player(p, is_starter=is_start)
-            all_players.append(canon_p)
+            parsed_player = self._map_player(raw_player, is_starter=is_start)
+            all_players.append(parsed_player)
 
             if slot in ["IR"]:
-                ir.append(canon_p)
+                ir.append(parsed_player)
             elif is_start:
-                starters.append(canon_p)
+                starters.append(parsed_player)
             else:
-                bench.append(canon_p)
+                bench.append(parsed_player)
 
         return TeamRoster(
             team_id=str(team_id),
@@ -130,14 +132,7 @@ class ESPNAdapter(BaseLeagueAdapter):
         total_rounds = getattr(getattr(league, "settings", None), "draft_rounds", 16)
         current_pick = len(picks_list) + 1
         current_round = ((current_pick - 1) // total_teams) + 1
-
-        free_agents = self.get_free_agents(limit=150)
-        by_pos: dict[str, list[Player]] = {}
-        for fa in free_agents:
-            pos_key = str(fa.position)
-            if pos_key not in by_pos:
-                by_pos[pos_key] = []
-            by_pos[pos_key].append(fa)
+        by_pos = self.get_available_players_by_position(limit=150)
 
         return DraftState(
             league_id=self.profile.league_id,

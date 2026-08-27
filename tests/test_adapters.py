@@ -256,3 +256,23 @@ def test_sleeper_adapter_roster_and_draft_mapping(sleeper_profile: LeagueProfile
     assert draft_state.total_teams == 10
     assert len(draft_state.recent_picks) == 1
     assert draft_state.recent_picks[0].player_name == "Christian McCaffrey"
+
+
+def test_espn_invalid_position_raises_error(espn_profile: LeagueProfile) -> None:
+    """Verify ESPN adapter raises ValueError on unrecognized position instead of arbitrary fallback."""
+    with patch("nfl_helper.adapters.espn_adapter.League") as mock_league_cls:
+        mock_league = MagicMock()
+        mock_league_cls.return_value = mock_league
+
+        mock_bad_player = MagicMock()
+        mock_bad_player.name = "Unknown Pos Player"
+        mock_bad_player.position = "INVALID_POS_XYZ"
+        mock_team = MagicMock()
+        mock_team.team_id = 1
+        mock_team.team_name = "Test"
+        mock_team.roster = [mock_bad_player]
+        mock_league.teams = [mock_team]
+
+        adapter = ESPNAdapter(espn_profile)
+        with pytest.raises(ValueError, match="Unrecognized ESPN position"):
+            adapter.get_roster(team_id="1")

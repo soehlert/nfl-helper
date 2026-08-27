@@ -24,8 +24,19 @@ class BaseLeagueAdapter(ABC):
 
     @abstractmethod
     def get_draft_state(self) -> DraftState:
-        """Fetch current draft board, picks made, and available player pool."""
+        """Fetch current draft board, picks made, and draft status."""
 
     @abstractmethod
     def get_free_agents(self, limit: int = 100) -> list[Player]:
         """Fetch available free agents and waiver targets."""
+
+    def get_available_players_by_position(self, limit: int = 150) -> dict[str, list[Player]]:
+        """Fetch and group available free agents by position."""
+        free_agents = self.get_free_agents(limit=limit)
+        by_position: dict[str, list[Player]] = {}
+        for player in free_agents:
+            pos_key = str(player.position)
+            if pos_key not in by_position:
+                by_position[pos_key] = []
+            by_position[pos_key].append(player)
+        return by_position
