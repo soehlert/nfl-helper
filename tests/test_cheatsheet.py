@@ -31,33 +31,74 @@ TE - Target the top 4 in rounds 3-5
 """
     context = parse_plain_text_cheatsheet(sample_text)
 
-    # Verify players parsed with normalized keys
     gibbs_key = next((k for k in context.entries if "gibbs" in k), None)
     assert gibbs_key is not None
     assert context.entries[gibbs_key].position == "RB"
     assert context.entries[gibbs_key].tier == 1
     assert context.entries[gibbs_key].adp == 1.1
 
-    # Check McCaffrey (Tier 2 RB due to blank line)
     cmc_key = next((k for k in context.entries if "mccaffrey" in k), None)
     assert cmc_key is not None
     assert context.entries[cmc_key].tier == 2
 
-    # Check Charbonnet injury flag
     charb_key = next((k for k in context.entries if "charbonnet" in k), None)
     assert charb_key is not None
     assert context.entries[charb_key].is_injured is True
 
-    # Check overall round target strategy rules
     assert len(context.round_targets) == 1
     assert context.round_targets[0].target_rounds == [1, 2]
     assert "RB" in context.round_targets[0].allowed_positions
     assert context.round_targets[0].min_counts == {"RB": 1}
 
-    # Check positional strategy rules
     assert len(context.positional_strategy) == 1
     assert context.positional_strategy[0].position == "TE"
     assert context.positional_strategy[0].top_n_target == 4
+
+
+def test_parse_full_multi_page_cheatsheet() -> None:
+    """Verify parser handles WR, WR con't, TE across pages with multiple tiers and injury flags."""
+    full_sample = """
+WR
+Chase CIN 3.1
+Nacua LAR 4.8
+St Brown DET 5.9
+Smith-Njigba SEA 5.5
+
+Lamb DAL 11.3
+Jefferson MIN 12.3
+
+WR con't
+Thomas JAX 67.7
+Harrison ARI 62.1
+
+Tyson* NO 123.5
+Lemon PHI 107.6
+
+TE
+Bowers LV 21.6
+McBride ARI 28.4
+
+LaPorta DET 100.1
+Pitts ATL 81.9
+"""
+    context = parse_plain_text_cheatsheet(full_sample)
+
+    # Check WR Page 2 start
+    assert any("chase" in k for k in context.entries)
+    assert any("nacua" in k for k in context.entries)
+    assert any("st brown" in k for k in context.entries)
+
+    # Check WR con't continuity into WR position
+    tyson_key = next((k for k in context.entries if "tyson" in k), None)
+    assert tyson_key is not None
+    assert context.entries[tyson_key].position == "WR"
+    assert context.entries[tyson_key].is_injured is True
+
+    # Check TE parsing
+    bowers_key = next((k for k in context.entries if "bowers" in k), None)
+    assert bowers_key is not None
+    assert context.entries[bowers_key].position == "TE"
+    assert context.entries[bowers_key].tier == 1
 
 
 def test_parse_csv_cheatsheet() -> None:
@@ -109,15 +150,12 @@ Tyson* NO 123.5
 
     enriched = apply_cheatsheet_context(players, context)
 
-    # Jefferson should have cheatsheet tier attached
     p_jeff = next(p for p in enriched if p.id == "101")
     assert p_jeff.cheatsheet_tier == 1
-    assert p_jeff.projected_points == 18.4  # Projections NOT overwritten
+    assert p_jeff.projected_points == 18.4
 
-    # St. Brown should match via normalized lookup
     p_amon = next(p for p in enriched if p.id == "102")
     assert p_amon.cheatsheet_tier == 1
 
-    # Unlisted player remains untouched
     p_lamar = next(p for p in enriched if p.id == "103")
     assert p_lamar.cheatsheet_tier is None

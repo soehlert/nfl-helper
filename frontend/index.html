@@ -328,7 +328,7 @@
     </div>
     <div class="header-actions">
       <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted);">Team: <strong id="current-team-name" style="color: var(--text-main);">My Squad</strong></span>
-      <button id="admin-settings-header-btn" class="btn btn-primary" onclick="switchTab('settings')">⚙️ Settings & Cheatsheets</button>
+      <button id="settings-header-btn" class="btn btn-primary" onclick="switchTab('settings')">⚙️ Settings</button>
     </div>
   </header>
 
@@ -369,7 +369,7 @@
       <div id="cheatsheet-rules-container" style="display: none; margin-bottom: 1.25rem;">
         <div class="card" style="border-left: 4px solid var(--accent-blue);">
           <div class="card-header" style="margin-bottom: 0.5rem;">
-            <div class="card-title" style="font-size: 0.95rem;">📋 Active Cheatsheet & Macro Strategy Guidance</div>
+            <div class="card-title" style="font-size: 0.95rem;">📋 Active Cheatsheet & Strategy Rules</div>
             <span id="cheatsheet-stats-badge" class="badge badge-claimed">0 Players Loaded</span>
           </div>
           <div id="cheatsheet-rules-list"></div>
@@ -721,13 +721,13 @@
       </div>
     </div>
 
-    <!-- TAB 4: FULL-PAGE SETTINGS & CHEATSHEETS (Admin) -->
+    <!-- TAB 4: FULL-PAGE SETTINGS -->
     <div id="tab-settings" class="tab-content">
       <!-- Active League Configuration -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">🏈 Active League Configuration</div>
-          <span class="badge badge-admin">Host / Admin</span>
+          <div class="card-title">🏈 League Configuration</div>
+          <span id="settings-role-indicator" class="badge badge-admin">Host / Admin</span>
         </div>
         <div class="grid-2">
           <div>
@@ -762,14 +762,14 @@
         </div>
       </div>
 
-      <!-- Magic Invite Generator -->
-      <div class="card">
+      <!-- Magic Invite Generator (Admin only) -->
+      <div id="admin-invite-card" class="card">
         <div class="card-header">
           <div class="card-title">🔗 One-Time Magic Invite Link for Friend</div>
           <span class="badge badge-admin">Single-Use</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.85rem;">
-          Generate a single-use invite link for your friend's Sleeper league. Once claimed, they can view their draft/team independently without seeing this Settings page.
+          Generate a single-use invite link for your friend's Sleeper league. Once claimed, they can view their draft/team independently.
         </p>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.85rem;">
           <div class="form-group">
@@ -801,8 +801,8 @@
       <!-- Plain-Text / CSV Cheatsheet Ingestion -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">📝 Plain-Text / CSV / JSON Cheatsheet Ingestion</div>
-          <button class="btn" style="font-size: 0.8rem;" onclick="loadSampleCheatsheet()">Load Sample Cheatsheet</button>
+          <div class="card-title">📝 Cheatsheet Ingestion</div>
+          <button class="btn" style="font-size: 0.8rem;" onclick="loadSampleCheatsheet()">Load Sample</button>
         </div>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
           Paste your custom rankings, tiers, injury markers (<code>*</code>), and macro strategy rules.
@@ -811,7 +811,7 @@
           <textarea id="cheatsheet-textarea" class="form-control" rows="8" placeholder="Paste your plain-text cheatsheet, OCR table, CSV, or JSON here..."></textarea>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-          <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Ingest & Apply Cheatsheet</button>
+          <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Ingest Cheatsheet</button>
           <span id="cheatsheet-status-msg" style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;"></span>
         </div>
       </div>
@@ -819,7 +819,7 @@
       <!-- Parsed Cheatsheet Player Directory -->
       <div id="cheatsheet-directory-card" class="card" style="display: none;">
         <div class="card-header">
-          <div class="card-title">📖 Loaded Cheatsheet Player Directory & Tiers</div>
+          <div class="card-title">📖 Loaded Cheatsheet Tiers</div>
           <span id="directory-count-badge" class="badge badge-claimed">0 Players</span>
         </div>
         <table class="data-table">
@@ -1003,7 +1003,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         if (res.ok) {
           const data = await res.json();
           const pCount = Object.keys(data.entries || {}).length;
-          document.getElementById('cheatsheet-status-msg').textContent = `✅ Successfully loaded ${pCount} players & ${data.strategy_rules?.length || 0} strategy rules!`;
+          document.getElementById('cheatsheet-status-msg').textContent = `✅ Loaded ${pCount} players & ${data.strategy_rules?.length || 0} strategy rules!`;
           renderCheatsheetContext(data);
         }
       } catch (err) {
@@ -1081,11 +1081,15 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       if (inviteCode) {
         document.getElementById('role-badge').textContent = 'Guest Session';
         document.getElementById('role-badge').className = 'badge badge-claimed';
-        const adminBtn = document.getElementById('admin-settings-header-btn');
-        if (adminBtn) adminBtn.style.display = 'none';
+        document.getElementById('settings-role-indicator').textContent = 'Guest / Friend';
+        document.getElementById('settings-role-indicator').className = 'badge badge-claimed';
+        const adminInviteCard = document.getElementById('admin-invite-card');
+        if (adminInviteCard) adminInviteCard.style.display = 'none';
         if (platformParam) {
           document.getElementById('platform-badge').textContent = platformParam.toUpperCase();
           document.getElementById('platform-badge').className = 'badge badge-' + platformParam;
+          document.getElementById('session-platform').value = platformParam;
+          toggleCookieFields();
         }
       }
 
