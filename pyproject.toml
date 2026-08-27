@@ -30,7 +30,7 @@ dependencies = [
 ]
 
 [project.scripts]
-nfl-helper = "nfl_helper.main:main"
+nfl-helper = "nfl_helper.cli:main"
 
 [tool.pytest.ini_options]
 minversion = "8.0"
