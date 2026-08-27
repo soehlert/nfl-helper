@@ -1224,6 +1224,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           const pCount = Object.keys(data.entries || {}).length;
           document.getElementById('cheatsheet-status-msg').textContent = `Successfully parsed "${file.name}" (${pCount} players, ${data.strategy_rules?.length || 0} rules)!`;
           renderCheatsheetContext(data);
+          fetchDraftState();
         } else {
           const errJson = await res.json().catch(() => ({}));
           const detail = errJson.detail || 'Failed to parse uploaded file.';
@@ -1313,6 +1314,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           const pCount = Object.keys(data.entries || {}).length;
           document.getElementById('cheatsheet-status-msg').textContent = `Loaded ${pCount} players & ${data.strategy_rules?.length || 0} strategy rules!`;
           renderCheatsheetContext(data);
+          fetchDraftState();
         } else {
           const errJson = await res.json().catch(() => ({}));
           const detail = errJson.detail || 'Failed to parse text.';

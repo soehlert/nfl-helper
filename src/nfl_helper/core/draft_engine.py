@@ -1,6 +1,7 @@
 """Deterministic live draft engine with snake lookahead, VORP, and cliff defense."""
 
 import math
+import re
 
 from nfl_helper.core.tier_calculator import cluster_position_tiers, detect_tier_cliffs
 from nfl_helper.models.cheatsheet import CheatsheetContext
@@ -94,56 +95,71 @@ def _evaluate_strategy_rule_adjustments(
     cheatsheet_context: CheatsheetContext | None,
     current_round: int,
 ) -> tuple[float, str | None]:
-    """Calculate deterministic score delta and reason note from active strategy rules."""
+    """Calculate deterministic score delta and reason note from active strategy rules dynamically."""
     if not cheatsheet_context:
         return 0.0, None
 
     delta = 0.0
-    note: str | None = None
+    notes: list[str] = []
 
-    # Check round target rules (e.g. Rounds 1-2 only RB/WR)
+    # 1. Evaluate Round Target Constraints (e.g. Rounds 1-2 only RB/WR)
     for rnd_rule in cheatsheet_context.round_targets:
         if current_round in rnd_rule.target_rounds:
             if rnd_rule.allowed_positions and player.position not in rnd_rule.allowed_positions:
                 delta -= 5.0
-                note = f"Deprioritized: Rd {current_round} targets {', '.join(rnd_rule.allowed_positions)}"
+                notes.append(f"Deprioritized: Rd {current_round} targets {', '.join(rnd_rule.allowed_positions)}")
             elif rnd_rule.allowed_positions and player.position in rnd_rule.allowed_positions:
                 delta += 1.0
 
-    # Check positional strategy rules
+    # 2. Evaluate Positional and Round Target Strategies dynamically
     for pos_rule in cheatsheet_context.positional_strategy:
         if pos_rule.position == str(player.position):
-            rule_desc = pos_rule.rule_description.lower()
+            rule_desc = pos_rule.rule_description
             p_tier = player.cheatsheet_tier or player.tier or 1
 
-            if pos_rule.position == "QB":
-                # Late-round QB strategy (e.g., target tiers 3-4, or Allen in round 4)
-                if "tier 3" in rule_desc or "tier 4" in rule_desc:
-                    if current_round in (1, 2, 3):
+            # Check dynamic player name targets in rule (e.g. 'or get Allen in round 4', 'target Mahomes in round 3')
+            name_target_match = re.search(
+                r"(?:get|target)\s+([A-Za-z]+)\s+in\s+round\s+(\d+)", rule_desc, re.IGNORECASE
+            )
+            if name_target_match:
+                t_name, t_rnd = name_target_match.group(1).lower(), int(name_target_match.group(2))
+                if t_name in player.name.lower():
+                    if current_round >= t_rnd:
+                        delta += 3.0
+                        notes.append(f"Strategy Target: {player.name} in Rd {t_rnd}")
+                    else:
                         delta -= 4.0
-                        note = "Deprioritized: Late-Round QB strategy"
-                    elif current_round >= 4:
-                        if "allen" in player.name.lower() and "allen" in rule_desc:
-                            delta += 2.5
-                            note = "Strategy Target: Josh Allen"
-                        elif pos_rule.target_tiers and p_tier in pos_rule.target_tiers:
-                            delta += 2.0
-                            note = f"Strategy Target: Tier {p_tier} QB"
-            elif pos_rule.position == "TE":
-                if pos_rule.target_rounds and current_round in pos_rule.target_rounds:
+                        notes.append(f"Hold: Target {player.name} in Rd {t_rnd}")
+                    continue
+
+            # Check if this rule defines a specific round window (e.g. rounds 3-5)
+            if pos_rule.target_rounds:
+                if current_round in pos_rule.target_rounds:
                     if (
                         pos_rule.top_n_target and (player.cheatsheet_rank or 99) <= pos_rule.top_n_target
                     ) or p_tier == 1:
                         delta += 2.5
-                        note = "Strategy Target: Elite TE in Rounds 3-5"
+                        notes.append(f"Strategy Target: Top {pos_rule.position} in Rd {current_round}")
                     elif pos_rule.target_tiers and p_tier in pos_rule.target_tiers:
                         delta += 1.5
-                        note = f"Strategy Target: Tier {p_tier} TE"
-                elif current_round in (1, 2):
-                    delta -= 3.0
-                    note = "Deprioritized: TE targeted in rounds 3-5"
+                        notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
+                elif current_round < min(pos_rule.target_rounds):
+                    delta -= 3.5
+                    notes.append(f"Deprioritized: {pos_rule.position} targeted in Rd {min(pos_rule.target_rounds)}+")
 
-    return delta, note
+            # Check if this rule defines specific target tiers (e.g. tiers 3-4 for late-round approach)
+            elif pos_rule.target_tiers:
+                if current_round <= 3 and min(pos_rule.target_tiers) >= 3:
+                    delta -= 4.0
+                    notes.append(
+                        f"Deprioritized: Late-Round {pos_rule.position} (targeting Tiers {','.join(map(str, pos_rule.target_tiers))})"
+                    )
+                elif current_round >= 4 and p_tier in pos_rule.target_tiers:
+                    delta += 2.0
+                    notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
+
+    final_note = notes[0] if notes else None
+    return delta, final_note
 
 
 def _build_suggestion_reason(
@@ -166,13 +182,9 @@ def _build_suggestion_reason(
     if cliff:
         reasons.append(f"Tier {cliff.current_tier} scarcity ({cliff.players_remaining} left)")
     if adp_delta >= 3.0:
-        reasons.append(f"+{round(adp_delta, 1)} picks past ADP")
+        reasons.append(f"+{round(adp_delta, 1)} pick discount past ADP")
     elif player.cheatsheet_notes:
         reasons.append(player.cheatsheet_notes)
-    elif player.position in ("RB", "WR") and vorp >= 3.0 and not rule_note:
-        reasons.append("High-volume primary role & baseline advantage")
-    elif player.position == "QB" and vorp >= 3.0 and not rule_note:
-        reasons.append("Elite passing/rushing upside")
 
     return " • ".join(reasons)
 

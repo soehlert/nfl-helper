@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from nfl_helper.adapters import get_adapter_for_profile
 from nfl_helper.api.draft_poller import poller_registry
 from nfl_helper.api.ws_manager import ws_manager
-from nfl_helper.core.cheatsheet import parse_cheatsheet_content, parse_pdf_cheatsheet
+from nfl_helper.core.cheatsheet import apply_cheatsheet_context, parse_cheatsheet_content, parse_pdf_cheatsheet
 from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.core.lineup_optimizer import solve_optimal_lineup
 from nfl_helper.core.waiver_engine import generate_waiver_recommendations
@@ -299,16 +299,17 @@ async def get_waiver_recommendations(session_id: str | None = None) -> WaiverAna
 @app.post("/api/cheatsheet/upload", response_model=CheatsheetContext)
 async def upload_cheatsheet(payload: CheatsheetUploadRequest) -> CheatsheetContext:
     """Ingest and parse plain-text, CSV, or JSON cheatsheet, storing active context."""
-    global _ACTIVE_CHEATSHEET
+    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     context = parse_cheatsheet_content(payload.text)
     _ACTIVE_CHEATSHEET = context
+    _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
     return context
 
 
 @app.post("/api/cheatsheet/upload-file", response_model=CheatsheetContext)
 async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
     """Ingest uploaded PDF, CSV, TXT, or JSON cheatsheet file."""
-    global _ACTIVE_CHEATSHEET
+    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     filename = (file.filename or "").lower()
     content_bytes = await file.read()
 
@@ -320,6 +321,7 @@ async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
             context = parse_cheatsheet_content(text_str)
 
         _ACTIVE_CHEATSHEET = context
+        _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
         logger.info(
             "Successfully parsed cheatsheet file %s: %d players, %d rules",
             filename,
