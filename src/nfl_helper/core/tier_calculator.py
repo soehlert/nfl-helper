@@ -19,11 +19,26 @@ _DEFAULT_THRESHOLD: tuple[float, float] = (1.5, 3.0)
 
 
 def _cluster_by_cheatsheet(players: list[Player], position: str) -> list[PlayerTier]:
-    """Group players by explicit cheatsheet tiers."""
+    """Group players by explicit cheatsheet tiers and smoothly cluster unranked players."""
     grouped: dict[int, list[Player]] = defaultdict(list)
+    unranked: list[Player] = []
+
     for p in players:
-        tier_num = p.cheatsheet_tier if p.cheatsheet_tier is not None else 99
-        grouped[tier_num].append(p)
+        if p.cheatsheet_tier is not None and p.cheatsheet_tier > 0:
+            grouped[p.cheatsheet_tier].append(p)
+        else:
+            unranked.append(p)
+
+    # If no players had a valid tier, fall back to statistical clustering
+    if not grouped:
+        return _cluster_statistically(players, position)
+
+    # If unranked players exist, cluster them into sequential tiers following max tier
+    if unranked:
+        max_tier = max(grouped.keys())
+        unranked_tiers = _cluster_statistically(unranked, position)
+        for idx, u_tier in enumerate(unranked_tiers, start=max_tier + 1):
+            grouped[idx].extend(u_tier.players)
 
     tiers: list[PlayerTier] = []
     for tier_num in sorted(grouped.keys()):
@@ -87,9 +102,11 @@ def cluster_position_tiers(
     if not pos_players:
         return []
 
-    has_cheatsheet_tiers = any(p.cheatsheet_tier is not None for p in pos_players)
-    if has_cheatsheet_tiers or (cheatsheet_context and cheatsheet_context.entries):
+    # Only use cheatsheet tiering for this position if players at this position actually have cheatsheet tiers
+    has_cheatsheet_tiers = any(p.cheatsheet_tier is not None and p.cheatsheet_tier > 0 for p in pos_players)
+    if has_cheatsheet_tiers:
         return _cluster_by_cheatsheet(pos_players, position)
+
     return _cluster_statistically(pos_players, position)
 
 

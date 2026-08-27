@@ -16,52 +16,160 @@ from nfl_helper.models.cheatsheet import (
 )
 from nfl_helper.models.player import Player
 
-POSITION_HEADERS = {"QB", "RB", "WR", "TE", "K", "DEF", "DST", "D/ST"}
-LINE_PATTERN = re.compile(r"^([A-Za-z\s\-\.'\*]+?)\s+([A-Z]{2,3})\s+(\d+\.?\d*)$")
+POSITION_HEADERS = {
+    "QB": "QB",
+    "QUARTERBACK": "QB",
+    "QUARTERBACKS": "QB",
+    "RB": "RB",
+    "RUNNING": "RB",
+    "RUNNINGBACK": "RB",
+    "RUNNINGBACKS": "RB",
+    "RBS": "RB",
+    "WR": "WR",
+    "WIDE": "WR",
+    "RECEIVER": "WR",
+    "RECEIVERS": "WR",
+    "WRS": "WR",
+    "TE": "TE",
+    "TIGHT": "TE",
+    "TIGHTEND": "TE",
+    "TIGHTENDS": "TE",
+    "TES": "TE",
+    "K": "K",
+    "KICKER": "K",
+    "KICKERS": "K",
+    "PK": "K",
+    "DEF": "DST",
+    "DST": "DST",
+    "D/ST": "DST",
+    "DEFENSE": "DST",
+    "DEFENSES": "DST",
+}
+
+NFL_TEAMS = {
+    "ARI",
+    "ATL",
+    "BAL",
+    "BUF",
+    "CAR",
+    "CHI",
+    "CIN",
+    "CLE",
+    "DAL",
+    "DEN",
+    "DET",
+    "GB",
+    "HOU",
+    "IND",
+    "JAX",
+    "KC",
+    "LAC",
+    "LAR",
+    "LV",
+    "MIA",
+    "MIN",
+    "NE",
+    "NO",
+    "NYG",
+    "NYJ",
+    "PHI",
+    "PIT",
+    "SEA",
+    "SF",
+    "TB",
+    "TEN",
+    "WAS",
+    "WSH",
+    "FA",
+}
 
 
 def _clean_position_header(raw_header: str) -> str | None:
-    """Extract standard position from header line (e.g. 'RB con't' -> 'RB')."""
-    tokens = raw_header.strip().split()
+    """Extract standard position from header line (e.g. 'RUNNING BACKS', 'RB con't' -> 'RB')."""
+    cleaned = re.sub(r"[^A-Za-z0-9/ ]", "", raw_header).strip().upper()
+    tokens = cleaned.split()
     if not tokens:
         return None
-    candidate = tokens[0].upper()
-    if candidate in POSITION_HEADERS:
-        return "DST" if candidate in ("DEF", "D/ST") else candidate
+
+    first = tokens[0]
+    if first in POSITION_HEADERS:
+        return POSITION_HEADERS[first]
+    if len(tokens) >= 2 and f"{tokens[0]} {tokens[1]}" in ("RUNNING BACKS", "WIDE RECEIVERS", "TIGHT ENDS"):
+        return POSITION_HEADERS[tokens[0]]
+
     return None
 
 
 def _parse_player_line(line: str, current_pos: str, current_tier: int) -> CheatsheetEntry | None:
-    """Parse a line in format 'PlayerName Team ADP' into a CheatsheetEntry."""
-    match = LINE_PATTERN.match(line.strip())
-    if not match:
-        if "-" in line or ":" in line:
-            parts = re.split(r"[-:]", line, maxsplit=1)
-            name = parts[0].strip()
-            notes = parts[1].strip() if len(parts) > 1 else None
-            is_inj = "*" in name
-            clean_name = name.replace("*", "").strip()
-            return CheatsheetEntry(
-                player_name=clean_name,
-                normalized_name=normalize_player_name(clean_name),
-                position=current_pos,
-                tier=current_tier,
-                is_injured=is_inj,
-                notes=notes,
-            )
+    """Parse flexible line formats into CheatsheetEntry."""
+    cleaned = line.strip()
+    if not cleaned or len(cleaned) < 2:
         return None
 
-    raw_name, team, adp_str = match.groups()
-    clean_name = raw_name.replace("*", "").strip()
+    # Check for notes separated by hyphen or colon
+    notes = None
+    if " - " in cleaned:
+        parts = cleaned.split(" - ", 1)
+        cleaned = parts[0].strip()
+        notes = parts[1].strip()
+    elif " : " in cleaned or (":" in cleaned and not cleaned.startswith("Tier")):
+        parts = cleaned.split(":", 1)
+        cleaned = parts[0].strip()
+        notes = parts[1].strip()
+
+    # Strip leading rank numbers / bullets (e.g. '1. ', '1) ', '#1 ')
+    cleaned = re.sub(r"^\s*#?\d+[\.\)\:\-]?\s*", "", cleaned).strip()
+
+    # Check for injury marker
+    is_inj = "*" in cleaned or "(Q)" in cleaned or "(IR)" in cleaned or "(O)" in cleaned
+    cleaned = re.sub(r"[\*\(\)]", " ", cleaned).strip()
+
+    tokens = cleaned.split()
+    if not tokens:
+        return None
+
+    # Extract ADP if last token is numeric
+    adp_val = None
+    if tokens and re.match(r"^\d+(\.\d+)?$", tokens[-1]):
+        try:
+            adp_val = float(tokens[-1])
+            tokens = tokens[:-1]
+        except ValueError:
+            pass
+
+    # Extract Position & Team tokens
+    pos_found = current_pos
+    team_found = None
+
+    filtered_tokens: list[str] = []
+    for tok in tokens:
+        tok_upper = tok.upper()
+        if tok_upper in POSITION_HEADERS:
+            pos_found = POSITION_HEADERS[tok_upper]
+        elif tok_upper in NFL_TEAMS:
+            team_found = tok_upper
+        elif re.match(r"^\d+$", tok) and len(tok) <= 2:
+            # Bye week number (e.g. 9 or 12)
+            continue
+        else:
+            filtered_tokens.append(tok)
+
+    if not filtered_tokens:
+        return None
+
+    player_name = " ".join(filtered_tokens).strip()
+    if len(player_name) < 2:
+        return None
 
     return CheatsheetEntry(
-        player_name=clean_name,
-        normalized_name=normalize_player_name(clean_name),
-        position=current_pos,
-        team=team.upper(),
+        player_name=player_name,
+        normalized_name=normalize_player_name(player_name),
+        position=pos_found or current_pos or "WR",
+        team=team_found,
         tier=current_tier,
-        adp=float(adp_str),
-        is_injured="*" in raw_name,
+        adp=adp_val,
+        is_injured=is_inj,
+        notes=notes,
     )
 
 
@@ -207,7 +315,14 @@ def parse_json_cheatsheet(json_text: str) -> CheatsheetContext:
 def parse_pdf_cheatsheet(pdf_bytes: bytes) -> CheatsheetContext:
     """Extract text from PDF file and parse positional tiers, ADPs, and strategy rules."""
     reader = PdfReader(io.BytesIO(pdf_bytes))
-    full_text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    page_texts: list[str] = []
+    for page in reader.pages:
+        try:
+            txt = page.extract_text(extraction_mode="layout") or ""
+        except Exception:
+            txt = page.extract_text() or ""
+        page_texts.append(txt)
+    full_text = "\n".join(page_texts)
     return parse_plain_text_cheatsheet(full_text)
 
 
