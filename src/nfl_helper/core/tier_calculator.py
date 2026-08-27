@@ -157,8 +157,12 @@ def _evaluate_waiting_cliff(
     tier: PlayerTier, next_tier: PlayerTier | None, picks_until_turn: int, snake_turn_gap: int
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is waiting for upcoming pick."""
+    # Special teams (K, D/ST) should not trigger premature upcoming turn cliff alerts
+    if tier.position in ("K", "D/ST", "DST"):
+        return None
+
     drop = calculate_tier_drop(tier, next_tier)
-    if drop < 1.0:
+    if drop < 1.5:
         return None
 
     remaining = len(tier.players)
@@ -167,7 +171,7 @@ def _evaluate_waiting_cliff(
     # Only alert for actionable upcoming turn cliffs (tier survives to your pick but depletes during turn gap)
     survives_to_turn = remaining > picks_until_turn
     wipes_in_gap = remaining <= (picks_until_turn + max(2, (snake_turn_gap + 2) // 3))
-    is_tier_draining = (remaining / tier_size) <= 0.40 or remaining <= 4
+    is_tier_draining = (remaining / tier_size) <= 0.50 or remaining <= 3
 
     if survives_to_turn and wipes_in_gap and is_tier_draining and snake_turn_gap >= 4:
         risk = "HIGH" if remaining <= picks_until_turn + 1 else "MODERATE"

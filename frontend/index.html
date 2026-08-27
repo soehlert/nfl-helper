@@ -627,17 +627,50 @@
           <table class="data-table" id="draft-suggestions-table">
             <thead style="position: sticky; top: 0; z-index: 2;">
               <tr>
-                <th style="width: 45px; cursor: pointer;" onclick="sortDraftTable('rank')">Rank <span id="sort-icon-rank">⬍</span></th>
-                <th style="width: 45px; cursor: pointer;" onclick="sortDraftTable('pos')">Pos <span id="sort-icon-pos">⬍</span></th>
-                <th style="width: 50px; cursor: pointer;" onclick="sortDraftTable('team')">Team <span id="sort-icon-team">⬍</span></th>
-                <th style="cursor: pointer;" onclick="sortDraftTable('name')">Player <span id="sort-icon-name">⬍</span></th>
-                <th style="width: 65px; cursor: pointer;" onclick="sortDraftTable('tier')">Tier <span id="sort-icon-tier">⬍</span></th>
-                <th style="width: 75px; cursor: pointer;" onclick="sortDraftTable('pts')">Proj Pts <span id="sort-icon-pts">⬍</span></th>
-                <th style="width: 60px; cursor: pointer;" onclick="sortDraftTable('adp')">ADP <span id="sort-icon-adp">⬍</span></th>
-                <th style="width: 50px; cursor: pointer;" onclick="sortDraftTable('bye')">Bye <span id="sort-icon-bye">⬍</span></th>
-                <th>Reason</th>
+                <th style="width: 75px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('rank')">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+                    <span>Rank</span><span id="sort-icon-rank" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
+                  </div>
+                </th>
+                <th style="width: 70px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('pos')">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+                    <span>Pos</span><span id="sort-icon-pos" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
+                  </div>
+                </th>
+                <th style="width: 80px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('team')">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+                    <span>Team</span><span id="sort-icon-team" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
+                  </div>
+                </th>
+                <th style="min-width: 170px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('name')">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+                    <span>Player</span><span id="sort-icon-name" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
+                  </div>
+                </th>
+                <th style="width: 80px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('tier')">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+                    <span>Tier</span><span id="sort-icon-tier" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
+                  </div>
+                </th>
+                <th style="width: 100px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('pts')">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+                    <span>Proj Pts</span><span id="sort-icon-pts" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
+                  </div>
+                </th>
+                <th style="width: 75px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('adp')">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+                    <span>ADP</span><span id="sort-icon-adp" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
+                  </div>
+                </th>
+                <th style="width: 75px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('bye')">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+                    <span>Bye</span><span id="sort-icon-bye" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
+                  </div>
+                </th>
+                <th style="white-space: nowrap; vertical-align: middle;">Reason</th>
               </tr>
             </thead>
+
             <tbody id="draft-suggestions-tbody">
               <tr>
                 <td><strong>1</strong></td>
