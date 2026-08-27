@@ -1,5 +1,7 @@
 """Integration tests for FastAPI application endpoints and static UI mounting."""
 
+import io
+
 from fastapi.testclient import TestClient
 
 from nfl_helper.main import app
@@ -74,3 +76,15 @@ Rounds 1-2 - Only RB/WR at least 1 RB
     get_data = get_res.json()
     assert get_data is not None
     assert len(get_data["entries"]) >= 2
+
+
+def test_cheatsheet_file_upload_endpoint() -> None:
+    """Verify file upload endpoint parsing text/csv content."""
+    csv_bytes = b"Player,Position,Team,Tier,ADP,Notes\nBreece Hall,RB,NYJ,1,8.9,Elite\n"
+    res = client.post(
+        "/api/cheatsheet/upload-file",
+        files={"file": ("cheatsheet.csv", io.BytesIO(csv_bytes), "text/csv")},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert "breece hall" in data["entries"]

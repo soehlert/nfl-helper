@@ -5,6 +5,8 @@ import io
 import json
 import re
 
+from pypdf import PdfReader
+
 from nfl_helper.core.name_normalizer import normalize_player_name
 from nfl_helper.models.cheatsheet import (
     CheatsheetContext,
@@ -69,7 +71,6 @@ def _parse_strategy_rule(line: str) -> tuple[DraftRoundTarget | None, Positional
     round_target = None
     pos_target = None
 
-    # E.g. "Rounds 1-2 - Only RB/WR at least 1 RB"
     if norm_line.lower().startswith("rounds"):
         rounds_match = re.search(r"rounds?\s+(\d+)(?:\s*-\s*(\d+))?", norm_line, re.IGNORECASE)
         if rounds_match:
@@ -84,7 +85,6 @@ def _parse_strategy_rule(line: str) -> tuple[DraftRoundTarget | None, Positional
                 min_counts=min_counts,
                 rule_description=norm_line,
             )
-    # E.g. "TE - Target the top 4 in rounds 3-5 or take 2 from tiers 2-4"
     elif any(norm_line.upper().startswith(f"{pos} -") for pos in ("TE", "QB", "RB", "WR")):
         pos = norm_line[:2].upper()
         top_n = 4 if "top 4" in norm_line.lower() else None
@@ -202,6 +202,13 @@ def parse_json_cheatsheet(json_text: str) -> CheatsheetContext:
         entries[norm_name] = entry
 
     return CheatsheetContext(entries=entries, strategy_rules=rules)
+
+
+def parse_pdf_cheatsheet(pdf_bytes: bytes) -> CheatsheetContext:
+    """Extract text from PDF file and parse positional tiers, ADPs, and strategy rules."""
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    full_text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    return parse_plain_text_cheatsheet(full_text)
 
 
 def parse_cheatsheet_content(content: str) -> CheatsheetContext:

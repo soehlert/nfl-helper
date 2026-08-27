@@ -238,6 +238,21 @@
       gap: 0.5rem;
     }
 
+    .dropzone {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      background: var(--bg-primary);
+      transition: all 0.2s ease;
+      margin-bottom: 1rem;
+    }
+    .dropzone:hover {
+      border-color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.05);
+    }
+
     table.data-table {
       width: 100%;
       border-collapse: collapse;
@@ -769,14 +784,14 @@
           <span class="badge badge-admin">Single-Use</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.85rem;">
-          Generate a single-use invite link for your friend's Sleeper league. Once claimed, they can view their draft/team independently.
+          Generate a single-use invite link for your friend's league. Once claimed, they can view their draft/team independently.
         </p>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.85rem;">
           <div class="form-group">
             <label class="form-label">Platform</label>
-            <select id="invite-platform" class="form-control">
-              <option value="sleeper">Sleeper</option>
-              <option value="espn">ESPN</option>
+            <select id="invite-platform" class="form-control" onchange="toggleInviteCookieFields()">
+              <option value="sleeper">Sleeper (No auth needed)</option>
+              <option value="espn">ESPN (Private or Public)</option>
             </select>
           </div>
           <div class="form-group">
@@ -788,6 +803,19 @@
             <input type="text" id="invite-team-id" class="form-control" placeholder="e.g. 2">
           </div>
         </div>
+
+        <!-- Optional ESPN credentials for friend -->
+        <div id="invite-espn-cookie-inputs" style="display: none; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Friend ESPN SWID (Optional)</label>
+            <input type="text" id="invite-swid" class="form-control" placeholder="{12345678-ABCD-1234-ABCD-1234567890AB}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Friend ESPN espn_s2 (Optional)</label>
+            <input type="text" id="invite-espn-s2" class="form-control" placeholder="AECb...">
+          </div>
+        </div>
+
         <button class="btn btn-primary" onclick="generateMagicLink()">✨ Generate Link</button>
 
         <div id="invite-output-container" style="margin-top: 0.85rem; display: none;">
@@ -798,20 +826,30 @@
         </div>
       </div>
 
-      <!-- Plain-Text / CSV Cheatsheet Ingestion -->
+      <!-- PDF / CSV / TXT Cheatsheet Ingestion -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">📝 Cheatsheet Ingestion</div>
+          <div class="card-title">📝 Cheatsheet & PDF Ingestion</div>
           <button class="btn" style="font-size: 0.8rem;" onclick="loadSampleCheatsheet()">Load Sample</button>
         </div>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
-          Paste your custom rankings, tiers, injury markers (<code>*</code>), and macro strategy rules.
+          Upload your friend's <strong>PDF</strong> cheatsheet file directly, or paste plain-text/CSV below:
         </p>
+        
+        <!-- Direct File Upload Dropzone -->
+        <div class="dropzone" onclick="document.getElementById('cheatsheet-file-input').click()">
+          <div style="font-size: 1.8rem; margin-bottom: 0.35rem;">📄</div>
+          <div style="font-weight: 600; font-size: 0.9rem;">Click to Upload Cheatsheet File (.pdf, .csv, .txt, .json)</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Drop your PDF here to automatically parse all pages, tiers, ADPs, and rules</div>
+          <input type="file" id="cheatsheet-file-input" accept=".pdf,.csv,.txt,.json" style="display: none;" onchange="handleFileUpload(event)">
+        </div>
+
         <div class="form-group">
-          <textarea id="cheatsheet-textarea" class="form-control" rows="8" placeholder="Paste your plain-text cheatsheet, OCR table, CSV, or JSON here..."></textarea>
+          <label class="form-label">Or Paste Plain-Text / CSV / JSON Directly</label>
+          <textarea id="cheatsheet-textarea" class="form-control" rows="6" placeholder="Paste your plain-text cheatsheet, OCR table, CSV, or JSON here..."></textarea>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-          <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Ingest Cheatsheet</button>
+          <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Ingest Text</button>
           <span id="cheatsheet-status-msg" style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;"></span>
         </div>
       </div>
@@ -871,13 +909,31 @@
       }
     }
 
+    function toggleInviteCookieFields() {
+      const platform = document.getElementById('invite-platform').value;
+      const cookieBox = document.getElementById('invite-espn-cookie-inputs');
+      if (platform === 'espn') {
+        cookieBox.style.display = 'grid';
+      } else {
+        cookieBox.style.display = 'none';
+      }
+    }
+
     function generateMagicLink() {
       const platform = document.getElementById('invite-platform').value;
       const leagueId = document.getElementById('invite-league-id').value || '987654321';
       const teamId = document.getElementById('invite-team-id').value || '2';
       const code = platform.toUpperCase().slice(0, 3) + '-' + Math.random().toString(36).substring(2, 7).toUpperCase();
       
-      const link = `${window.location.origin}/?invite=${code}&platform=${platform}&league=${leagueId}&team=${teamId}`;
+      let link = `${window.location.origin}/?invite=${code}&platform=${platform}&league=${leagueId}&team=${teamId}`;
+      
+      if (platform === 'espn') {
+        const swid = document.getElementById('invite-swid').value.trim();
+        const s2 = document.getElementById('invite-espn-s2').value.trim();
+        if (swid) link += `&swid=${encodeURIComponent(swid)}`;
+        if (s2) link += `&espn_s2=${encodeURIComponent(s2)}`;
+      }
+
       document.getElementById('invite-link-output').value = link;
       document.getElementById('invite-output-container').style.display = 'block';
     }
@@ -928,6 +984,32 @@ TE - Target the top 4 in rounds 3-5 or take 2 from tiers 2-4
 QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
 * = injured a while`;
       document.getElementById('cheatsheet-textarea').value = sample;
+    }
+
+    async function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        document.getElementById('cheatsheet-status-msg').textContent = '⏳ Parsing PDF file...';
+        const res = await fetch('/api/cheatsheet/upload-file', {
+          method: 'POST',
+          body: formData,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const pCount = Object.keys(data.entries || {}).length;
+          document.getElementById('cheatsheet-status-msg').textContent = `✅ Successfully parsed "${file.name}" (${pCount} players, ${data.strategy_rules?.length || 0} rules)!`;
+          renderCheatsheetContext(data);
+        } else {
+          document.getElementById('cheatsheet-status-msg').textContent = '❌ Failed to parse uploaded file.';
+        }
+      } catch (err) {
+        document.getElementById('cheatsheet-status-msg').textContent = '❌ Upload error.';
+      }
     }
 
     function renderCheatsheetContext(data) {
@@ -1077,6 +1159,8 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       const params = new URLSearchParams(window.location.search);
       const inviteCode = params.get('invite');
       const platformParam = params.get('platform');
+      const swidParam = params.get('swid');
+      const espnS2Param = params.get('espn_s2');
 
       if (inviteCode) {
         document.getElementById('role-badge').textContent = 'Guest Session';
@@ -1090,6 +1174,12 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           document.getElementById('platform-badge').className = 'badge badge-' + platformParam;
           document.getElementById('session-platform').value = platformParam;
           toggleCookieFields();
+        }
+        if (swidParam) {
+          document.getElementById('session-swid').value = swidParam;
+        }
+        if (espnS2Param) {
+          document.getElementById('session-espn-s2').value = espnS2Param;
         }
       }
 

@@ -3,12 +3,12 @@
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from nfl_helper.core.cheatsheet import parse_cheatsheet_content
+from nfl_helper.core.cheatsheet import parse_cheatsheet_content, parse_pdf_cheatsheet
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import CliffType, DraftState, DraftSuggestion, PlayerTier, TierCliffWarning
 from nfl_helper.models.player import Player, Position
@@ -26,7 +26,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Enable CORS for local development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -37,7 +36,7 @@ app.add_middleware(
 
 FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "frontend" / "index.html"
 
-# In-memory storage for active cheatsheet context
+# In-memory active cheatsheet store
 _ACTIVE_CHEATSHEET: CheatsheetContext | None = None
 
 
@@ -189,6 +188,23 @@ async def upload_cheatsheet(payload: CheatsheetUploadRequest) -> CheatsheetConte
     """Ingest and parse plain-text, CSV, or JSON cheatsheet, storing active context."""
     global _ACTIVE_CHEATSHEET
     context = parse_cheatsheet_content(payload.text)
+    _ACTIVE_CHEATSHEET = context
+    return context
+
+
+@app.post("/api/cheatsheet/upload-file", response_model=CheatsheetContext)
+async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
+    """Ingest uploaded PDF, CSV, TXT, or JSON cheatsheet file."""
+    global _ACTIVE_CHEATSHEET
+    filename = (file.filename or "").lower()
+    content_bytes = await file.read()
+
+    if filename.endswith(".pdf"):
+        context = parse_pdf_cheatsheet(content_bytes)
+    else:
+        text_str = content_bytes.decode("utf-8", errors="replace")
+        context = parse_cheatsheet_content(text_str)
+
     _ACTIVE_CHEATSHEET = context
     return context
 
