@@ -110,24 +110,38 @@ _SAMPLE_PLAYERS: list[Player] = [
     Player(id="p_bijan", name="Bijan Robinson", position=Position.RB, team="ATL", projected_points=17.8, tier=1),
     Player(id="p_jt", name="Jonathan Taylor", position=Position.RB, team="IND", projected_points=16.0, tier=2),
     Player(id="p_saquon", name="Saquon Barkley", position=Position.RB, team="PHI", projected_points=15.8, tier=2),
+    Player(id="p_gibbs", name="Jahmyr Gibbs", position=Position.RB, team="DET", projected_points=15.2, tier=2),
+    Player(id="p_kyren", name="Kyren Williams", position=Position.RB, team="LAR", projected_points=14.8, tier=2),
+    Player(id="p_achane", name="De'Von Achane", position=Position.RB, team="MIA", projected_points=14.1, tier=3),
     Player(id="p_ceedee", name="CeeDee Lamb", position=Position.WR, team="DAL", projected_points=19.2, tier=1),
     Player(id="p_tyreek", name="Tyreek Hill", position=Position.WR, team="MIA", projected_points=18.8, tier=1),
     Player(id="p_amonra", name="Amon-Ra St. Brown", position=Position.WR, team="DET", projected_points=17.8, tier=1),
     Player(id="p_jj", name="Justin Jefferson", position=Position.WR, team="MIN", projected_points=17.5, tier=1),
     Player(id="p_chase", name="Ja'Marr Chase", position=Position.WR, team="CIN", projected_points=17.2, tier=1),
     Player(id="p_ajb", name="A.J. Brown", position=Position.WR, team="PHI", projected_points=16.4, tier=2),
+    Player(id="p_wilson", name="Garrett Wilson", position=Position.WR, team="NYJ", projected_points=15.8, tier=2),
     Player(id="p_josh", name="Josh Allen", position=Position.QB, team="BUF", projected_points=24.0, tier=1),
     Player(id="p_lamar", name="Lamar Jackson", position=Position.QB, team="BAL", projected_points=22.4, tier=1),
+    Player(id="p_mahomes", name="Patrick Mahomes", position=Position.QB, team="KC", projected_points=21.2, tier=2),
+    Player(id="p_hurts", name="Jalen Hurts", position=Position.QB, team="PHI", projected_points=20.8, tier=2),
+    Player(id="p_stroud", name="C.J. Stroud", position=Position.QB, team="HOU", projected_points=19.5, tier=3),
     Player(id="p_kelce", name="Travis Kelce", position=Position.TE, team="KC", projected_points=14.5, tier=1),
     Player(id="p_laporta", name="Sam LaPorta", position=Position.TE, team="DET", projected_points=13.8, tier=1),
     Player(id="p_mcbride", name="Trey McBride", position=Position.TE, team="ARI", projected_points=12.5, tier=2),
+    Player(id="p_kincaid", name="Dalton Kincaid", position=Position.TE, team="BUF", projected_points=11.8, tier=2),
     Player(id="p_aubrey", name="Brandon Aubrey", position=Position.K, team="DAL", projected_points=9.5, tier=1),
+    Player(id="p_butker", name="Harrison Butker", position=Position.K, team="KC", projected_points=8.8, tier=2),
     Player(id="p_bal_dst", name="Ravens D/ST", position=Position.DST, team="BAL", projected_points=8.5, tier=1),
+    Player(id="p_sf_dst", name="49ers D/ST", position=Position.DST, team="SF", projected_points=8.1, tier=2),
 ]
 
 
 @app.get("/api/draft/state", response_model=DraftState)
-async def get_draft_state(session_id: str | None = None, simulate_cliff: bool = False) -> DraftState:
+async def get_draft_state(
+    session_id: str | None = None,
+    simulate_cliff: bool = False,
+    simulate_tier_roll: bool = False,
+) -> DraftState:
     """Fetch the current snapshot of the draft board with cliff warnings and VORP suggestions."""
     if session_id:
         poller = poller_registry.get(session_id)
@@ -158,10 +172,57 @@ async def get_draft_state(session_id: str | None = None, simulate_cliff: bool = 
         ),
     ]
 
+    if simulate_tier_roll:
+        # Simulate drafting the remaining Tier 1 QBs and RBs
+        mock_picks.extend(
+            [
+                DraftPick(
+                    round_num=1,
+                    round_pick=3,
+                    overall_pick=3,
+                    team_id="3",
+                    team_name="Team 3",
+                    player_id="p_breece",
+                    player_name="Breece Hall",
+                    position="RB",
+                ),
+                DraftPick(
+                    round_num=1,
+                    round_pick=4,
+                    overall_pick=4,
+                    team_id="4",
+                    team_name="Team 4",
+                    player_id="p_bijan",
+                    player_name="Bijan Robinson",
+                    position="RB",
+                ),
+                DraftPick(
+                    round_num=1,
+                    round_pick=5,
+                    overall_pick=5,
+                    team_id="5",
+                    team_name="Team 5",
+                    player_id="p_josh",
+                    player_name="Josh Allen",
+                    position="QB",
+                ),
+                DraftPick(
+                    round_num=1,
+                    round_pick=6,
+                    overall_pick=6,
+                    team_id="6",
+                    team_name="Team 6",
+                    player_id="p_lamar",
+                    player_name="Lamar Jackson",
+                    position="QB",
+                ),
+            ]
+        )
+
     state = build_draft_state(
         league_id="default_league",
         draft_id="draft_live",
-        overall_pick=14,
+        overall_pick=14 if not simulate_tier_roll else 18,
         user_draft_slot=6,
         total_teams=12,
         total_rounds=16,
@@ -174,13 +235,13 @@ async def get_draft_state(session_id: str | None = None, simulate_cliff: bool = 
         state.cliff_warnings = [
             TierCliffWarning(
                 position="RB",
-                current_tier=1,
+                current_tier=1 if not simulate_tier_roll else 2,
                 players_remaining=1,
                 cliff_type=CliffType.ON_THE_CLOCK_CLIFF,
                 picks_before_next_turn=12,
                 cliff_risk="CRITICAL",
                 projected_drop_off=4.2,
-                recommended_action="Draft Tier 1 RB (Breece Hall) now. Only 1 player left in Tier 1 before a 4.2 pt drop-off across your 12-pick turn gap.",
+                recommended_action="Draft remaining Tier RB now before a 4.2 pt drop-off across your 12-pick turn gap.",
             )
         ]
 

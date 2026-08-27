@@ -59,7 +59,8 @@
     }
     .badge-espn { background: #dc2626; color: #fff; }
     .badge-sleeper { background: #0284c7; color: #fff; }
-    .badge-claimed { background: #15803d; color: #fff; }
+    .badge-claimed { background: rgba(16, 185, 129, 0.12); color: var(--accent-green); border: 1px solid var(--accent-green); }
+
 
     .header-actions {
       display: flex;
@@ -493,8 +494,9 @@
           <div class="value" id="clock-status-tag" style="color: var(--accent-green);">LIVE FEED</div>
           <div class="label">Auto-Refresh</div>
         </div>
-        <div class="clock-stat" style="display: flex; flex-direction: column; justify-content: center;">
+        <div class="clock-stat" style="display: flex; flex-direction: row; gap: 0.5rem; justify-content: center; align-items: center;">
           <button id="simulate-cliff-btn" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.65rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main);" onclick="toggleSimulateCliff()">Simulate Cliff</button>
+          <button id="simulate-tier-roll-btn" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.65rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main);" onclick="toggleSimulateTierRoll()">Simulate Tier Roll</button>
         </div>
       </div>
 
@@ -523,7 +525,6 @@
               <div class="card-title" style="font-size: 0.95rem;">Positional Tier Depletion</div>
               <span id="tier-depletion-toggle-icon" style="font-size: 0.75rem; color: var(--text-muted);">▼</span>
             </div>
-            <span style="font-size: 0.75rem; color: var(--accent-green);">● Auto-Syncing</span>
           </div>
           <div id="tier-depletion-drawer">
             <table class="data-table" style="font-size: 0.82rem;">
@@ -578,25 +579,26 @@
           <div class="card-title">Suggestions</div>
         </div>
         <table class="data-table">
-
           <thead>
             <tr>
-              <th style="width: 60px;">Rank</th>
+              <th style="width: 50px;">Rank</th>
+              <th style="width: 45px;">Pos</th>
+              <th style="width: 50px;">Team</th>
               <th>Player</th>
-              <th style="width: 80px;">Pos</th>
-              <th style="width: 90px;">Tier</th>
-              <th style="width: 100px;">Proj Pts</th>
+              <th style="width: 75px;">Tier</th>
+              <th style="width: 85px;">Proj Pts</th>
               <th>Reason</th>
             </tr>
           </thead>
           <tbody id="draft-suggestions-tbody">
             <tr>
               <td><strong>1</strong></td>
-              <td><strong>Breece Hall</strong></td>
               <td><span class="pos-tag pos-RB">RB</span></td>
-              <td><strong>Tier 1</strong></td>
+              <td>NYJ</td>
+              <td><strong>Breece Hall</strong></td>
+              <td>Tier 1</td>
               <td>18.2</td>
-              <td>Top Positional Value • +2.4 VORP over baseline</td>
+              <td class="reason-text">Top Positional Value • +2.4 VORP over baseline</td>
             </tr>
             <tr>
               <td><strong>2</strong></td>
@@ -1010,8 +1012,12 @@
   </main>
 
   <footer>
-    <div>Live Status: <span style="color: var(--accent-green); font-weight: 600;" id="ws-status">● Auto-Syncing (WebSocket Live)</span></div>
+    <div style="display: flex; gap: 1.5rem; justify-content: center; align-items: center; font-size: 0.85rem;">
+      <div>Backend: <span id="backend-status-tag" style="color: var(--accent-green); font-weight: 600;">● Connected</span></div>
+      <div>Platform: <span id="platform-status-tag" style="color: var(--accent-green); font-weight: 600;">● Connected</span></div>
+    </div>
   </footer>
+
 
   <script>
     let ws = null;
@@ -1241,14 +1247,14 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         } else {
           const errJson = await res.json().catch(() => ({}));
           const detail = errJson.detail || 'Failed to parse text.';
-          document.getElementById('cheatsheet-status-msg').textContent = `Failed: ${detail}`;
-        }
       } catch (err) {
         document.getElementById('cheatsheet-status-msg').textContent = `Upload error: ${err.message}`;
       }
     }
 
     let isCliffSimulated = false;
+    let isTierRollSimulated = false;
+
 
     function toggleSimulateCliff() {
       isCliffSimulated = !isCliffSimulated;
@@ -1256,6 +1262,16 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       if (btn) {
         btn.textContent = isCliffSimulated ? 'Clear Cliff' : 'Simulate Cliff';
         btn.style.color = isCliffSimulated ? 'var(--accent-red)' : 'var(--text-main)';
+      }
+      fetchDraftState();
+    }
+
+    function toggleSimulateTierRoll() {
+      isTierRollSimulated = !isTierRollSimulated;
+      const btn = document.getElementById('simulate-tier-roll-btn');
+      if (btn) {
+        btn.textContent = isTierRollSimulated ? 'Reset Simulation' : 'Simulate Tier Roll';
+        btn.style.color = isTierRollSimulated ? 'var(--accent-amber)' : 'var(--text-main)';
       }
       fetchDraftState();
     }
@@ -1300,7 +1316,20 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       const topCliffWrapper = document.getElementById('top-cliff-alerts-wrapper');
       const topCliffContainer = document.getElementById('top-cliff-alerts-container');
       if (topCliffWrapper && topCliffContainer) {
-        const cliffs = data.cliff_warnings || [];
+        let cliffs = data.cliff_warnings || [];
+        if (isCliffSimulated && cliffs.length === 0) {
+          cliffs = [{
+            position: 'RB',
+            current_tier: isTierRollSimulated ? 2 : 1,
+            players_remaining: 1,
+            cliff_type: 'ON_THE_CLOCK_CLIFF',
+            picks_before_next_turn: 12,
+            cliff_risk: 'CRITICAL',
+            projected_drop_off: 4.2,
+            recommended_action: 'Draft remaining Tier RB now before a 4.2 pt drop-off across your 12-pick turn gap.'
+          }];
+        }
+
         if (cliffs.length === 0) {
           topCliffWrapper.style.display = 'none';
           topCliffContainer.innerHTML = '';
@@ -1331,14 +1360,18 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           const p = s.player;
           const cleanPos = (p.position || 'WR').replace('/', '-');
           const posClass = `pos-${cleanPos}`;
+          const team = p.team || 'FA';
+          const tierStr = `Tier ${p.cheatsheet_tier || p.tier || 1}`;
+          const ptsStr = p.projected_points ? p.projected_points.toFixed(1) : '—';
           sugHtml += `
             <tr>
               <td><strong>${s.rank}</strong></td>
-              <td><strong>${p.name}</strong></td>
               <td><span class="pos-tag ${posClass}">${p.position}</span></td>
-              <td><strong>Tier ${p.cheatsheet_tier || p.tier || 1}</strong></td>
-              <td>${p.projected_points ? p.projected_points.toFixed(1) : '—'}</td>
-              <td>${s.reason}</td>
+              <td>${team}</td>
+              <td><strong>${p.name}</strong></td>
+              <td>${tierStr}</td>
+              <td>${ptsStr}</td>
+              <td class="reason-text">${s.reason}</td>
             </tr>`;
         });
         sugTbody.innerHTML = sugHtml;
@@ -1369,21 +1402,29 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       }
     }
 
-
     async function fetchDraftState() {
       try {
-        let url = '/api/draft/state';
-        if (isCliffSimulated) {
-          url += '?simulate_cliff=true';
-        }
+        let url = '/api/draft/state?';
+        if (isCliffSimulated) url += 'simulate_cliff=true&';
+        if (isTierRollSimulated) url += 'simulate_tier_roll=true&';
         const res = await fetch(url);
         if (!res.ok) throw new Error('Draft fetch failed');
         const data = await res.json();
         renderDraftState(data);
+        const backendTag = document.getElementById('backend-status-tag');
+        if (backendTag) {
+          backendTag.textContent = '● Connected';
+          backendTag.style.color = 'var(--accent-green)';
+        }
       } catch (err) {
-        console.log('Draft synced');
+        const backendTag = document.getElementById('backend-status-tag');
+        if (backendTag) {
+          backendTag.textContent = '● Disconnected';
+          backendTag.style.color = 'var(--accent-red)';
+        }
       }
     }
+
 
 
     function getContextBadgesHtml(reasons) {
@@ -1774,14 +1815,19 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       try {
         ws = new WebSocket(wsUrl);
         ws.onopen = () => {
-          document.getElementById('ws-status').textContent = '● Auto-Syncing (WebSocket Live)';
-          document.getElementById('ws-status').style.color = 'var(--accent-green)';
+          const platTag = document.getElementById('platform-status-tag');
+          if (platTag) {
+            platTag.textContent = '● Connected';
+            platTag.style.color = 'var(--accent-green)';
+          }
         };
         ws.onmessage = (event) => {
           try {
             const msg = JSON.parse(event.data);
             if (msg.event === 'draft_update' && msg.data) {
-              renderDraftState(msg.data);
+              if (!isTierRollSimulated) {
+                renderDraftState(msg.data);
+              }
             } else {
               fetchDraftState();
             }
@@ -1790,14 +1836,22 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           }
         };
         ws.onclose = () => {
-          document.getElementById('ws-status').textContent = '● Auto-Polling (HTTP)';
-          document.getElementById('ws-status').style.color = 'var(--accent-amber)';
+          const platTag = document.getElementById('platform-status-tag');
+          if (platTag) {
+            platTag.textContent = '● Polling (HTTP)';
+            platTag.style.color = 'var(--accent-amber)';
+          }
           setTimeout(initWebSocket, 3000);
         };
       } catch (e) {
-        document.getElementById('ws-status').textContent = '● Auto-Polling (HTTP)';
+        const platTag = document.getElementById('platform-status-tag');
+        if (platTag) {
+          platTag.textContent = '● Polling (HTTP)';
+          platTag.style.color = 'var(--accent-amber)';
+        }
       }
     }
+
 
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
