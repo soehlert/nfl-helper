@@ -116,14 +116,18 @@ def _evaluate_on_the_clock_cliff(
         return None
 
     remaining = len(tier.players)
-    if remaining > 2 and not (snake_turn_gap >= 8 and remaining <= 3):
+    tier_size = max(remaining, tier.count)
+    is_percentage_scarce = (remaining / tier_size) <= 0.30 if tier_size > 0 else False
+    is_gap_scarce = remaining <= max(2, (snake_turn_gap + 2) // 3)
+
+    if not (is_percentage_scarce or is_gap_scarce or remaining <= 2):
         return None
 
     risk = "CRITICAL" if (remaining == 1 or drop >= 3.0) else "HIGH"
     next_num = next_tier.tier_num if next_tier else tier.tier_num + 1
     action = (
-        f"Only {remaining} Tier {tier.tier_num} {tier.position} left before a {snake_turn_gap}-pick turn gap. "
-        f"Draft now to avoid dropping -{drop:.1f} pts to Tier {next_num}."
+        f"Only {remaining} of {tier_size} Tier {tier.tier_num} {tier.position} remaining ({round(remaining / tier_size * 100)}% left) "
+        f"before a {snake_turn_gap}-pick turn gap. Draft now to avoid dropping -{drop:.1f} pts to Tier {next_num}."
     )
     return TierCliffWarning(
         position=tier.position,
@@ -150,14 +154,17 @@ def _evaluate_waiting_cliff(
         return None
 
     remaining = len(tier.players)
+    tier_size = max(remaining, tier.count)
     next_num = next_tier.tier_num if next_tier else tier.tier_num + 1
 
-    # Tier expected to deplete before user pick (genuine scarcity)
-    if (remaining == 1 and picks_until_turn >= 1) or (remaining == 2 and picks_until_turn >= 4 and drop >= 1.5):
+    # Tier expected to deplete before user pick (genuine scarcity ahead of turn)
+    is_severely_scarce = remaining <= 2 or ((remaining / tier_size) <= 0.25 and remaining <= 3)
+    if is_severely_scarce and picks_until_turn >= max(1, remaining):
         risk = "CRITICAL" if remaining == 1 else "HIGH"
+        pct_left = round((remaining / tier_size) * 100) if tier_size > 0 else 0
         action = (
-            f"Only {remaining} Tier {tier.tier_num} {tier.position} remaining with {picks_until_turn} picks until turn. "
-            f"Likely to deplete before your pick; prepare for Tier {next_num} (-{drop:.1f} pts)."
+            f"Only {remaining} of {tier_size} Tier {tier.tier_num} {tier.position} remaining ({pct_left}% left) with "
+            f"{picks_until_turn} picks until turn. Likely to deplete before your pick; prepare for Tier {next_num} (-{drop:.1f} pts)."
         )
         return TierCliffWarning(
             position=tier.position,
@@ -172,7 +179,11 @@ def _evaluate_waiting_cliff(
         )
 
     # Tier will survive to user's pick but wipe out during subsequent turn gap
-    if remaining <= 3 and remaining > picks_until_turn and snake_turn_gap >= 6:
+    survives_to_turn = remaining > picks_until_turn
+    wipes_in_gap = remaining <= (picks_until_turn + max(2, (snake_turn_gap + 2) // 3))
+    is_tier_draining = (remaining / tier_size) <= 0.40 or remaining <= 4
+
+    if survives_to_turn and wipes_in_gap and is_tier_draining and snake_turn_gap >= 6:
         risk = "HIGH" if remaining <= picks_until_turn + 1 else "MODERATE"
         action = (
             f"{remaining} Tier {tier.tier_num} {tier.position} left. Tier will survive to your pick in {picks_until_turn} turns "

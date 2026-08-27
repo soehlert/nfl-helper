@@ -79,27 +79,28 @@ When no cheatsheet is provided or when evaluating unranked players:
 ## 3. Three-Scenario Tier Cliff Detection
 
 ### Objective
-Alert the user when an active tier for a critical position is in imminent danger of complete depletion before or during their upcoming turn windows.
+Alert the user when an active tier for a critical skill position (QB, RB, WR, TE) is in imminent danger of complete depletion before or during their upcoming turn windows.
 
-### Scenarios & Triggers
-Let $C$ be the number of players remaining in the highest available tier of a position, $P_{wait}$ be `picks_until_user_turn`, and $G$ be `snake_turn_gap`.
+### Scenarios & Dynamic Scarcity Triggers
+Let $C$ be the number of players remaining in the highest active tier, $S_{tier}$ be the total size of that tier, $P_{wait}$ be `picks_until_user_turn`, $G$ be `snake_turn_gap`, and $\text{Drop}$ be the point loss to the next tier ($\text{Drop} \ge 1.0$ pts required).
 
-#### 1. `ON_THE_CLOCK_CLIFF`
-- **Trigger**: $P_{wait} \le 0$ AND $C \le \max(1, \lceil G / 2 \rceil)$ (or $C \le 3$ when $G \ge 4$).
-- **Meaning**: You are drafting right now. If you pass on this position, the remaining $C$ players in this tier will be taken before your next pick in $G$ turns.
-- **Risk Level**:
-  - `CRITICAL` if $C = 1$ or $\text{Drop} \ge 3.0$ pts.
-  - `HIGH` if $C \le 2$.
+#### 1. `ON_THE_CLOCK_CLIFF` (On the Clock Scarcity)
+- **When**: User is drafting right now ($P_{wait} \le 0$).
+- **Trigger**: $\frac{C}{S_{tier}} \le 0.30$ (less than $30\%$ of tier remains) OR $C \le \max(2, \lfloor\frac{G+2}{3}\rfloor)$.
+- **Meaning**: You are on the clock. If you pass on this position now, the remaining $C$ players in this tier will be taken before your next pick in $G$ turns.
+- **Action**: Draft this position now to avoid dropping $-\text{Drop}$ pts to the next tier.
 
-#### 2. `UPCOMING_TURN_CLIFF`
-- **Trigger**: $P_{wait} > 0$ AND $C > P_{wait}$ AND $C \le (P_{wait} + \max(1, \lceil G / 2 \rceil))$.
-- **Meaning**: The tier will survive until your upcoming pick, but will completely deplete during the subsequent $G$-pick turn gap. You must target this position at your next pick.
-- **Risk Level**: `HIGH` or `MODERATE`.
+#### 2. `UPCOMING_TURN_CLIFF` (Upcoming Turn Scarcity)
+- **When**: User is waiting for their pick ($P_{wait} > 0$).
+- **Trigger**: $C > P_{wait}$ AND $C \le (P_{wait} + \max(2, \lfloor\frac{G+2}{3}\rfloor))$ AND $\frac{C}{S_{tier}} \le 0.40$ AND $G \ge 6$.
+- **Meaning**: The tier will survive until your upcoming turn, but after you pick, the subsequent turn gap ($G$ picks) will wipe out whatever is left.
+- **Action**: Prepare to target this position at your upcoming turn.
 
-#### 3. `DEPLETED_BEFORE_TURN`
-- **Trigger**: $P_{wait} > 0$ AND $C \le P_{wait}$.
-- **Meaning**: Opponents drafting ahead of you will draft the remaining $C$ players before you even get to pick. Do not plan on drafting this tier; pivot to Tier $T+1$ or alternate position.
-- **Risk Level**: `CRITICAL` / `HIGH`.
+#### 3. `DEPLETED_BEFORE_TURN` (Depletion Ahead of Turn)
+- **When**: User is waiting for their pick ($P_{wait} > 0$).
+- **Trigger**: ($C \le 2$ OR $\frac{C}{S_{tier}} \le 0.25$) AND $P_{wait} \ge \max(1, C)$.
+- **Meaning**: Opponents drafting ahead of you are mathematically expected to drain the remaining $C$ players before you even reach the clock.
+- **Action**: Do not bank on drafting this tier; prepare to target Tier $T+1$ or pivot to another position.
 
 ---
 
