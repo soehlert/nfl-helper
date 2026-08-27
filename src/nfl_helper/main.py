@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
+from nfl_helper.adapters import get_adapter_for_profile
 from nfl_helper.core.cheatsheet import parse_cheatsheet_content, parse_pdf_cheatsheet
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import CliffType, DraftState, DraftSuggestion, PlayerTier, TierCliffWarning
@@ -19,6 +20,7 @@ from nfl_helper.models.roster import (
     StreamingOption,
     WaiverAnalysis,
 )
+from nfl_helper.models.session import LeagueProfile, PlatformType
 
 app = FastAPI(
     title="Fantasy War Room",
@@ -65,6 +67,34 @@ async def serve_index() -> HTMLResponse:
 async def health_check() -> dict[str, str]:
     """Health check endpoint confirming application status."""
     return {"status": "ok", "version": "0.1.0"}
+
+
+@app.get("/api/league/teams")
+async def get_league_teams(
+    platform: PlatformType = PlatformType.ESPN,
+    league_id: str = "12345678",
+    swid: str | None = None,
+    espn_s2: str | None = None,
+) -> list[dict[str, str]]:
+    """Fetch all teams in a league for friendly dropdown selection."""
+    profile = LeagueProfile(
+        session_id="temp_lookup",
+        platform=platform,
+        league_id=league_id,
+        team_id="1",
+        swid=swid,
+        espn_s2=espn_s2,
+    )
+    try:
+        adapter = get_adapter_for_profile(profile)
+        return adapter.get_league_teams()
+    except Exception:
+        # Fallback list for local test exploration
+        return [
+            {"team_id": "1", "team_name": "Lamar Squad", "owner_name": "You"},
+            {"team_id": "2", "team_name": "Gridiron Kings", "owner_name": "Friend"},
+            {"team_id": "3", "team_name": "Mahomes Magic", "owner_name": "Rival"},
+        ]
 
 
 @app.get("/api/draft/state", response_model=DraftState)

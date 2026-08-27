@@ -19,14 +19,14 @@ class LeagueProfile(BaseModel):
     session_id: str
     platform: PlatformType
     league_id: str
-    league_name: str
-    season_year: int
-    team_id: str
-    team_name: str
+    league_name: str = "Fantasy League"
+    season_year: int | None = None
+    team_id: str = "1"
+    team_name: str = "My Squad"
     user_draft_slot: int = 1
     espn_s2: str | None = None
     swid: str | None = None
-    invite_code: str
+    invite_code: str = ""
     is_claimed: bool = False
     claimed_at: datetime | None = None
     custom_scoring: dict[str, float] = Field(default_factory=dict)

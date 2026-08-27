@@ -35,7 +35,6 @@ class ESPNAdapter(BaseLeagueAdapter):
         if not pos_str:
             raise ValueError(f"Missing position on ESPN player: {getattr(espn_player, 'name', 'Unknown')}")
 
-        # Map position enum explicitly without arbitrary fallback
         try:
             pos_enum = Position(pos_str)
         except ValueError as err:
@@ -73,6 +72,22 @@ class ESPNAdapter(BaseLeagueAdapter):
         if hasattr(league, "settings") and hasattr(league.settings, "name"):
             self.profile.league_name = str(league.settings.name)
         return self.profile
+
+    def get_league_teams(self) -> list[dict[str, str]]:
+        """Fetch all team IDs and team names from ESPN."""
+        league = self._get_league()
+        results = []
+        for team in getattr(league, "teams", []):
+            owners = getattr(team, "owners", [])
+            owner_name = str(owners[0]) if owners else ""
+            results.append(
+                {
+                    "team_id": str(getattr(team, "team_id", "")),
+                    "team_name": str(getattr(team, "team_name", f"Team {getattr(team, 'team_id', '')}")),
+                    "owner_name": owner_name,
+                }
+            )
+        return results
 
     def get_roster(self, team_id: str) -> TeamRoster:
         """Fetch full team roster and starters for a specific ESPN team ID."""

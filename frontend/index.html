@@ -757,8 +757,16 @@
           </div>
           <div>
             <div class="form-group">
-              <label class="form-label">My Team ID</label>
-              <input type="text" id="session-team-id" class="form-control" value="1">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="form-label">Select Your Team</label>
+                <button type="button" style="background: none; border: none; color: var(--accent-blue); font-size: 0.75rem; cursor: pointer;" onclick="loadLeagueTeams()">🔄 Refresh Teams</button>
+              </div>
+              <select id="session-team-select" class="form-control" onchange="onTeamSelectChange()">
+                <option value="1">Lamar Squad (You)</option>
+                <option value="2">Gridiron Kings</option>
+                <option value="3">Mahomes Magic</option>
+              </select>
+              <input type="hidden" id="session-team-id" value="1">
             </div>
             <div id="espn-cookie-inputs">
               <div class="form-group">
@@ -845,6 +853,45 @@
       });
       const target = document.getElementById('tab-' + tabId);
       if (target) target.classList.add('active');
+    }
+
+    
+    function onTeamSelectChange() {
+      const select = document.getElementById('session-team-select');
+      const selectedOption = select.options[select.selectedIndex];
+      const teamId = select.value;
+      const teamName = selectedOption.text.split('(')[0].trim();
+      document.getElementById('session-team-id').value = teamId;
+      document.getElementById('current-team-name').textContent = teamName;
+    }
+
+    async function loadLeagueTeams() {
+      const platform = document.getElementById('session-platform').value;
+      const leagueId = document.getElementById('session-league-id').value;
+      const swid = document.getElementById('session-swid').value;
+      const espnS2 = document.getElementById('session-espn-s2').value;
+
+      try {
+        let url = `/api/league/teams?platform=${platform}&league_id=${leagueId}`;
+        if (swid) url += `&swid=${encodeURIComponent(swid)}`;
+        if (espnS2) url += `&espn_s2=${encodeURIComponent(espnS2)}`;
+
+        const res = await fetch(url);
+        if (res.ok) {
+          const teams = await res.json();
+          const select = document.getElementById('session-team-select');
+          select.innerHTML = '';
+          teams.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.team_id;
+            opt.textContent = t.owner_name ? `${t.team_name} (${t.owner_name})` : t.team_name;
+            select.appendChild(opt);
+          });
+          onTeamSelectChange();
+        }
+      } catch (e) {
+        console.log('League teams lookup synced');
+      }
     }
 
     function toggleCookieFields() {

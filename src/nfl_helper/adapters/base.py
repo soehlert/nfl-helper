@@ -19,6 +19,10 @@ class BaseLeagueAdapter(ABC):
         """Fetch and update metadata for the configured league."""
 
     @abstractmethod
+    def get_league_teams(self) -> list[dict[str, str]]:
+        """Fetch list of all teams and owner display names in the league."""
+
+    @abstractmethod
     def get_roster(self, team_id: str) -> TeamRoster:
         """Fetch full team roster and starters for a specific team ID."""
 

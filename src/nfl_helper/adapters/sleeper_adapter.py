@@ -91,6 +91,27 @@ class SleeperAdapter(BaseLeagueAdapter):
             self.profile.season_year = int(raw_season) if raw_season else get_current_nfl_season_year()
         return self.profile
 
+    def get_league_teams(self) -> list[dict[str, str]]:
+        """Fetch all team IDs, names, and managers from Sleeper."""
+        rosters, users_by_id = self._fetch_rosters_and_users()
+        results = []
+        for r in rosters:
+            roster_id = str(r.get("roster_id", ""))
+            owner_id = str(r.get("owner_id", ""))
+            user_meta = users_by_id.get(owner_id, {})
+            raw_meta = user_meta.get("metadata")
+            team_name_meta = raw_meta.get("team_name") if isinstance(raw_meta, dict) else None
+            team_name = str(team_name_meta or user_meta.get("display_name") or f"Team {roster_id}")
+            owner_name = str(user_meta.get("display_name", ""))
+            results.append(
+                {
+                    "team_id": roster_id,
+                    "team_name": team_name,
+                    "owner_name": owner_name,
+                }
+            )
+        return results
+
     def _fetch_rosters_and_users(self) -> tuple[list[dict[str, object]], dict[str, dict[str, object]]]:
         """Fetch raw rosters and users dictionaries from Sleeper REST endpoints."""
         res_rosters = self._client.get(f"/league/{self.profile.league_id}/rosters")

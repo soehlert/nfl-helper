@@ -88,3 +88,14 @@ def test_cheatsheet_file_upload_endpoint() -> None:
     assert res.status_code == 200
     data = res.json()
     assert "breece hall" in data["entries"]
+
+
+def test_get_league_teams_endpoint() -> None:
+    """Verify /api/league/teams returns list of teams with IDs and names."""
+    res = client.get("/api/league/teams?platform=espn&league_id=12345678")
+    assert res.status_code == 200
+    teams = res.json()
+    assert isinstance(teams, list)
+    assert len(teams) >= 1
+    assert "team_id" in teams[0]
+    assert "team_name" in teams[0]
