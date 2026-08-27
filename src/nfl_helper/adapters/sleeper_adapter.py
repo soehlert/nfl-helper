@@ -1,5 +1,7 @@
 """Sleeper fantasy football league adapter via official Sleeper REST API."""
 
+import math
+
 import httpx
 
 from nfl_helper.adapters.base import BaseLeagueAdapter
@@ -50,9 +52,16 @@ class SleeperAdapter(BaseLeagueAdapter):
         last_name = str(raw_meta.get("last_name", ""))
         full_name = f"{first_name} {last_name}".strip() or str(raw_meta.get("full_name", f"Player {player_id}"))
 
-        pos_str = str(raw_meta.get("position", "")).upper()
-        if not pos_str:
+        raw_pos = str(raw_meta.get("position", "")).upper()
+        if not raw_pos:
             raise ValueError(f"Missing position on Sleeper player {player_id} ({full_name})")
+
+        if raw_pos in ("DEF", "DST"):
+            pos_str = "D/ST"
+        elif raw_pos == "FB":
+            pos_str = "RB"
+        else:
+            pos_str = raw_pos
 
         try:
             pos_enum = Position(pos_str)
@@ -68,7 +77,27 @@ class SleeperAdapter(BaseLeagueAdapter):
         team = str(raw_meta.get("team", "FA") or "FA")
         raw_slots = raw_meta.get("fantasy_positions")
         slots = list(raw_slots) if isinstance(raw_slots, list) else [pos_str]
-        proj_pts = float(str(raw_meta.get("projected_points", 0.0) or 0.0))
+        raw_proj = float(str(raw_meta.get("projected_points", 0.0) or 0.0))
+        search_rank = raw_meta.get("search_rank")
+        adp_val = float(search_rank) if search_rank is not None else None
+
+        # Derive realistic baseline fantasy projection if platform database lacks raw weekly projections
+        if raw_proj <= 0.0:
+            rank = adp_val if adp_val is not None and adp_val > 0 else 100.0
+            if pos_str == "QB":
+                proj_pts = max(12.0, 24.5 - 2.8 * math.log(max(1.0, rank * 0.15)))
+            elif pos_str == "RB":
+                proj_pts = max(6.0, 20.5 - 3.2 * math.log(max(1.0, rank * 0.2)))
+            elif pos_str == "WR":
+                proj_pts = max(6.0, 19.5 - 3.0 * math.log(max(1.0, rank * 0.2)))
+            elif pos_str == "TE":
+                proj_pts = max(5.0, 14.5 - 2.5 * math.log(max(1.0, rank * 0.1)))
+            elif pos_str in ("K", "D/ST", "DST", "DEF"):
+                proj_pts = max(5.0, 9.5 - 0.8 * math.log(max(1.0, rank * 0.05)))
+            else:
+                proj_pts = 10.0
+        else:
+            proj_pts = raw_proj
 
         return Player(
             id=str(player_id),
@@ -76,6 +105,7 @@ class SleeperAdapter(BaseLeagueAdapter):
             position=pos_enum,
             team=team,
             projected_points=round(proj_pts, 2),
+            adp=adp_val,
             injury_status=injury_enum,
             eligible_slots=slots,
             is_starter=is_starter,
@@ -229,7 +259,18 @@ class SleeperAdapter(BaseLeagueAdapter):
             available_players_by_pos=by_pos,
         )
 
-    def get_free_agents(self, limit: int = 100) -> list[Player]:
-        """Fetch available free agents from Sleeper."""
+    def get_free_agents(self, limit: int = 150) -> list[Player]:
+        """Fetch available free agents from Sleeper sorted by active search rank."""
         db = self._ensure_player_db()
-        return [self._map_player(pid, meta_override=meta) for pid, meta in list(db.items())[:limit]]
+        valid_candidates: list[tuple[int, str, dict[str, object]]] = []
+        for pid, meta in db.items():
+            if not isinstance(meta, dict):
+                continue
+            pos = str(meta.get("position", "")).upper()
+            if pos in ("QB", "RB", "FB", "WR", "TE", "K", "DEF", "DST", "D/ST"):
+                search_rank = meta.get("search_rank")
+                rank_val = int(search_rank) if search_rank is not None else 99999
+                valid_candidates.append((rank_val, pid, meta))
+
+        valid_candidates.sort(key=lambda x: x[0])
+        return [self._map_player(pid, meta_override=meta) for _, pid, meta in valid_candidates[:limit]]

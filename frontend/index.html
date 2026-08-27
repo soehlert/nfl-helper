@@ -1133,6 +1133,13 @@
       const espnS2 = document.getElementById('session-espn-s2').value;
 
       try {
+        localStorage.setItem('fwr_platform', platform);
+        localStorage.setItem('fwr_league_id', leagueId);
+        if (swid) localStorage.setItem('fwr_swid', swid);
+        if (espnS2) localStorage.setItem('fwr_espn_s2', espnS2);
+      } catch (e) {}
+
+      try {
         let url = `/api/league/teams?platform=${platform}&league_id=${leagueId}`;
         if (swid) url += `&swid=${encodeURIComponent(swid)}`;
         if (espnS2) url += `&espn_s2=${encodeURIComponent(espnS2)}`;
@@ -1149,6 +1156,12 @@
             select.appendChild(opt);
           });
           onTeamSelectChange();
+          const badge = document.getElementById('platform-badge');
+          if (badge) {
+            badge.textContent = platform.toUpperCase();
+            badge.className = 'badge badge-' + platform;
+          }
+          fetchDraftState();
         }
       } catch (e) {
         console.log('League teams lookup synced');
@@ -1164,6 +1177,7 @@
         cookieBox.style.display = 'block';
       }
     }
+
 
     function loadSampleCheatsheet() {
       const sample = `QB
@@ -1630,6 +1644,15 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
     async function fetchDraftState() {
       try {
         let url = '/api/draft/state?';
+        const platform = document.getElementById('session-platform')?.value;
+        const leagueId = document.getElementById('session-league-id')?.value;
+        const swid = document.getElementById('session-swid')?.value;
+        const espnS2 = document.getElementById('session-espn-s2')?.value;
+        if (platform && leagueId && leagueId !== '12345678') {
+          url += `platform=${encodeURIComponent(platform)}&league_id=${encodeURIComponent(leagueId)}&`;
+          if (swid) url += `swid=${encodeURIComponent(swid)}&`;
+          if (espnS2) url += `espn_s2=${encodeURIComponent(espnS2)}&`;
+        }
         if (isCliffSimulated) url += 'simulate_cliff=true&';
         if (isTierRollSimulated) url += 'simulate_tier_roll=true&';
         const res = await fetch(url);
@@ -1649,6 +1672,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         }
       }
     }
+
 
 
 
@@ -2107,9 +2131,31 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         if (espnS2Param) {
           document.getElementById('session-espn-s2').value = espnS2Param;
         }
+      } else {
+        try {
+          const savedPlat = localStorage.getItem('fwr_platform');
+          const savedLid = localStorage.getItem('fwr_league_id');
+          const savedSwid = localStorage.getItem('fwr_swid');
+          const savedS2 = localStorage.getItem('fwr_espn_s2');
+          if (savedPlat) {
+            document.getElementById('session-platform').value = savedPlat;
+            toggleCookieFields();
+            const badge = document.getElementById('platform-badge');
+            if (badge) {
+              badge.textContent = savedPlat.toUpperCase();
+              badge.className = 'badge badge-' + savedPlat;
+            }
+          }
+          if (savedLid) {
+            document.getElementById('session-league-id').value = savedLid;
+          }
+          if (savedSwid) document.getElementById('session-swid').value = savedSwid;
+          if (savedS2) document.getElementById('session-espn-s2').value = savedS2;
+        } catch (e) {}
       }
 
       fetchDraftState();
+
       fetchLineupOptimization();
       fetchWaiverRecommendations();
       fetchCheatsheet();

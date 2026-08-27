@@ -110,6 +110,10 @@ _SAMPLE_PLAYERS: list[Player] = get_mock_player_pool()
 @app.get("/api/draft/state", response_model=DraftState)
 async def get_draft_state(
     session_id: str | None = None,
+    platform: str | None = None,
+    league_id: str | None = None,
+    swid: str | None = None,
+    espn_s2: str | None = None,
     simulate_cliff: bool = False,
     simulate_tier_roll: bool = False,
 ) -> DraftState:
@@ -118,6 +122,42 @@ async def get_draft_state(
         poller = poller_registry.get(session_id)
         if poller and poller.latest_state:
             return poller.latest_state
+
+    # If real league platform & league_id are specified (e.g. Sleeper or ESPN)
+    if platform and league_id and league_id not in ("12345678", "demo", ""):
+        try:
+            plat_type = PlatformType.SLEEPER if platform.lower() == "sleeper" else PlatformType.ESPN
+            profile = LeagueProfile(
+                session_id=session_id or f"sess_{league_id}",
+                invite_code=f"INV-{league_id[:5]}",
+                platform=plat_type,
+                league_id=league_id,
+                swid=swid,
+                espn_s2=espn_s2,
+            )
+            adapter = get_adapter_for_profile(profile)
+            live_draft = adapter.get_draft_state()
+
+            all_avail = []
+            for plist in live_draft.available_players_by_pos.values():
+                all_avail.extend(plist)
+
+            if _ACTIVE_CHEATSHEET:
+                all_avail = apply_cheatsheet_context(all_avail, _ACTIVE_CHEATSHEET)
+
+            return build_draft_state(
+                league_id=live_draft.league_id,
+                draft_id=live_draft.draft_id,
+                overall_pick=live_draft.current_pick,
+                user_draft_slot=live_draft.user_draft_slot or 1,
+                total_teams=live_draft.total_teams,
+                total_rounds=live_draft.total_rounds,
+                recent_picks=live_draft.recent_picks,
+                all_players=all_avail,
+                cheatsheet_context=_ACTIVE_CHEATSHEET,
+            )
+        except Exception as exc:
+            logger.warning("Failed to fetch live draft state from %s (%s): %s", platform, league_id, exc)
 
     # Default live calculation using engine
     mock_picks: list[DraftPick] = [
