@@ -1,6 +1,5 @@
 """Positional tier clustering and 3-scenario cliff detection."""
 
-import math
 from collections import defaultdict
 
 from nfl_helper.models.cheatsheet import CheatsheetContext
@@ -101,21 +100,30 @@ def calculate_tier_drop(current_tier: PlayerTier, next_tier: PlayerTier | None) 
     return max(0.0, round(current_tier.avg_projected - next_tier.avg_projected, 1))
 
 
+# Core skill positions evaluated for cliff scarcity
+_CORE_SKILL_POSITIONS: set[str] = {"QB", "RB", "WR", "TE"}
+
+
 def _evaluate_on_the_clock_cliff(
     tier: PlayerTier, next_tier: PlayerTier | None, snake_turn_gap: int
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is currently on the clock."""
-    remaining = len(tier.players)
-    threshold = max(1, math.ceil(snake_turn_gap / 2))
-    if remaining > threshold and not (snake_turn_gap >= 4 and remaining <= 3):
+    if tier.position not in _CORE_SKILL_POSITIONS:
         return None
 
     drop = calculate_tier_drop(tier, next_tier)
+    if drop < 1.0:
+        return None
+
+    remaining = len(tier.players)
+    if remaining > 2 and not (snake_turn_gap >= 8 and remaining <= 3):
+        return None
+
     risk = "CRITICAL" if (remaining == 1 or drop >= 3.0) else "HIGH"
     next_num = next_tier.tier_num if next_tier else tier.tier_num + 1
     action = (
-        f"Only {remaining} Tier {tier.tier_num} {tier.position} remaining before a {snake_turn_gap}-pick "
-        f"turn gap. Draft now to avoid dropping {drop} pts to Tier {next_num}."
+        f"Only {remaining} Tier {tier.tier_num} {tier.position} left before a {snake_turn_gap}-pick turn gap. "
+        f"Draft now to avoid dropping -{drop:.1f} pts to Tier {next_num}."
     )
     return TierCliffWarning(
         position=tier.position,
@@ -134,15 +142,22 @@ def _evaluate_waiting_cliff(
     tier: PlayerTier, next_tier: PlayerTier | None, picks_until_turn: int, snake_turn_gap: int
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is waiting for their pick."""
-    remaining = len(tier.players)
+    if tier.position not in _CORE_SKILL_POSITIONS:
+        return None
+
     drop = calculate_tier_drop(tier, next_tier)
+    if drop < 1.0:
+        return None
+
+    remaining = len(tier.players)
     next_num = next_tier.tier_num if next_tier else tier.tier_num + 1
 
-    if remaining <= picks_until_turn:
+    # Tier expected to deplete before user pick (genuine scarcity)
+    if (remaining == 1 and picks_until_turn >= 1) or (remaining == 2 and picks_until_turn >= 4 and drop >= 1.5):
         risk = "CRITICAL" if remaining == 1 else "HIGH"
         action = (
-            f"Only {remaining} Tier {tier.tier_num} {tier.position} remaining with {picks_until_turn} picks "
-            f"until your turn. Tier is expected to deplete before your pick. Prepare to target Tier {next_num} or pivot."
+            f"Only {remaining} Tier {tier.tier_num} {tier.position} remaining with {picks_until_turn} picks until turn. "
+            f"Likely to deplete before your pick; prepare for Tier {next_num} (-{drop:.1f} pts)."
         )
         return TierCliffWarning(
             position=tier.position,
@@ -156,13 +171,12 @@ def _evaluate_waiting_cliff(
             recommended_action=action,
         )
 
-    turn_reach = picks_until_turn + max(1, math.ceil(snake_turn_gap / 2))
-    if remaining <= turn_reach or (snake_turn_gap >= 4 and remaining <= picks_until_turn + 3):
+    # Tier will survive to user's pick but wipe out during subsequent turn gap
+    if remaining <= 3 and remaining > picks_until_turn and snake_turn_gap >= 6:
         risk = "HIGH" if remaining <= picks_until_turn + 1 else "MODERATE"
         action = (
-            f"{remaining} Tier {tier.tier_num} {tier.position} remaining. Tier will survive to your pick in "
-            f"{picks_until_turn} picks, but will deplete during your {snake_turn_gap}-pick turn gap. "
-            f"Target {tier.position} at your upcoming turn."
+            f"{remaining} Tier {tier.tier_num} {tier.position} left. Tier will survive to your pick in {picks_until_turn} turns "
+            f"but will deplete during your {snake_turn_gap}-pick turn gap."
         )
         return TierCliffWarning(
             position=tier.position,

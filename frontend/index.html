@@ -389,56 +389,8 @@
         </div>
       </div>
 
-      <!-- Tier Cliff Alerts Container -->
-      <div id="cliff-alerts-container">
-        <div class="alert-banner">
-          <div>🚨</div>
-          <div>
-            <div class="alert-title">DEPLETED BEFORE TURN: Tier 1 Running Backs (1 remaining)</div>
-            <div class="alert-desc">Only 1 Tier-1 RB remains with 4 picks before your turn. Tier 1 is expected to deplete before your pick. Prepare to target Tier 2 RB or pivot to WR.</div>
-          </div>
-        </div>
-      </div>
-
+      <!-- Row 1: Side-by-Side Tier Depletion & Cliff Alerts -->
       <div class="grid-2">
-        <!-- Top Pick Suggestions -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">💡 Tactical Suggestions</div>
-            <span class="badge badge-espn">Deterministic VORP</span>
-          </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Player</th>
-                <th>Pos</th>
-                <th>Tier</th>
-                <th>Proj Pts</th>
-                <th>Reason</th>
-              </tr>
-            </thead>
-            <tbody id="draft-suggestions-tbody">
-              <tr>
-                <td><strong>1</strong></td>
-                <td><strong>Amon-Ra St. Brown</strong></td>
-                <td><span class="pos-tag pos-WR">WR</span></td>
-                <td><strong>Tier 1</strong></td>
-                <td>17.8</td>
-                <td>Tier 1 WR cliff defense; 3 left before 9-pick turn gap</td>
-              </tr>
-              <tr>
-                <td><strong>2</strong></td>
-                <td><strong>Jonathan Taylor</strong></td>
-                <td><span class="pos-tag pos-RB">RB</span></td>
-                <td><strong>Tier 2</strong></td>
-                <td>16.5</td>
-                <td>Top remaining Tier 2 RB value</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
         <!-- Positional Tier Summary -->
         <div class="card">
           <div class="card-header">
@@ -459,27 +411,93 @@
               <tr>
                 <td><span class="pos-tag pos-RB">RB</span></td>
                 <td>Tier 1</td>
-                <td><strong>1 player</strong></td>
-                <td>18.2</td>
-                <td><span style="color: var(--accent-red);">-3.4 pts</span></td>
+                <td><strong>2 players</strong></td>
+                <td>18.0</td>
+                <td><span style="color: var(--accent-amber);">-2.1 pts</span></td>
               </tr>
               <tr>
                 <td><span class="pos-tag pos-WR">WR</span></td>
                 <td>Tier 1</td>
-                <td><strong>3 players</strong></td>
-                <td>17.6</td>
-                <td><span style="color: var(--accent-amber);">-2.5 pts</span></td>
+                <td><strong>5 players</strong></td>
+                <td>17.8</td>
+                <td><span style="color: var(--accent-amber);">-1.4 pts</span></td>
               </tr>
               <tr>
                 <td><span class="pos-tag pos-TE">TE</span></td>
                 <td>Tier 1</td>
-                <td><strong>2 players</strong></td>
+                <td><strong>3 players</strong></td>
                 <td>14.1</td>
-                <td><span style="color: var(--accent-red);">-4.0 pts</span></td>
+                <td><span style="color: var(--accent-red);">-1.6 pts</span></td>
+              </tr>
+              <tr>
+                <td><span class="pos-tag pos-QB">QB</span></td>
+                <td>Tier 1</td>
+                <td><strong>2 players</strong></td>
+                <td>23.2</td>
+                <td><span style="color: var(--text-muted);">-0.0 pts</span></td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- Tier Cliff Alerts -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🚨 Tier Cliff Alerts</div>
+            <span id="cliff-count-badge" class="badge badge-claimed">0 Active</span>
+          </div>
+          <div id="cliff-alerts-container" style="display: flex; flex-direction: column; gap: 0.6rem;">
+            <div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem; text-align: center;">
+              ✅ All positional tiers currently stable. No imminent drop-off cliffs detected.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Full-Width Suggestions Table -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💡 Suggestions</div>
+          <span class="badge badge-espn">Deterministic VORP</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">Rank</th>
+              <th>Player</th>
+              <th style="width: 80px;">Pos</th>
+              <th style="width: 90px;">Tier</th>
+              <th style="width: 100px;">Proj Pts</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody id="draft-suggestions-tbody">
+            <tr>
+              <td><strong>1</strong></td>
+              <td><strong>Breece Hall</strong></td>
+              <td><span class="pos-tag pos-RB">RB</span></td>
+              <td><strong>Tier 1</strong></td>
+              <td>18.2</td>
+              <td>Top Positional Value • +2.4 VORP over baseline</td>
+            </tr>
+            <tr>
+              <td><strong>2</strong></td>
+              <td><strong>Tyreek Hill</strong></td>
+              <td><span class="pos-tag pos-WR">WR</span></td>
+              <td><strong>Tier 1</strong></td>
+              <td>18.8</td>
+              <td>Top Positional Value • +2.4 VORP over baseline</td>
+            </tr>
+            <tr>
+              <td><strong>3</strong></td>
+              <td><strong>Bijan Robinson</strong></td>
+              <td><span class="pos-tag pos-RB">RB</span></td>
+              <td><strong>Tier 1</strong></td>
+              <td>17.8</td>
+              <td>Top Positional Value • +2.0 VORP over baseline</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -1070,22 +1088,28 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
 
       // Render Cliff Alerts
       const cliffContainer = document.getElementById('cliff-alerts-container');
+      const cliffBadge = document.getElementById('cliff-count-badge');
       if (cliffContainer) {
         const cliffs = data.cliff_warnings || [];
+        if (cliffBadge) {
+          cliffBadge.textContent = `${cliffs.length} Active`;
+          cliffBadge.className = cliffs.length > 0 ? 'badge badge-espn' : 'badge badge-claimed';
+        }
         if (cliffs.length === 0) {
-          cliffContainer.innerHTML = '';
+          cliffContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1.5rem 1rem; text-align: center;">✅ All positional tiers currently stable. No imminent drop-off cliffs detected.</div>';
         } else {
           let cliffHtml = '';
           cliffs.forEach(c => {
             const isWarning = c.cliff_risk === 'MODERATE' || c.cliff_type === 'UPCOMING_TURN_CLIFF';
             const bannerClass = isWarning ? 'alert-banner warning' : 'alert-banner';
             const icon = isWarning ? '⚠️' : '🚨';
+            const typeLabel = c.cliff_type === 'ON_THE_CLOCK_CLIFF' ? 'On the Clock Scarcity' : (c.cliff_type === 'UPCOMING_TURN_CLIFF' ? 'Upcoming Turn Scarcity' : 'Depletion Alert');
             cliffHtml += `
-              <div class="${bannerClass}">
-                <div>${icon}</div>
+              <div class="${bannerClass}" style="margin-bottom: 0.5rem; padding: 0.65rem 0.85rem;">
+                <div style="font-size: 1.1rem; line-height: 1.2;">${icon}</div>
                 <div>
-                  <div class="alert-title">${c.cliff_type}: Tier ${c.current_tier} ${c.position} (${c.players_remaining} remaining)</div>
-                  <div class="alert-desc">${c.recommended_action}</div>
+                  <div class="alert-title" style="font-size: 0.85rem; margin-bottom: 0.15rem;">${typeLabel}: Tier ${c.current_tier} ${c.position} (${c.players_remaining} left)</div>
+                  <div class="alert-desc" style="font-size: 0.78rem; line-height: 1.35;">${c.recommended_action}</div>
                 </div>
               </div>`;
           });

@@ -98,14 +98,14 @@ def _build_suggestion_reason(
     """Generate concise deterministic justification for draft recommendation."""
     reasons: list[str] = []
     if cliff:
-        reasons.append(f"Tier {cliff.current_tier} {cliff.position} cliff defense ({cliff.cliff_risk.lower()} risk)")
+        reasons.append(f"Tier {cliff.current_tier} Scarcity ({cliff.players_remaining} left)")
     if adp_delta >= 3.0:
-        reasons.append(f"Market value steal (+{round(adp_delta, 1)} past ADP)")
+        reasons.append(f"Value Steal (+{round(adp_delta, 1)} past ADP)")
     elif vorp > 0:
-        reasons.append(f"+{vorp:.1f} pts VORP over positional replacement")
+        reasons.append(f"+{vorp:.1f} VORP over baseline")
     else:
-        reasons.append(f"Top available {player.position} ({player.projected_points:.1f} proj pts)")
-    return "; ".join(reasons)
+        reasons.append(f"Top {player.position} ({player.projected_points:.1f} pts)")
+    return " • ".join(reasons)
 
 
 def generate_draft_suggestions(
