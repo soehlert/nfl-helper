@@ -186,12 +186,47 @@ def solve_optimal_lineup(
     optimal_starters: list[Player] = []
     chosen_ids: set[str] = set()
 
-    for (p_id, _, _), var in x_vars.items():
+    for (p_id, s_name, idx), var in x_vars.items():
         if pulp.value(var) is not None and pulp.value(var) > 0.5 and p_id not in chosen_ids:
             p_obj = next(p for p in all_players if p.id == p_id)
+            slot_def = next((s for s in slots if s.slot_name == s_name), None)
+            if slot_def and slot_def.count > 1 and s_name in ["RB", "WR", "TE"]:
+                p_obj.assigned_slot = f"{s_name}{idx + 1}"
+            else:
+                p_obj.assigned_slot = s_name
             optimal_starters.append(p_obj)
             chosen_ids.add(p_id)
 
+    canonical_order = [
+        "QB",
+        "QB1",
+        "QB2",
+        "RB",
+        "RB1",
+        "RB2",
+        "RB3",
+        "WR",
+        "WR1",
+        "WR2",
+        "WR3",
+        "TE",
+        "TE1",
+        "TE2",
+        "FLEX",
+        "FLEX1",
+        "FLEX2",
+        "SUPERFLEX",
+        "K",
+        "K1",
+        "DST",
+        "D/ST",
+    ]
+
+    def _slot_rank(p: Player) -> int:
+        s = (p.assigned_slot or "").upper()
+        return canonical_order.index(s) if s in canonical_order else 99
+
+    optimal_starters.sort(key=_slot_rank)
     optimal_bench = [p for p in all_players if p.id not in chosen_ids]
 
     # Calculate projected totals and deltas

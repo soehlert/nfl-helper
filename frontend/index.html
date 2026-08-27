@@ -170,6 +170,19 @@
       gap: 1.25rem;
     }
 
+    .grid-lineup {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      gap: 1.25rem;
+      align-items: start;
+    }
+    @media (max-width: 1100px) {
+      .grid-lineup {
+        grid-template-columns: 1fr;
+      }
+    }
+
+
     /* Live Draft Banner */
     .draft-clock-banner {
       background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -542,8 +555,8 @@
               <div class="delta-pill delta-plus" id="optimal-proj-delta">+0.0 pts</div>
             </div>
             <div style="display: flex; gap: 0.5rem;">
-              <button class="btn btn-green" onclick="fetchLineupOptimization(false)">⚡ Re-Solve</button>
-              <button class="btn btn-primary" onclick="fetchLineupOptimization(true)" title="Randomize Vegas spreads, over/unders, weather and snap trends in sandbox mode">🎲 Randomize Matchups</button>
+              <button id="lineup-resolve-btn" class="btn btn-green" onclick="fetchLineupOptimization(false)">⚡ Re-Solve</button>
+              <button id="lineup-randomize-btn" class="btn btn-primary" onclick="fetchLineupOptimization(true)" title="Randomize Vegas spreads, over/unders, weather and snap trends in sandbox mode">🎲 Randomize Matchups</button>
             </div>
           </div>
         </div>
@@ -563,7 +576,7 @@
       <!-- IR / Out Warnings -->
       <div id="lineup-ir-warnings-container" style="display: none; margin-bottom: 1rem;"></div>
 
-      <div class="grid-2">
+      <div class="grid-lineup">
         <div class="card">
           <div class="card-header">
             <div class="card-title">✅ Optimal Starting Lineup</div>
@@ -575,8 +588,8 @@
                 <th style="width: 55px;">Slot</th>
                 <th>Player</th>
                 <th style="width: 55px;">Team</th>
-                <th>Opponent / Environment</th>
-                <th style="width: 85px;">Proj Pts</th>
+                <th>Opponent / Matchup</th>
+                <th style="width: 75px;">Proj Pts</th>
               </tr>
             </thead>
             <tbody id="optimal-starters-tbody"></tbody>
@@ -592,8 +605,9 @@
               <tr>
                 <th style="width: 50px;">Pos</th>
                 <th>Player</th>
-                <th style="width: 75px;">Status</th>
-                <th style="width: 80px;">Proj Pts</th>
+                <th style="width: 55px;">Team</th>
+                <th style="width: 65px;">Status</th>
+                <th style="width: 75px;">Proj Pts</th>
                 <th>Recommendation</th>
               </tr>
             </thead>
@@ -602,6 +616,7 @@
         </div>
       </div>
     </div>
+
 
 
     <!-- TAB 3: 3-WEEK WAIVER & STREAMING -->
@@ -1125,15 +1140,62 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
 
     function getContextBadgesHtml(reasons) {
       if (!reasons || reasons.length === 0) return '';
-      let html = '<div style="margin-top: 0.2rem;">';
+      let html = '<div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem;">';
       reasons.forEach(r => {
         let badgeClass = 'badge-info';
-        if (r.includes('+') || r.includes('Shootout') || r.includes('Dome') || r.includes('Surge') || r.includes('Elite') || r.includes('Goal-Line') || r.includes('Favorite')) {
+        let shortText = r;
+
+        if (r.includes('Vegas Shootout')) {
+          const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
+          const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '+10%';
+          shortText = `🔥 Shootout ${pts}`;
           badgeClass = 'badge-boost';
-        } else if (r.includes('-') || r.includes('Demotion') || r.includes('Slugfest') || r.includes('Wind') || r.includes('Decoy') || r.includes('Snow')) {
+        } else if (r.includes('Defensive Slugfest')) {
+          const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
+          const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '-10%';
+          shortText = `🛡️ Slugfest ${pts}`;
+          badgeClass = 'badge-penalty';
+        } else if (r.includes('Heavy Favorite')) {
+          shortText = r.includes('+') ? '🏆 Favorite +1.5' : '🏆 Fav Pass -0.5';
+          badgeClass = r.includes('+') ? 'badge-boost' : 'badge-penalty';
+        } else if (r.includes('Heavy Underdog')) {
+          shortText = '⚡ Underdog +1.0';
+          badgeClass = 'badge-boost';
+        } else if (r.includes('Indoor Dome')) {
+          shortText = r.includes('Kicker') ? '🏟️ Dome +0.8' : '🏟️ Dome +0.5';
+          badgeClass = 'badge-boost';
+        } else if (r.includes('High Wind Storm')) {
+          const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
+          const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '-15%';
+          shortText = `🌪️ Wind ${pts}`;
+          badgeClass = 'badge-penalty';
+        } else if (r.includes('Blizzard') || r.includes('Snow')) {
+          shortText = r.includes('+') ? '❄️ Snow Run +1.0' : '❄️ Blizzard -15%';
+          badgeClass = r.includes('+') ? 'badge-boost' : 'badge-penalty';
+        } else if (r.includes('Role Demotion')) {
+          const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
+          const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '-30%';
+          shortText = `📉 Snaps ${pts}`;
+          badgeClass = 'badge-penalty';
+        } else if (r.includes('Role Surge')) {
+          const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
+          const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '+15%';
+          shortText = `📈 Snaps ${pts}`;
+          badgeClass = 'badge-boost';
+        } else if (r.includes('Route Participation')) {
+          shortText = r.includes('+') ? '🎯 Routes +1.0' : '🎯 Routes -2.0';
+          badgeClass = r.includes('+') ? 'badge-boost' : 'badge-penalty';
+        } else if (r.includes('High-Value Touches')) {
+          shortText = r.includes('1.8') ? '🏈 Goal-Line +1.8' : '🏈 Goal-Line +1.5';
+          badgeClass = 'badge-boost';
+        } else if (r.includes('Decoy')) {
+          const match = r.match(/\([+-]?\d+\.?\d* pts\)/);
+          const pts = match ? match[0].replace(' pts)', '').replace('(', '') : '-25%';
+          shortText = `⚠️ Decoy ${pts}`;
           badgeClass = 'badge-penalty';
         }
-        html += `<span class="context-badge ${badgeClass}">${r}</span>`;
+
+        html += `<span class="context-badge ${badgeClass}" title="${r}">${shortText}</span>`;
       });
       html += '</div>';
       return html;
@@ -1148,6 +1210,14 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       const swid = document.getElementById('session-swid')?.value || '';
       const espnS2 = document.getElementById('session-espn-s2')?.value || '';
 
+      const resolveBtn = document.getElementById('lineup-resolve-btn');
+      const randBtn = document.getElementById('lineup-randomize-btn');
+      if (randomize && randBtn) {
+        randBtn.textContent = '🎲 Randomizing...';
+      } else if (!randomize && resolveBtn) {
+        resolveBtn.textContent = '⚡ Solving...';
+      }
+
       try {
         let url = `/api/lineup/optimize?strategy=${strategy}`;
         if (randomize) url += '&randomize=true';
@@ -1160,7 +1230,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         const res = await fetch(url);
         if (!res.ok) throw new Error('Lineup fetch failed');
         const data = await res.json();
-        
+
         if (data.optimal_projected_total !== undefined) {
           document.getElementById('optimal-proj-pts').textContent = data.optimal_projected_total.toFixed(1) + ' pts';
           document.getElementById('optimal-proj-delta').textContent = '+' + data.projected_delta.toFixed(1) + ' pts';
@@ -1230,7 +1300,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           let rowsHtml = '';
           data.optimal_starters.forEach((p, idx) => {
             const posClass = `pos-${p.position || 'WR'}`;
-            const slotName = idx === 0 ? 'QB' : (idx === 1 ? 'RB1' : (idx === 2 ? 'RB2' : (idx === 3 ? 'WR1' : (idx === 4 ? 'WR2' : (idx === 5 ? 'TE' : (idx === 6 ? 'FLEX' : (idx === 7 ? 'K' : 'D/ST')))))));
+            const slotName = p.assigned_slot || (idx === 0 ? 'QB' : 'FLEX');
             const envStr = p.game_context ? `${p.game_context.opponent || '—'} ${p.game_context.is_dome ? '(Dome)' : ''}` : (p.opponent || '—');
             const badges = getContextBadgesHtml(p.projection_adjustment_reasons);
 
@@ -1268,9 +1338,10 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
               <tr>
                 <td><span class="pos-tag ${posClass}">${p.position}</span></td>
                 <td>
-                  <strong>${p.name}</strong> (${p.team || '—'})
+                  <strong>${p.name}</strong>
                   ${badges}
                 </td>
+                <td>${p.team || '—'}</td>
                 <td>${statusTag}</td>
                 <td>${p.adjusted_projected_points ? p.adjusted_projected_points.toFixed(1) : p.projected_points.toFixed(1)}</td>
                 <td>${actionHtml}</td>
@@ -1281,8 +1352,12 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         }
       } catch (err) {
         console.log('Lineup optimization synced');
+      } finally {
+        if (resolveBtn) resolveBtn.textContent = '⚡ Re-Solve';
+        if (randBtn) randBtn.textContent = '🎲 Randomize Matchups';
       }
     }
+
 
 
     async function fetchWaiverRecommendations() {

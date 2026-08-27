@@ -91,3 +91,4 @@ class Player(BaseModel):
     projection_adjustment_reasons: list[str] = Field(default_factory=list)
     floor_points: float = 0.0
     ceiling_points: float = 0.0
+    assigned_slot: str | None = None
