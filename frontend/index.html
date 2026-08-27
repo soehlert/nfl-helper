@@ -293,6 +293,40 @@
       border-color: var(--accent-blue);
     }
 
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      width: 100%;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
     footer {
       background-color: var(--bg-secondary);
       border-top: 1px solid var(--border-color);
@@ -315,7 +349,7 @@
     </div>
     <div class="header-actions">
       <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted);">Team: <strong id="current-team-name" style="color: var(--text-main);">My Squad</strong></span>
-      <button class="btn btn-primary" onclick="switchTab('settings')">⚙️ Settings & Invites</button>
+      <button id="admin-settings-btn" class="btn btn-primary" onclick="openSettingsModal()">⚙️ Settings & Invites</button>
     </div>
   </header>
 
@@ -323,7 +357,6 @@
     <button class="tab-btn active" onclick="switchTab('draft')">🎯 Live Draft Board</button>
     <button class="tab-btn" onclick="switchTab('lineup')">⚡ Lineup Optimizer</button>
     <button class="tab-btn" onclick="switchTab('waivers')">🔍 3-Week Waiver & Streaming</button>
-    <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings & Cheatsheets</button>
   </nav>
 
   <main>
@@ -695,73 +728,27 @@
       </div>
     </div>
 
-    <!-- TAB 4: SETTINGS & INGESTION (Admin Section) -->
-    <div id="tab-settings" class="tab-content">
-      <div class="grid-2">
-        <!-- Magic Invite Generator (Admin) -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">🔗 One-Time Magic Invite Generator</div>
-            <span class="badge badge-admin">Host / Admin</span>
-          </div>
-          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-            Generate a secure, single-use invite link for your friend's Sleeper league or separate team. Once claimed, it binds to their browser session.
-          </p>
-          <div class="form-group">
-            <label class="form-label">Platform</label>
-            <select id="invite-platform" class="form-control">
-              <option value="sleeper">Sleeper (Public REST API - No cookies required)</option>
-              <option value="espn">ESPN</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Friend's League ID</label>
-            <input type="text" id="invite-league-id" class="form-control" placeholder="e.g. 987654321098765432">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Friend's Team ID / Name</label>
-            <input type="text" id="invite-team-id" class="form-control" placeholder="e.g. 3 or Team Name">
-          </div>
-          <button class="btn btn-primary" onclick="generateMagicLink()">✨ Generate One-Time Link</button>
-          
-          <div id="invite-output-container" style="margin-top: 1rem; display: none;">
-            <label class="form-label">Share this link with your friend:</label>
-            <div style="display: flex; gap: 0.5rem;">
-              <input type="text" id="invite-link-output" class="form-control" readonly>
-              <button class="btn btn-green" onclick="copyInviteLink()">📋 Copy</button>
-            </div>
-          </div>
-        </div>
+  </main>
 
-        <!-- Plain-Text Cheatsheet Ingestion -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">📝 Plain-Text Cheatsheet Ingestion</div>
-          </div>
-          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-            Paste plain-text rankings or notes from your friend. Notes attach contextually to players on the board without overwriting raw projections.
-          </p>
-          <div class="form-group">
-            <textarea id="cheatsheet-textarea" class="form-control" rows="7" placeholder="Justin Jefferson - Elite WR1 target
-Breece Hall - Must draft Tier 1 RB
-Jordan Mason - High priority handcuff
-George Pickens - High upside WR2..."></textarea>
-          </div>
-          <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Save Cheatsheet</button>
-        </div>
+  <!-- MODAL: Settings, Credentials & Magic Invites (Admin only) -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="font-size: 1.15rem;">⚙️ Settings, Credentials & Invites</h3>
+        <button class="btn" onclick="closeSettingsModal()">✕</button>
       </div>
 
-      <!-- League Configuration -->
-      <div class="card">
+      <!-- Active League Configuration -->
+      <div class="card" style="margin-bottom: 1rem;">
         <div class="card-header">
-          <div class="card-title">⚙️ Active League & Credentials</div>
+          <div class="card-title" style="font-size: 0.95rem;">🏈 Active League Configuration</div>
         </div>
         <div class="grid-2">
           <div>
             <div class="form-group">
               <label class="form-label">Platform</label>
               <select id="session-platform" class="form-control" onchange="toggleCookieFields()">
-                <option value="espn">ESPN (Requires League ID, SWID, espn_s2 for private leagues)</option>
+                <option value="espn">ESPN (Requires League ID, SWID, espn_s2)</option>
                 <option value="sleeper">Sleeper (Requires League ID only)</option>
               </select>
             </div>
@@ -791,11 +778,62 @@ George Pickens - High upside WR2..."></textarea>
             </div>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="saveSettings()">💾 Save & Connect League</button>
+      </div>
+
+      <!-- Magic Invite Generator -->
+      <div class="card" style="margin-bottom: 1rem;">
+        <div class="card-header">
+          <div class="card-title" style="font-size: 0.95rem;">🔗 One-Time Magic Invite Link for Friend</div>
+          <span class="badge badge-admin">Admin</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 0.75rem;">
+          Generate a single-use invite link for your friend's Sleeper league. Once claimed, they can view their draft/team independently without seeing this Settings modal.
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Platform</label>
+            <select id="invite-platform" class="form-control">
+              <option value="sleeper">Sleeper</option>
+              <option value="espn">ESPN</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Friend League ID</label>
+            <input type="text" id="invite-league-id" class="form-control" placeholder="e.g. 987654321">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Friend Team ID</label>
+            <input type="text" id="invite-team-id" class="form-control" placeholder="e.g. 2">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="generateMagicLink()">✨ Generate Link</button>
+
+        <div id="invite-output-container" style="margin-top: 0.75rem; display: none;">
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="invite-link-output" class="form-control" readonly>
+            <button class="btn btn-green" onclick="copyInviteLink()">📋 Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Plain-Text Cheatsheet Ingestion -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" style="font-size: 0.95rem;">📝 Plain-Text Cheatsheet Ingestion</div>
+        </div>
+        <div class="form-group">
+          <textarea id="cheatsheet-textarea" class="form-control" rows="5" placeholder="Justin Jefferson - Elite WR1 target
+Breece Hall - Must draft Tier 1 RB
+Jordan Mason - High priority handcuff..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Save Cheatsheet</button>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+        <button class="btn" onclick="closeSettingsModal()">Close</button>
       </div>
     </div>
-
-  </main>
+  </div>
 
   <footer>
     <div>Live Status: <span style="color: var(--accent-green); font-weight: 600;" id="ws-status">● Auto-Syncing (WebSocket Live)</span></div>
@@ -817,6 +855,13 @@ George Pickens - High upside WR2..."></textarea>
       });
       const target = document.getElementById('tab-' + tabId);
       if (target) target.classList.add('active');
+    }
+
+    function openSettingsModal() {
+      document.getElementById('settings-modal').classList.add('open');
+    }
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').classList.remove('open');
     }
 
     function toggleCookieFields() {
@@ -906,10 +951,6 @@ George Pickens - High upside WR2..."></textarea>
       }
     }
 
-    function saveSettings() {
-      alert('Settings and league credentials saved.');
-    }
-
     function initWebSocket() {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/ws/draft/default_session`;
@@ -926,7 +967,6 @@ George Pickens - High upside WR2..."></textarea>
         ws.onclose = () => {
           document.getElementById('ws-status').textContent = '● Auto-Polling (HTTP)';
           document.getElementById('ws-status').style.color = 'var(--accent-amber)';
-          // Reconnect after 3 seconds
           setTimeout(initWebSocket, 3000);
         };
       } catch (e) {
@@ -934,16 +974,16 @@ George Pickens - High upside WR2..."></textarea>
       }
     }
 
-    // Auto-refresh initialization
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const inviteCode = params.get('invite');
       const platformParam = params.get('platform');
 
       if (inviteCode) {
-        // Guest mode
+        // Guest mode - hide admin settings button
         document.getElementById('role-badge').textContent = 'Guest Session';
         document.getElementById('role-badge').className = 'badge badge-claimed';
+        document.getElementById('admin-settings-btn').style.display = 'none';
         if (platformParam) {
           document.getElementById('platform-badge').textContent = platformParam.toUpperCase();
           document.getElementById('platform-badge').className = 'badge badge-' + platformParam;
@@ -952,8 +992,6 @@ George Pickens - High upside WR2..."></textarea>
 
       fetchDraftState();
       initWebSocket();
-      
-      // Auto-refresh draft state every 4 seconds as a background fallback
       autoRefreshInterval = setInterval(fetchDraftState, 4000);
     });
   </script>
