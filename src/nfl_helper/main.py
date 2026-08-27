@@ -1,5 +1,4 @@
-"""FastAPI application entrypoint for Fantasy War Room."""
-
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +24,9 @@ from nfl_helper.models.roster import (
 )
 from nfl_helper.models.session import LeagueProfile, PlatformType
 from tests.fixtures.demo_rosters import generate_randomized_roster, get_demo_roster
+
+logger = logging.getLogger("nfl_helper.api")
+
 
 app = FastAPI(
     title="Fantasy War Room",
@@ -267,14 +269,24 @@ async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
     filename = (file.filename or "").lower()
     content_bytes = await file.read()
 
-    if filename.endswith(".pdf"):
-        context = parse_pdf_cheatsheet(content_bytes)
-    else:
-        text_str = content_bytes.decode("utf-8", errors="replace")
-        context = parse_cheatsheet_content(text_str)
+    try:
+        if filename.endswith(".pdf"):
+            context = parse_pdf_cheatsheet(content_bytes)
+        else:
+            text_str = content_bytes.decode("utf-8", errors="replace")
+            context = parse_cheatsheet_content(text_str)
 
-    _ACTIVE_CHEATSHEET = context
-    return context
+        _ACTIVE_CHEATSHEET = context
+        logger.info(
+            "Successfully parsed cheatsheet file %s: %d players, %d rules",
+            filename,
+            len(context.entries),
+            len(context.strategy_rules),
+        )
+        return context
+    except Exception as exc:
+        logger.exception("Failed to parse uploaded cheatsheet file %s: %s", filename, exc)
+        raise HTTPException(status_code=400, detail=f"Failed to parse file: {exc}") from exc
 
 
 @app.get("/api/cheatsheet", response_model=CheatsheetContext | None)
