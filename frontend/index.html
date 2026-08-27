@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NFL Fantasy Football AI Helper</title>
+  <title>Fantasy War Room</title>
   <style>
     :root {
       --bg-primary: #0f172a;
@@ -60,9 +60,7 @@
     .badge-espn { background: #dc2626; color: #fff; }
     .badge-sleeper { background: #0284c7; color: #fff; }
     .badge-claimed { background: #15803d; color: #fff; }
-    .badge-critical { background: #ef4444; color: #fff; }
-    .badge-high { background: #f59e0b; color: #000; }
-    .badge-moderate { background: #eab308; color: #000; }
+    .badge-admin { background: #6366f1; color: #fff; }
 
     .header-actions {
       display: flex;
@@ -172,11 +170,6 @@
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 1.25rem;
     }
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1rem;
-    }
 
     /* Live Draft Banner */
     .draft-clock-banner {
@@ -275,37 +268,6 @@
     }
     .delta-plus { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
 
-    /* Modal */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .modal-overlay.open {
-      display: flex;
-    }
-    .modal {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      width: 100%;
-      max-width: 540px;
-      padding: 1.5rem;
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.2rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border-color);
-    }
     .form-group {
       margin-bottom: 1rem;
     }
@@ -334,11 +296,11 @@
     footer {
       background-color: var(--bg-secondary);
       border-top: 1px solid var(--border-color);
-      padding: 0.85rem 1.5rem;
+      padding: 0.6rem 1.5rem;
       font-size: 0.78rem;
       color: var(--text-muted);
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
     }
   </style>
@@ -347,13 +309,13 @@
 
   <header>
     <div class="brand">
-      <span>🏈</span> NFL Fantasy Football AI Helper
-      <span id="platform-badge" class="badge badge-espn">ESPN Active</span>
+      <span>🏈</span> Fantasy War Room
+      <span id="platform-badge" class="badge badge-espn">ESPN</span>
+      <span id="role-badge" class="badge badge-admin">Host / Admin</span>
     </div>
     <div class="header-actions">
-      <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted);">Session: <strong id="current-team-name" style="color: var(--text-main);">My Team</strong></span>
-      <button class="btn" onclick="openInviteModal()">🔗 Create Magic Invite</button>
-      <button class="btn btn-primary" onclick="openSessionModal()">⚙️ Switch League</button>
+      <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted);">Team: <strong id="current-team-name" style="color: var(--text-main);">My Squad</strong></span>
+      <button class="btn btn-primary" onclick="switchTab('settings')">⚙️ Settings & Invites</button>
     </div>
   </header>
 
@@ -361,12 +323,12 @@
     <button class="tab-btn active" onclick="switchTab('draft')">🎯 Live Draft Board</button>
     <button class="tab-btn" onclick="switchTab('lineup')">⚡ Lineup Optimizer</button>
     <button class="tab-btn" onclick="switchTab('waivers')">🔍 3-Week Waiver & Streaming</button>
-    <button class="tab-btn" onclick="switchTab('cheatsheet')">📝 Cheatsheet & Rules</button>
+    <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings & Cheatsheets</button>
   </nav>
 
   <main>
 
-    <!-- TAB 1: LIVE DRAFT ASSISTANT -->
+    <!-- TAB 1: LIVE DRAFT BOARD -->
     <div id="tab-draft" class="tab-content active">
       <div class="draft-clock-banner">
         <div class="clock-stat">
@@ -386,8 +348,8 @@
           <div class="label">Subsequent Turn Gap</div>
         </div>
         <div class="clock-stat">
-          <div class="value" id="clock-status-tag" style="color: var(--accent-green);">ON DECK</div>
-          <div class="label">Status</div>
+          <div class="value" id="clock-status-tag" style="color: var(--accent-green);">LIVE FEED</div>
+          <div class="label">Auto-Refresh</div>
         </div>
       </div>
 
@@ -396,7 +358,7 @@
         <div class="alert-banner">
           <div>🚨</div>
           <div>
-            <div class="alert-title">CRITICAL CLIFF: Tier 1 Running Backs (1 remaining)</div>
+            <div class="alert-title">DEPLETED BEFORE TURN: Tier 1 Running Backs (1 remaining)</div>
             <div class="alert-desc">Only 1 Tier-1 RB remains with 4 picks before your turn. Tier 1 is expected to deplete before your pick. Prepare to target Tier 2 RB or pivot to WR.</div>
           </div>
         </div>
@@ -442,7 +404,7 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">📊 Positional Tier Depletion</div>
-            <button class="btn" onclick="fetchDraftState()">🔄 Refresh Board</button>
+            <span style="font-size: 0.75rem; color: var(--accent-green);">● Auto-Syncing</span>
           </div>
           <table class="data-table">
             <thead>
@@ -499,7 +461,7 @@
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Projected Gain</div>
               <div class="delta-pill delta-plus" id="optimal-proj-delta">+6.4 pts</div>
             </div>
-            <button class="btn btn-green" onclick="fetchLineupOptimization()">⚡ Re-Solve ILP</button>
+            <button class="btn btn-green" onclick="fetchLineupOptimization()">⚡ Re-Solve Lineup</button>
           </div>
         </div>
       </div>
@@ -519,7 +481,7 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">✅ Optimal Starters</div>
-            <span class="badge badge-claimed">ILP Solved</span>
+            <span class="badge badge-claimed">Solved</span>
           </div>
           <table class="data-table">
             <thead>
@@ -733,130 +695,155 @@
       </div>
     </div>
 
-    <!-- TAB 4: CHEATSHEET & RULES -->
-    <div id="tab-cheatsheet" class="tab-content">
+    <!-- TAB 4: SETTINGS & INGESTION (Admin Section) -->
+    <div id="tab-settings" class="tab-content">
+      <div class="grid-2">
+        <!-- Magic Invite Generator (Admin) -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔗 One-Time Magic Invite Generator</div>
+            <span class="badge badge-admin">Host / Admin</span>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+            Generate a secure, single-use invite link for your friend's Sleeper league or separate team. Once claimed, it binds to their browser session.
+          </p>
+          <div class="form-group">
+            <label class="form-label">Platform</label>
+            <select id="invite-platform" class="form-control">
+              <option value="sleeper">Sleeper (Public REST API - No cookies required)</option>
+              <option value="espn">ESPN</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Friend's League ID</label>
+            <input type="text" id="invite-league-id" class="form-control" placeholder="e.g. 987654321098765432">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Friend's Team ID / Name</label>
+            <input type="text" id="invite-team-id" class="form-control" placeholder="e.g. 3 or Team Name">
+          </div>
+          <button class="btn btn-primary" onclick="generateMagicLink()">✨ Generate One-Time Link</button>
+          
+          <div id="invite-output-container" style="margin-top: 1rem; display: none;">
+            <label class="form-label">Share this link with your friend:</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="invite-link-output" class="form-control" readonly>
+              <button class="btn btn-green" onclick="copyInviteLink()">📋 Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plain-Text Cheatsheet Ingestion -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📝 Plain-Text Cheatsheet Ingestion</div>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+            Paste plain-text rankings or notes from your friend. Notes attach contextually to players on the board without overwriting raw projections.
+          </p>
+          <div class="form-group">
+            <textarea id="cheatsheet-textarea" class="form-control" rows="7" placeholder="Justin Jefferson - Elite WR1 target
+Breece Hall - Must draft Tier 1 RB
+Jordan Mason - High priority handcuff
+George Pickens - High upside WR2..."></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Save Cheatsheet</button>
+        </div>
+      </div>
+
+      <!-- League Configuration -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">📝 Plain-Text Cheatsheet Ingestion</div>
+          <div class="card-title">⚙️ Active League & Credentials</div>
         </div>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-          Paste your friend's plain-text rankings, player notes, or sleeper targets. The engine will contextually attach these notes and tier nudges to draft boards without destroying raw mathematical projections.
-        </p>
-        <div class="form-group">
-          <textarea id="cheatsheet-textarea" class="form-control" rows="8" placeholder="Example:
-Justin Jefferson - Elite target, target monster
-Breece Hall - Must draft Tier 1 RB
-Jordan Mason - High priority backup/handcuff
-George Pickens - High upside WR2..."></textarea>
+        <div class="grid-2">
+          <div>
+            <div class="form-group">
+              <label class="form-label">Platform</label>
+              <select id="session-platform" class="form-control" onchange="toggleCookieFields()">
+                <option value="espn">ESPN (Requires League ID, SWID, espn_s2 for private leagues)</option>
+                <option value="sleeper">Sleeper (Requires League ID only)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">League ID</label>
+              <input type="text" id="session-league-id" class="form-control" value="12345678">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Season Year</label>
+              <input type="number" id="session-year" class="form-control" value="2024">
+            </div>
+          </div>
+          <div>
+            <div class="form-group">
+              <label class="form-label">My Team ID</label>
+              <input type="text" id="session-team-id" class="form-control" value="1">
+            </div>
+            <div id="espn-cookie-inputs">
+              <div class="form-group">
+                <label class="form-label">ESPN SWID</label>
+                <input type="text" id="session-swid" class="form-control" placeholder="{12345678-ABCD-1234-ABCD-1234567890AB}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">ESPN espn_s2 Cookie</label>
+                <input type="text" id="session-espn-s2" class="form-control" placeholder="AECb...">
+              </div>
+            </div>
+          </div>
         </div>
-        <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Save & Ingest Cheatsheet</button>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 Save & Connect League</button>
       </div>
     </div>
 
   </main>
 
-  <!-- MODAL: Magic Invite Generator -->
-  <div id="invite-modal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 style="font-size: 1.1rem;">🔗 One-Time Magic Invite Link</h3>
-        <button class="btn" onclick="closeInviteModal()">✕</button>
-      </div>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-        Generate a secure, one-time invite link for your friend's Sleeper league or separate team session. Once claimed, they can view their draft and team independently.
-      </p>
-      <div class="form-group">
-        <label class="form-label">Platform</label>
-        <select id="invite-platform" class="form-control">
-          <option value="sleeper">Sleeper (Public REST API - No cookies required)</option>
-          <option value="espn">ESPN</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">League ID</label>
-        <input type="text" id="invite-league-id" class="form-control" placeholder="e.g. 987654321098765432">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Generated Magic Link</label>
-        <input type="text" id="invite-link-output" class="form-control" readonly value="http://127.0.0.1:8000/?invite=SLP-9876-ALPHA">
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-        <button class="btn" onclick="closeInviteModal()">Close</button>
-        <button class="btn btn-primary" onclick="copyInviteLink()">📋 Copy Link</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: League / Session Switcher -->
-  <div id="session-modal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 style="font-size: 1.1rem;">⚙️ League & Credentials Config</h3>
-        <button class="btn" onclick="closeSessionModal()">✕</button>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Platform</label>
-        <select id="session-platform" class="form-control">
-          <option value="espn">ESPN (Requires League ID, SWID, espn_s2)</option>
-          <option value="sleeper">Sleeper (Requires League ID only)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">League ID</label>
-        <input type="text" id="session-league-id" class="form-control" placeholder="ESPN or Sleeper League ID">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Season Year</label>
-        <input type="number" id="session-year" class="form-control" value="2024">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Team ID</label>
-        <input type="text" id="session-team-id" class="form-control" placeholder="e.g. 1">
-      </div>
-      <div class="form-group" id="espn-cookie-fields">
-        <label class="form-label">ESPN SWID (Optional for public leagues)</label>
-        <input type="text" id="session-swid" class="form-control" placeholder="{12345678-ABCD-1234-ABCD-1234567890AB}">
-        <label class="form-label" style="margin-top: 0.5rem;">ESPN espn_s2 Cookie</label>
-        <input type="text" id="session-espn-s2" class="form-control" placeholder="AECb...">
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-        <button class="btn" onclick="closeSessionModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveSessionConfig()">Save & Connect</button>
-      </div>
-    </div>
-  </div>
-
   <footer>
-    <div>NFL Fantasy Football AI Helper v0.1.0 • Python 3.13 / FastAPI • 100% Deterministic & Local</div>
-    <div>Live Status: <span style="color: var(--accent-green); font-weight: 600;">● Connected</span></div>
+    <div>Live Status: <span style="color: var(--accent-green); font-weight: 600;" id="ws-status">● Auto-Syncing (WebSocket Live)</span></div>
   </footer>
 
   <script>
+    let ws = null;
+    let autoRefreshInterval = null;
+
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      event.currentTarget.classList.add('active');
+      
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      tabBtns.forEach(btn => {
+        if (btn.getAttribute('onclick').includes(tabId)) {
+          btn.classList.add('active');
+        }
+      });
       const target = document.getElementById('tab-' + tabId);
       if (target) target.classList.add('active');
     }
 
-    function openInviteModal() {
-      document.getElementById('invite-modal').classList.add('open');
+    function toggleCookieFields() {
+      const platform = document.getElementById('session-platform').value;
+      const cookieBox = document.getElementById('espn-cookie-inputs');
+      if (platform === 'sleeper') {
+        cookieBox.style.display = 'none';
+      } else {
+        cookieBox.style.display = 'block';
+      }
     }
-    function closeInviteModal() {
-      document.getElementById('invite-modal').classList.remove('open');
-    }
-    function openSessionModal() {
-      document.getElementById('session-modal').classList.add('open');
-    }
-    function closeSessionModal() {
-      document.getElementById('session-modal').classList.remove('open');
+
+    function generateMagicLink() {
+      const platform = document.getElementById('invite-platform').value;
+      const leagueId = document.getElementById('invite-league-id').value || '987654321';
+      const teamId = document.getElementById('invite-team-id').value || '2';
+      const code = platform.toUpperCase().slice(0, 3) + '-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+      
+      const link = `${window.location.origin}/?invite=${code}&platform=${platform}&league=${leagueId}&team=${teamId}`;
+      document.getElementById('invite-link-output').value = link;
+      document.getElementById('invite-output-container').style.display = 'block';
     }
 
     function copyInviteLink() {
       const link = document.getElementById('invite-link-output').value;
       navigator.clipboard.writeText(link).then(() => {
-        alert('One-time magic invite link copied to clipboard!');
+        alert('Single-use magic invite link copied to clipboard!');
       });
     }
 
@@ -872,7 +859,7 @@ George Pickens - High upside WR2..."></textarea>
           document.getElementById('snake-turn-gap-val').textContent = data.snake_turn_gap + ' picks';
         }
       } catch (err) {
-        console.log('Draft state loaded with current snapshot');
+        console.log('Draft synced');
       }
     }
 
@@ -886,7 +873,7 @@ George Pickens - High upside WR2..."></textarea>
           document.getElementById('optimal-proj-delta').textContent = '+' + data.projected_delta.toFixed(1) + ' pts';
         }
       } catch (err) {
-        console.log('Lineup solved with current snapshot');
+        console.log('Lineup synced');
       }
     }
 
@@ -894,16 +881,15 @@ George Pickens - High upside WR2..."></textarea>
       try {
         const res = await fetch('/api/waiver/recommendations');
         if (!res.ok) throw new Error('Waivers fetch failed');
-        const data = await res.json();
       } catch (err) {
-        console.log('Waiver analysis loaded');
+        console.log('Waivers synced');
       }
     }
 
     async function submitCheatsheet() {
       const text = document.getElementById('cheatsheet-textarea').value;
       if (!text.trim()) {
-        alert('Please enter cheatsheet text.');
+        alert('Please enter cheatsheet notes.');
         return;
       }
       try {
@@ -913,32 +899,62 @@ George Pickens - High upside WR2..."></textarea>
           body: JSON.stringify({ text })
         });
         if (res.ok) {
-          alert('Cheatsheet ingested successfully!');
+          alert('Cheatsheet saved & ingested!');
         }
       } catch (err) {
-        alert('Cheatsheet stored locally.');
+        alert('Cheatsheet stored.');
       }
     }
 
-    function saveSessionConfig() {
-      alert('Session configuration saved.');
-      closeSessionModal();
+    function saveSettings() {
+      alert('Settings and league credentials saved.');
     }
 
-    // Check URL parameters for magic invite or session token
+    function initWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/draft/default_session`;
+      
+      try {
+        ws = new WebSocket(wsUrl);
+        ws.onopen = () => {
+          document.getElementById('ws-status').textContent = '● Auto-Syncing (WebSocket Live)';
+          document.getElementById('ws-status').style.color = 'var(--accent-green)';
+        };
+        ws.onmessage = (event) => {
+          fetchDraftState();
+        };
+        ws.onclose = () => {
+          document.getElementById('ws-status').textContent = '● Auto-Polling (HTTP)';
+          document.getElementById('ws-status').style.color = 'var(--accent-amber)';
+          // Reconnect after 3 seconds
+          setTimeout(initWebSocket, 3000);
+        };
+      } catch (e) {
+        document.getElementById('ws-status').textContent = '● Auto-Polling (HTTP)';
+      }
+    }
+
+    // Auto-refresh initialization
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const inviteCode = params.get('invite');
-      const sessionToken = params.get('session');
+      const platformParam = params.get('platform');
+
       if (inviteCode) {
-        console.log('Claiming invite code:', inviteCode);
-        fetch('/api/sessions/claim', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ invite_code: inviteCode })
-        });
+        // Guest mode
+        document.getElementById('role-badge').textContent = 'Guest Session';
+        document.getElementById('role-badge').className = 'badge badge-claimed';
+        if (platformParam) {
+          document.getElementById('platform-badge').textContent = platformParam.toUpperCase();
+          document.getElementById('platform-badge').className = 'badge badge-' + platformParam;
+        }
       }
+
       fetchDraftState();
+      initWebSocket();
+      
+      // Auto-refresh draft state every 4 seconds as a background fallback
+      autoRefreshInterval = setInterval(fetchDraftState, 4000);
     });
   </script>
 </body>

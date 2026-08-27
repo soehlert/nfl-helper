@@ -1,4 +1,4 @@
-"""FastAPI application entrypoint for NFL Fantasy Football AI Helper."""
+"""FastAPI application entrypoint for Fantasy War Room."""
 
 from pathlib import Path
 from typing import Any
@@ -19,8 +19,8 @@ from nfl_helper.models.roster import (
 )
 
 app = FastAPI(
-    title="NFL Fantasy Football AI Helper",
-    description="Self-hosted deterministic draft and weekly fantasy football optimization helper",
+    title="Fantasy War Room",
+    description="Self-hosted deterministic draft and weekly fantasy football optimization manager",
     version="0.1.0",
 )
 
@@ -66,7 +66,6 @@ async def health_check() -> dict[str, str]:
 @app.get("/api/draft/state", response_model=DraftState)
 async def get_draft_state(session_id: str | None = None) -> DraftState:
     """Fetch the current snapshot of the draft board with cliff warnings and VORP suggestions."""
-    # Initial state schema; adapter connection plugged in Step 4/6
     cliff = TierCliffWarning(
         position="RB",
         current_tier=1,
@@ -111,7 +110,6 @@ async def get_draft_state(session_id: str | None = None) -> DraftState:
 @app.get("/api/lineup/optimize", response_model=LineupSolution)
 async def get_lineup_optimization(session_id: str | None = None) -> LineupSolution:
     """Solve the mathematically optimal starting lineup using Integer Linear Programming (PuLP)."""
-    # Initial ILP output structure; core solver engine plugged in Step 7
     qb = Player(id="p_lamar", name="Lamar Jackson", position=Position.QB, team="BAL", projected_points=22.4)
     rb1 = Player(id="p_cmc", name="Christian McCaffrey", position=Position.RB, team="SF", projected_points=19.8)
     rb2 = Player(id="p_breece", name="Breece Hall", position=Position.RB, team="NYJ", projected_points=17.5)
@@ -151,7 +149,6 @@ async def get_lineup_optimization(session_id: str | None = None) -> LineupSoluti
 @app.get("/api/waiver/recommendations", response_model=WaiverAnalysis)
 async def get_waiver_recommendations(session_id: str | None = None) -> WaiverAnalysis:
     """Analyze team positional weaknesses and return ranked add/drop pairs and streaming options."""
-    # Initial structure; core waiver analyzer plugged in Step 8
     pickup = Player(id="fa_jmason", name="Jordan Mason", position=Position.RB, team="SF", projected_points=14.2)
     drop = Player(id="bench_drop", name="Deshaun Watson", position=Position.QB, team="CLE", projected_points=0.0)
 

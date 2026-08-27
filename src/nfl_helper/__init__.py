@@ -1,3 +1,3 @@
-"""NFL Fantasy Football AI Helper package."""
+"""Fantasy War Room package."""
 
 __version__ = "0.1.0"

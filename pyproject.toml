@@ -8,7 +8,7 @@ where = ["src"]
 [project]
 name = "nfl-helper"
 version = "0.1.0"
-description = "Fantasy football draft and in-season helper application"
+description = "Fantasy football draft and weekly optimization manager"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

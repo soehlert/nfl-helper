@@ -21,7 +21,7 @@ def test_root_serves_html() -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
-    assert "NFL Fantasy Football AI Helper" in response.text
+    assert "Fantasy War Room" in response.text
 
 
 def test_draft_state_endpoint() -> None:

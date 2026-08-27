@@ -1,3 +1,3 @@
-# NFL Fantasy Football AI Helper
+# Fantasy War Room
 
-Self-hosted fantasy football draft & weekly helper application.
+Self-hosted fantasy football draft & weekly optimization manager.
