@@ -1,6 +1,8 @@
 """Unit tests for domain data models."""
 
-from nfl_helper.models.draft import DraftPick, DraftState, DraftSuggestion, PlayerTier, TierCliffWarning
+from datetime import UTC, datetime
+
+from nfl_helper.models.draft import CliffType, DraftPick, DraftState, DraftSuggestion, PlayerTier, TierCliffWarning
 from nfl_helper.models.player import InjuryStatus, Player, PlayerMatchupScore, Position
 from nfl_helper.models.roster import (
     AddDropRecommendation,
@@ -33,8 +35,8 @@ def test_player_model_creation() -> None:
     assert player.matchups_3wk[0].opponent == "NYG"
 
 
-def test_draft_models_creation() -> None:
-    """Test DraftState, DraftPick, PlayerTier, and TierCliffWarning models."""
+def test_draft_models_and_cliff_types() -> None:
+    """Test DraftState, PlayerTier, and refined TierCliffWarning scenarios."""
     pick = DraftPick(
         round_num=1,
         round_pick=1,
@@ -47,15 +49,44 @@ def test_draft_models_creation() -> None:
     )
     player = Player(id="p2", name="Breece Hall", position=Position.RB, team="NYJ", projected_points=17.5)
     tier = PlayerTier(tier_num=1, position="RB", players=[player], avg_projected=17.5, count=1)
-    cliff = TierCliffWarning(
+
+    # 1. On The Clock Cliff
+    cliff_otc = TierCliffWarning(
         position="RB",
         current_tier=1,
         players_remaining=1,
-        picks_until_turn=5,
+        picks_until_turn=0,
+        snake_turn_gap=9,
         cliff_risk="CRITICAL",
+        cliff_type=CliffType.ON_THE_CLOCK_CLIFF,
         next_tier_drop_points=3.2,
-        recommended_action="Draft RB now; tier 1 is depleting before your next pick.",
+        recommended_action="Draft RB now; tier 1 will deplete across the 9-pick snake turn gap.",
     )
+    # 2. Upcoming Turn Cliff
+    cliff_upcoming = TierCliffWarning(
+        position="WR",
+        current_tier=1,
+        players_remaining=3,
+        picks_until_turn=2,
+        snake_turn_gap=10,
+        cliff_risk="HIGH",
+        cliff_type=CliffType.UPCOMING_TURN_CLIFF,
+        next_tier_drop_points=2.8,
+        recommended_action="Prepare to draft WR; tier will deplete during your next round turn gap.",
+    )
+    # 3. Depleted Before Turn Alert
+    cliff_depleted = TierCliffWarning(
+        position="TE",
+        current_tier=1,
+        players_remaining=1,
+        picks_until_turn=5,
+        snake_turn_gap=8,
+        cliff_risk="CRITICAL",
+        cliff_type=CliffType.DEPLETED_BEFORE_TURN,
+        next_tier_drop_points=4.0,
+        recommended_action="Tier 1 TE will be depleted before your turn in 5 picks. Pivot draft queue to Tier 2 TE or WR.",
+    )
+
     suggestion = DraftSuggestion(
         rank=1,
         player=player,
@@ -69,15 +100,17 @@ def test_draft_models_creation() -> None:
         current_pick=2,
         user_draft_slot=6,
         picks_until_user_turn=4,
+        snake_turn_gap=8,
         recent_picks=[pick],
         tiers_by_position={"RB": [tier]},
-        cliff_warnings=[cliff],
+        cliff_warnings=[cliff_otc, cliff_upcoming, cliff_depleted],
         top_suggestions=[suggestion],
     )
     assert draft_state.total_teams == 12
     assert len(draft_state.recent_picks) == 1
-    assert len(draft_state.cliff_warnings) == 1
-    assert draft_state.cliff_warnings[0].cliff_risk == "CRITICAL"
+    assert len(draft_state.cliff_warnings) == 3
+    assert draft_state.cliff_warnings[0].cliff_type == CliffType.ON_THE_CLOCK_CLIFF
+    assert draft_state.cliff_warnings[2].cliff_type == CliffType.DEPLETED_BEFORE_TURN
 
 
 def test_roster_and_lineup_models() -> None:
@@ -148,8 +181,8 @@ def test_roster_and_lineup_models() -> None:
     assert len(waiver.dst_streaming) == 1
 
 
-def test_session_profile_model() -> None:
-    """Test LeagueProfile model validation."""
+def test_session_profile_model_with_one_time_claim() -> None:
+    """Test LeagueProfile model validation and one-time invite claim fields."""
     profile = LeagueProfile(
         session_id="sess_abc123",
         platform=PlatformType.SLEEPER,
@@ -160,6 +193,14 @@ def test_session_profile_model() -> None:
         team_name="Gridiron Gurus",
         user_draft_slot=4,
         invite_code="CHAMP2024",
+        is_claimed=False,
     )
     assert profile.platform == PlatformType.SLEEPER
     assert profile.invite_code == "CHAMP2024"
+    assert not profile.is_claimed
+
+    # Claim invite code
+    profile.is_claimed = True
+    profile.claimed_at = datetime.now(UTC)
+    assert profile.is_claimed
+    assert profile.claimed_at is not None

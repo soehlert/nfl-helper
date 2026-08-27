@@ -1,5 +1,6 @@
 """Multi-manager session and league profile domain models."""
 
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
@@ -26,5 +27,7 @@ class LeagueProfile(BaseModel):
     espn_s2: str | None = None
     swid: str | None = None
     invite_code: str
+    is_claimed: bool = False
+    claimed_at: datetime | None = None
     custom_scoring: dict[str, float] = Field(default_factory=dict)
     roster_slots: dict[str, int] = Field(default_factory=dict)

@@ -1,8 +1,18 @@
 """Draft state, snake lookahead, tier clustering, and cliff models."""
 
+from enum import StrEnum
+
 from pydantic import BaseModel, Field
 
 from nfl_helper.models.player import Player
+
+
+class CliffType(StrEnum):
+    """Type of cliff scenario based on pick distance and snake turn gap."""
+
+    ON_THE_CLOCK_CLIFF = "ON_THE_CLOCK_CLIFF"
+    UPCOMING_TURN_CLIFF = "UPCOMING_TURN_CLIFF"
+    DEPLETED_BEFORE_TURN = "DEPLETED_BEFORE_TURN"
 
 
 class DraftPick(BaseModel):
@@ -35,7 +45,9 @@ class TierCliffWarning(BaseModel):
     current_tier: int
     players_remaining: int
     picks_until_turn: int
+    snake_turn_gap: int = 0
     cliff_risk: str = Field(description="CRITICAL, HIGH, MODERATE, or LOW")
+    cliff_type: CliffType | str = CliffType.ON_THE_CLOCK_CLIFF
     next_tier_drop_points: float = 0.0
     recommended_action: str
 
@@ -62,6 +74,7 @@ class DraftState(BaseModel):
     current_round: int = 1
     user_draft_slot: int = 1
     picks_until_user_turn: int = 0
+    snake_turn_gap: int = 0
     is_user_on_the_clock: bool = False
     recent_picks: list[DraftPick] = Field(default_factory=list)
     available_players_by_pos: dict[str, list[Player]] = Field(default_factory=dict)

@@ -35,7 +35,9 @@ class PlayerMatchupScore(BaseModel):
     week: int
     opponent: str
     opponent_rank: int = Field(description="Defensive rank vs position, 1=toughest, 32=easiest")
-    difficulty_rating: float = Field(default=5.0, description="Normalized difficulty score from 1.0 (hard) to 10.0 (easy)")
+    difficulty_rating: float = Field(
+        default=5.0, description="Normalized difficulty score from 1.0 (hard) to 10.0 (easy)"
+    )
 
 
 class Player(BaseModel):
