@@ -18,8 +18,8 @@ def generate_invite_code(platform: str) -> str:
 
 def build_invite_url(
     platform: str,
-    league_id: str,
-    team_id: str,
+    league_id: str | None = None,
+    team_id: str | None = None,
     swid: str | None = None,
     espn_s2: str | None = None,
     base_url: str = "http://127.0.0.1:8000",
@@ -27,12 +27,14 @@ def build_invite_url(
     """Construct full single-use invite magic link URL with optional pre-configured credentials."""
     code = generate_invite_code(platform)
     clean_base = base_url.rstrip("/")
-    params = {
+    params: dict[str, str] = {
         "invite": code,
         "platform": platform,
-        "league": league_id,
-        "team": team_id,
     }
+    if league_id:
+        params["league"] = league_id
+    if team_id:
+        params["team"] = team_id
     if swid:
         params["swid"] = swid
     if espn_s2:
@@ -57,8 +59,9 @@ def create_invite_command(args: argparse.Namespace) -> None:
     print("🏈 FANTASY WAR ROOM - SINGLE-USE MAGIC INVITE CREATED")
     print("=" * 60)
     print(f"Platform   : {args.platform.upper()}")
-    print(f"League ID  : {args.league_id}")
-    print(f"Team ID    : {args.team_id}")
+    print(f"League ID  : {args.league_id if args.league_id else '(User will enter in Settings)'}")
+    if args.team_id:
+        print(f"Team ID    : {args.team_id}")
     if args.swid:
         print(f"ESPN SWID  : {args.swid[:8]}... (Pre-configured)")
     if args.espn_s2:
@@ -88,8 +91,8 @@ def main(argv: list[str] | None = None) -> None:
     invite_parser.add_argument(
         "--platform", choices=["sleeper", "espn"], default="sleeper", help="League platform (sleeper or espn)"
     )
-    invite_parser.add_argument("--league-id", required=True, help="Friend's league ID")
-    invite_parser.add_argument("--team-id", required=True, help="Friend's team ID")
+    invite_parser.add_argument("--league-id", default=None, help="Optional friend's league ID (if known)")
+    invite_parser.add_argument("--team-id", default=None, help="Optional friend's team ID (if known)")
     invite_parser.add_argument("--swid", default=None, help="Optional ESPN SWID cookie for private leagues")
     invite_parser.add_argument("--espn-s2", default=None, help="Optional ESPN espn_s2 cookie for private leagues")
     invite_parser.add_argument("--base-url", default="http://127.0.0.1:8000", help="Base application URL")
