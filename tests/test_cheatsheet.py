@@ -32,9 +32,6 @@ TE - Target the top 4 in rounds 3-5
     context = parse_plain_text_cheatsheet(sample_text)
 
     # Verify players parsed with normalized keys
-    assert "allen" in context.entries or "josh allen" in context.entries or any("allen" in k for k in context.entries)
-
-    # Check Gibbs (Tier 1 RB)
     gibbs_key = next((k for k in context.entries if "gibbs" in k), None)
     assert gibbs_key is not None
     assert context.entries[gibbs_key].position == "RB"
@@ -51,9 +48,16 @@ TE - Target the top 4 in rounds 3-5
     assert charb_key is not None
     assert context.entries[charb_key].is_injured is True
 
-    # Check strategy rules
-    assert len(context.strategy_rules) >= 2
-    assert any("Rounds 1-2" in rule for rule in context.strategy_rules)
+    # Check overall round target strategy rules
+    assert len(context.round_targets) == 1
+    assert context.round_targets[0].target_rounds == [1, 2]
+    assert "RB" in context.round_targets[0].allowed_positions
+    assert context.round_targets[0].min_counts == {"RB": 1}
+
+    # Check positional strategy rules
+    assert len(context.positional_strategy) == 1
+    assert context.positional_strategy[0].position == "TE"
+    assert context.positional_strategy[0].top_n_target == 4
 
 
 def test_parse_csv_cheatsheet() -> None:

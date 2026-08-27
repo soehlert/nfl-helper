@@ -1,5 +1,11 @@
-"""Domain models export."""
+"""Canonical domain data models export."""
 
+from nfl_helper.models.cheatsheet import (
+    CheatsheetContext,
+    CheatsheetEntry,
+    DraftRoundTarget,
+    PositionalStrategyRule,
+)
 from nfl_helper.models.draft import (
     CliffType,
     DraftPick,
@@ -8,22 +14,32 @@ from nfl_helper.models.draft import (
     PlayerTier,
     TierCliffWarning,
 )
-from nfl_helper.models.player import InjuryStatus, Player, PlayerMatchupScore, Position
+from nfl_helper.models.player import (
+    InjuryStatus,
+    Player,
+    PlayerMatchupScore,
+    Position,
+)
 from nfl_helper.models.roster import (
     AddDropRecommendation,
     LineupSolution,
     RosterAdjustment,
-    RosterSlotRequirement,
     StreamingOption,
     TeamRoster,
     WaiverAnalysis,
 )
-from nfl_helper.models.session import LeagueProfile, PlatformType
+from nfl_helper.models.session import (
+    LeagueProfile,
+    PlatformType,
+)
 
 __all__ = [
     "AddDropRecommendation",
+    "CheatsheetContext",
+    "CheatsheetEntry",
     "CliffType",
     "DraftPick",
+    "DraftRoundTarget",
     "DraftState",
     "DraftSuggestion",
     "InjuryStatus",
@@ -34,8 +50,8 @@ __all__ = [
     "PlayerMatchupScore",
     "PlayerTier",
     "Position",
+    "PositionalStrategyRule",
     "RosterAdjustment",
-    "RosterSlotRequirement",
     "StreamingOption",
     "TeamRoster",
     "TierCliffWarning",
