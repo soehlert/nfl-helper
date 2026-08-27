@@ -360,24 +360,76 @@
       border-color: var(--accent-blue);
       box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
     }
-    select.form-control {
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.75rem center;
-      padding-right: 2.25rem;
-      cursor: pointer;
+    .custom-dropdown {
+      position: relative;
+      min-width: 260px;
     }
-    select.form-control option {
-      background-color: #1a2234;
-      color: #f1f5f9;
-      padding: 0.6rem 0.8rem;
+    .custom-dropdown-btn {
+      width: 100%;
+      height: 38px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.45rem 0.85rem;
+      color: var(--text-main);
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      font-family: inherit;
+    }
+    .custom-dropdown-btn:hover {
+      border-color: var(--accent-blue);
+    }
+    .custom-dropdown-btn:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+    .custom-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      width: 100%;
+      background: #151f30;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .custom-dropdown-item {
+      padding: 0.65rem 0.85rem;
+      font-size: 0.84rem;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .custom-dropdown-item:hover {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+    }
+    .custom-dropdown-item.selected {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      font-weight: 600;
+    }
+    .custom-dropdown-item.selected::after {
+      content: "✓";
+      color: #4ade80;
+      font-weight: 700;
     }
 
     footer {
       background-color: var(--bg-secondary);
+
       border-top: 1px solid var(--border-color);
       padding: 0.6rem 1.5rem;
       font-size: 0.78rem;
@@ -570,12 +622,26 @@
           <div style="display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: wrap;">
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem; font-weight: 600;">Optimization Strategy</div>
-              <select id="lineup-strategy" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem; height: 38px;" onchange="fetchLineupOptimization(false)">
-                <option value="BALANCED">Balanced (Adjusted Projections)</option>
-                <option value="CEILING">High Upside / Ceiling (Underdog Mode)</option>
-                <option value="FLOOR">Safe Floor (Favorite Mode)</option>
-              </select>
+              <div class="custom-dropdown" id="strategy-dropdown-wrapper">
+                <button type="button" class="custom-dropdown-btn" id="strategy-dropdown-btn" onclick="toggleStrategyDropdown(event)">
+                  <span id="strategy-selected-label">Balanced (Adjusted Projections)</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); margin-left: 0.5rem;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="custom-dropdown-menu" id="strategy-dropdown-menu" style="display: none;">
+                  <div class="custom-dropdown-item selected" onclick="selectStrategy('BALANCED', 'Balanced (Adjusted Projections)')">
+                    <span>Balanced (Adjusted Projections)</span>
+                  </div>
+                  <div class="custom-dropdown-item" onclick="selectStrategy('CEILING', 'High Upside / Ceiling (Underdog Mode)')">
+                    <span>High Upside / Ceiling (Underdog Mode)</span>
+                  </div>
+                  <div class="custom-dropdown-item" onclick="selectStrategy('FLOOR', 'Safe Floor (Favorite Mode)')">
+                    <span>Safe Floor (Favorite Mode)</span>
+                  </div>
+                </div>
+                <input type="hidden" id="lineup-strategy" value="BALANCED" />
+              </div>
             </div>
+
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem; font-weight: 600;">Optimal Proj Total</div>
               <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-green); height: 38px; display: flex; align-items: center;" id="optimal-proj-pts">-- pts</div>
@@ -1312,6 +1378,35 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       return html;
     }
 
+    function toggleStrategyDropdown(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('strategy-dropdown-menu');
+      if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+      }
+    }
+
+    function selectStrategy(value, label) {
+      const input = document.getElementById('lineup-strategy');
+      if (input) input.value = value;
+      const labelElem = document.getElementById('strategy-selected-label');
+      if (labelElem) labelElem.textContent = label;
+      document.querySelectorAll('.custom-dropdown-item').forEach(el => {
+        el.classList.toggle('selected', el.getAttribute('onclick')?.includes(`'${value}'`));
+      });
+      const menu = document.getElementById('strategy-dropdown-menu');
+      if (menu) menu.style.display = 'none';
+      fetchLineupOptimization(false);
+    }
+
+    document.addEventListener('click', (e) => {
+      const wrapper = document.getElementById('strategy-dropdown-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        const menu = document.getElementById('strategy-dropdown-menu');
+        if (menu) menu.style.display = 'none';
+      }
+    });
+
     function toggleBadgeDefinitions() {
       const drawer = document.getElementById('badge-definitions-drawer');
       if (drawer) {
@@ -1320,6 +1415,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
     }
 
     async function fetchLineupOptimization(randomize = false) {
+
       const strategyElem = document.getElementById('lineup-strategy');
       const strategy = strategyElem ? strategyElem.value : 'BALANCED';
       const platform = document.getElementById('session-platform')?.value || 'espn';
