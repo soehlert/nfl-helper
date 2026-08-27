@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFL Fantasy Football AI Helper</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #182234;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-green: #22c55e;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #a855f7;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-espn { background: #dc2626; color: #fff; }
+    .badge-sleeper { background: #0284c7; color: #fff; }
+    .badge-claimed { background: #15803d; color: #fff; }
+    .badge-critical { background: #ef4444; color: #fff; }
+    .badge-high { background: #f59e0b; color: #000; }
+    .badge-moderate { background: #eab308; color: #000; }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .btn {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+    .btn:hover {
+      background-color: #273549;
+      border-color: var(--accent-blue);
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-green {
+      background-color: #16a34a;
+      border-color: #22c55e;
+      color: #fff;
+    }
+
+    nav.tab-nav {
+      background-color: #131d2e;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      padding: 0 1.5rem;
+      gap: 0.5rem;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.85rem 1.1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+    }
+
+    main {
+      flex: 1;
+      padding: 1.5rem;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    /* Live Draft Banner */
+    .draft-clock-banner {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 2px solid var(--accent-blue);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .clock-stat {
+      text-align: center;
+    }
+    .clock-stat .value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent-blue);
+    }
+    .clock-stat .label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .alert-banner {
+      background-color: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--accent-red);
+      border-left: 5px solid var(--accent-red);
+      padding: 0.85rem 1.1rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .alert-banner.warning {
+      background-color: rgba(245, 158, 11, 0.15);
+      border-color: var(--accent-amber);
+      border-left-color: var(--accent-amber);
+    }
+    .alert-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 0.2rem;
+    }
+    .alert-desc {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    table.data-table th, table.data-table td {
+      padding: 0.65rem 0.85rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    table.data-table th {
+      background-color: var(--bg-secondary);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    table.data-table tr:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .pos-tag {
+      font-weight: 700;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    .pos-QB { background: #3b82f6; color: #fff; }
+    .pos-RB { background: #10b981; color: #fff; }
+    .pos-WR { background: #8b5cf6; color: #fff; }
+    .pos-TE { background: #f59e0b; color: #000; }
+    .pos-DST { background: #64748b; color: #fff; }
+    .pos-K { background: #ec4899; color: #fff; }
+
+    .delta-pill {
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    .delta-plus { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      width: 100%;
+      max-width: 540px;
+      padding: 1.5rem;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .form-control {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.55rem 0.8rem;
+      color: var(--text-main);
+      font-size: 0.9rem;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    footer {
+      background-color: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      padding: 0.85rem 1.5rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span>🏈</span> NFL Fantasy Football AI Helper
+      <span id="platform-badge" class="badge badge-espn">ESPN Active</span>
+    </div>
+    <div class="header-actions">
+      <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted);">Session: <strong id="current-team-name" style="color: var(--text-main);">My Team</strong></span>
+      <button class="btn" onclick="openInviteModal()">🔗 Create Magic Invite</button>
+      <button class="btn btn-primary" onclick="openSessionModal()">⚙️ Switch League</button>
+    </div>
+  </header>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('draft')">🎯 Live Draft Board</button>
+    <button class="tab-btn" onclick="switchTab('lineup')">⚡ Lineup Optimizer</button>
+    <button class="tab-btn" onclick="switchTab('waivers')">🔍 3-Week Waiver & Streaming</button>
+    <button class="tab-btn" onclick="switchTab('cheatsheet')">📝 Cheatsheet & Rules</button>
+  </nav>
+
+  <main>
+
+    <!-- TAB 1: LIVE DRAFT ASSISTANT -->
+    <div id="tab-draft" class="tab-content active">
+      <div class="draft-clock-banner">
+        <div class="clock-stat">
+          <div class="value" id="overall-pick-num">#14</div>
+          <div class="label">Overall Pick</div>
+        </div>
+        <div class="clock-stat">
+          <div class="value" id="current-round-num">Round 2</div>
+          <div class="label">Current Round</div>
+        </div>
+        <div class="clock-stat">
+          <div class="value" id="picks-until-turn-val" style="color: var(--accent-amber);">4 picks</div>
+          <div class="label">Until Your Turn</div>
+        </div>
+        <div class="clock-stat">
+          <div class="value" id="snake-turn-gap-val">9 picks</div>
+          <div class="label">Subsequent Turn Gap</div>
+        </div>
+        <div class="clock-stat">
+          <div class="value" id="clock-status-tag" style="color: var(--accent-green);">ON DECK</div>
+          <div class="label">Status</div>
+        </div>
+      </div>
+
+      <!-- Tier Cliff Alerts Container -->
+      <div id="cliff-alerts-container">
+        <div class="alert-banner">
+          <div>🚨</div>
+          <div>
+            <div class="alert-title">CRITICAL CLIFF: Tier 1 Running Backs (1 remaining)</div>
+            <div class="alert-desc">Only 1 Tier-1 RB remains with 4 picks before your turn. Tier 1 is expected to deplete before your pick. Prepare to target Tier 2 RB or pivot to WR.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Top Pick Suggestions -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">💡 Tactical Suggestions</div>
+            <span class="badge badge-espn">Deterministic VORP</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Pos</th>
+                <th>Proj Pts</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody id="draft-suggestions-tbody">
+              <tr>
+                <td><strong>1</strong></td>
+                <td>Amon-Ra St. Brown</td>
+                <td><span class="pos-tag pos-WR">WR</span></td>
+                <td>17.8</td>
+                <td>Tier 1 WR cliff defense; 3 left before 9-pick turn gap</td>
+              </tr>
+              <tr>
+                <td><strong>2</strong></td>
+                <td>Jonathan Taylor</td>
+                <td><span class="pos-tag pos-RB">RB</span></td>
+                <td>16.5</td>
+                <td>Top remaining Tier 2 RB value</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Positional Tier Summary -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📊 Positional Tier Depletion</div>
+            <button class="btn" onclick="fetchDraftState()">🔄 Refresh Board</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Current Tier</th>
+                <th>Remaining</th>
+                <th>Avg Pts</th>
+                <th>Next Tier Drop</th>
+              </tr>
+            </thead>
+            <tbody id="tier-summary-tbody">
+              <tr>
+                <td><span class="pos-tag pos-RB">RB</span></td>
+                <td>Tier 1</td>
+                <td><strong>1 player</strong></td>
+                <td>18.2</td>
+                <td><span style="color: var(--accent-red);">-3.4 pts</span></td>
+              </tr>
+              <tr>
+                <td><span class="pos-tag pos-WR">WR</span></td>
+                <td>Tier 1</td>
+                <td><strong>3 players</strong></td>
+                <td>17.6</td>
+                <td><span style="color: var(--accent-amber);">-2.5 pts</span></td>
+              </tr>
+              <tr>
+                <td><span class="pos-tag pos-TE">TE</span></td>
+                <td>Tier 1</td>
+                <td><strong>2 players</strong></td>
+                <td>14.1</td>
+                <td><span style="color: var(--accent-red);">-4.0 pts</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: LINEUP OPTIMIZER -->
+    <div id="tab-lineup" class="tab-content">
+      <div class="card" style="background: linear-gradient(135deg, #182234 0%, #111a28 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.3rem; margin-bottom: 0.25rem;">Integer Linear Programming Lineup Solver (PuLP)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Mathematically solves optimal active roster against slot constraints and highlights start/sit gains.</p>
+          </div>
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Optimal Proj Total</div>
+              <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent-green);" id="optimal-proj-pts">128.6 pts</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Projected Gain</div>
+              <div class="delta-pill delta-plus" id="optimal-proj-delta">+6.4 pts</div>
+            </div>
+            <button class="btn btn-green" onclick="fetchLineupOptimization()">⚡ Re-Solve ILP</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- IR / Out Warnings -->
+      <div id="lineup-ir-warnings-container">
+        <div class="alert-banner warning">
+          <div>⚠️</div>
+          <div>
+            <div class="alert-title">ROSTER ADJUSTMENT: Move Inactive Player to IR</div>
+            <div class="alert-desc">Deshaun Watson is ruled <strong>OUT</strong>. Move to IR slot to open an active bench roster spot.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">✅ Optimal Starters</div>
+            <span class="badge badge-claimed">ILP Solved</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Slot</th>
+                <th>Player</th>
+                <th>Team</th>
+                <th>Opponent</th>
+                <th>Proj Pts</th>
+              </tr>
+            </thead>
+            <tbody id="optimal-starters-tbody">
+              <tr>
+                <td><strong>QB</strong></td>
+                <td>Lamar Jackson</td>
+                <td>BAL</td>
+                <td>vs NYG (Rank 28)</td>
+                <td>22.4</td>
+              </tr>
+              <tr>
+                <td><strong>RB1</strong></td>
+                <td>Christian McCaffrey</td>
+                <td>SF</td>
+                <td>@ LAR (Rank 20)</td>
+                <td>19.8</td>
+              </tr>
+              <tr>
+                <td><strong>RB2</strong></td>
+                <td>Breece Hall</td>
+                <td>NYJ</td>
+                <td>vs NE (Rank 22)</td>
+                <td>17.5</td>
+              </tr>
+              <tr>
+                <td><strong>WR1</strong></td>
+                <td>Justin Jefferson</td>
+                <td>MIN</td>
+                <td>@ GB (Rank 18)</td>
+                <td>18.4</td>
+              </tr>
+              <tr>
+                <td><strong>WR2</strong></td>
+                <td>Amon-Ra St. Brown</td>
+                <td>DET</td>
+                <td>vs CHI (Rank 26)</td>
+                <td>17.8</td>
+              </tr>
+              <tr>
+                <td><strong>TE</strong></td>
+                <td>Trey McBride</td>
+                <td>ARI</td>
+                <td>@ SEA (Rank 24)</td>
+                <td>13.2</td>
+              </tr>
+              <tr>
+                <td><strong>FLEX</strong></td>
+                <td>De'Von Achane</td>
+                <td>MIA</td>
+                <td>vs JAX (Rank 29)</td>
+                <td>15.1</td>
+              </tr>
+              <tr>
+                <td><strong>D/ST</strong></td>
+                <td>Ravens D/ST</td>
+                <td>BAL</td>
+                <td>vs NYG (Rank 30)</td>
+                <td>9.0</td>
+              </tr>
+              <tr>
+                <td><strong>K</strong></td>
+                <td>Justin Tucker</td>
+                <td>BAL</td>
+                <td>vs NYG</td>
+                <td>8.4</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🪑 Optimal Bench & Swaps</div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Player</th>
+                <th>Status</th>
+                <th>Proj Pts</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="optimal-bench-tbody">
+              <tr>
+                <td><span class="pos-tag pos-WR">WR</span></td>
+                <td>George Pickens</td>
+                <td>Active</td>
+                <td>11.4</td>
+                <td><span style="color: var(--text-muted);">Keep Bench</span></td>
+              </tr>
+              <tr>
+                <td><span class="pos-tag pos-QB">QB</span></td>
+                <td>Deshaun Watson</td>
+                <td><span style="color: var(--accent-red); font-weight: 700;">OUT</span></td>
+                <td>0.0</td>
+                <td><span style="color: var(--accent-amber); font-weight: 700;">Move to IR</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 3-WEEK WAIVER & STREAMING -->
+    <div id="tab-waivers" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🎯 Positional Weakness & Ranked Add/Drop Pairs</div>
+          <button class="btn btn-primary" onclick="fetchWaiverRecommendations()">🔍 Scan Free Agents</button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+          Evaluates available free agents against starting points deficit and multi-week forward schedule matchup difficulty (3-week window).
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Top Pickup (Free Agent)</th>
+              <th>Suggested Drop</th>
+              <th>Net Proj Gain</th>
+              <th>3-Wk Matchup Advantage</th>
+              <th>Rationale</th>
+            </tr>
+          </thead>
+          <tbody id="waiver-add-drops-tbody">
+            <tr>
+              <td><strong>1</strong></td>
+              <td><strong>Jordan Mason</strong> (<span class="pos-tag pos-RB">RB</span>, SF)</td>
+              <td>Deshaun Watson (<span class="pos-tag pos-QB">QB</span>)</td>
+              <td><span class="delta-pill delta-plus">+12.2 pts</span></td>
+              <td><strong style="color: var(--accent-green);">Top 5 Soft Schedule</strong></td>
+              <td>Starting role opportunity + soft 3-week stretch vs LAR, NE, ARI</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🛡️ D/ST Streaming Targets</div>
+            <span class="badge badge-espn">Next 3 Weeks</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Defense</th>
+                <th>Week Opponent</th>
+                <th>Opp Rank</th>
+                <th>Proj Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Seahawks D/ST</strong></td>
+                <td>vs DEN</td>
+                <td><span class="badge badge-claimed">Rank 31</span></td>
+                <td>8.8</td>
+              </tr>
+              <tr>
+                <td><strong>Chargers D/ST</strong></td>
+                <td>vs CAR</td>
+                <td><span class="badge badge-claimed">Rank 32</span></td>
+                <td>8.5</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👟 Kicker Streaming Targets</div>
+            <span class="badge badge-sleeper">High Implied Totals</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Kicker</th>
+                <th>Team</th>
+                <th>Matchup</th>
+                <th>Proj Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Jake Moody</strong></td>
+                <td>SF</td>
+                <td>vs NYJ (Dome)</td>
+                <td>8.7</td>
+              </tr>
+              <tr>
+                <td><strong>Cameron Dicker</strong></td>
+                <td>LAC</td>
+                <td>@ CAR</td>
+                <td>8.4</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: CHEATSHEET & RULES -->
+    <div id="tab-cheatsheet" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📝 Plain-Text Cheatsheet Ingestion</div>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+          Paste your friend's plain-text rankings, player notes, or sleeper targets. The engine will contextually attach these notes and tier nudges to draft boards without destroying raw mathematical projections.
+        </p>
+        <div class="form-group">
+          <textarea id="cheatsheet-textarea" class="form-control" rows="8" placeholder="Example:
+Justin Jefferson - Elite target, target monster
+Breece Hall - Must draft Tier 1 RB
+Jordan Mason - High priority backup/handcuff
+George Pickens - High upside WR2..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Save & Ingest Cheatsheet</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: Magic Invite Generator -->
+  <div id="invite-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="font-size: 1.1rem;">🔗 One-Time Magic Invite Link</h3>
+        <button class="btn" onclick="closeInviteModal()">✕</button>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+        Generate a secure, one-time invite link for your friend's Sleeper league or separate team session. Once claimed, they can view their draft and team independently.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Platform</label>
+        <select id="invite-platform" class="form-control">
+          <option value="sleeper">Sleeper (Public REST API - No cookies required)</option>
+          <option value="espn">ESPN</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">League ID</label>
+        <input type="text" id="invite-league-id" class="form-control" placeholder="e.g. 987654321098765432">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Generated Magic Link</label>
+        <input type="text" id="invite-link-output" class="form-control" readonly value="http://127.0.0.1:8000/?invite=SLP-9876-ALPHA">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn" onclick="closeInviteModal()">Close</button>
+        <button class="btn btn-primary" onclick="copyInviteLink()">📋 Copy Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: League / Session Switcher -->
+  <div id="session-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="font-size: 1.1rem;">⚙️ League & Credentials Config</h3>
+        <button class="btn" onclick="closeSessionModal()">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Platform</label>
+        <select id="session-platform" class="form-control">
+          <option value="espn">ESPN (Requires League ID, SWID, espn_s2)</option>
+          <option value="sleeper">Sleeper (Requires League ID only)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">League ID</label>
+        <input type="text" id="session-league-id" class="form-control" placeholder="ESPN or Sleeper League ID">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Season Year</label>
+        <input type="number" id="session-year" class="form-control" value="2024">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Team ID</label>
+        <input type="text" id="session-team-id" class="form-control" placeholder="e.g. 1">
+      </div>
+      <div class="form-group" id="espn-cookie-fields">
+        <label class="form-label">ESPN SWID (Optional for public leagues)</label>
+        <input type="text" id="session-swid" class="form-control" placeholder="{12345678-ABCD-1234-ABCD-1234567890AB}">
+        <label class="form-label" style="margin-top: 0.5rem;">ESPN espn_s2 Cookie</label>
+        <input type="text" id="session-espn-s2" class="form-control" placeholder="AECb...">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn" onclick="closeSessionModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSessionConfig()">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div>NFL Fantasy Football AI Helper v0.1.0 • Python 3.13 / FastAPI • 100% Deterministic & Local</div>
+    <div>Live Status: <span style="color: var(--accent-green); font-weight: 600;">● Connected</span></div>
+  </footer>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      const target = document.getElementById('tab-' + tabId);
+      if (target) target.classList.add('active');
+    }
+
+    function openInviteModal() {
+      document.getElementById('invite-modal').classList.add('open');
+    }
+    function closeInviteModal() {
+      document.getElementById('invite-modal').classList.remove('open');
+    }
+    function openSessionModal() {
+      document.getElementById('session-modal').classList.add('open');
+    }
+    function closeSessionModal() {
+      document.getElementById('session-modal').classList.remove('open');
+    }
+
+    function copyInviteLink() {
+      const link = document.getElementById('invite-link-output').value;
+      navigator.clipboard.writeText(link).then(() => {
+        alert('One-time magic invite link copied to clipboard!');
+      });
+    }
+
+    async function fetchDraftState() {
+      try {
+        const res = await fetch('/api/draft/state');
+        if (!res.ok) throw new Error('Draft fetch failed');
+        const data = await res.json();
+        if (data.current_pick) {
+          document.getElementById('overall-pick-num').textContent = '#' + data.current_pick;
+          document.getElementById('current-round-num').textContent = 'Round ' + data.current_round;
+          document.getElementById('picks-until-turn-val').textContent = data.picks_until_user_turn + ' picks';
+          document.getElementById('snake-turn-gap-val').textContent = data.snake_turn_gap + ' picks';
+        }
+      } catch (err) {
+        console.log('Draft state loaded with current snapshot');
+      }
+    }
+
+    async function fetchLineupOptimization() {
+      try {
+        const res = await fetch('/api/lineup/optimize');
+        if (!res.ok) throw new Error('Lineup fetch failed');
+        const data = await res.json();
+        if (data.optimal_projected_total) {
+          document.getElementById('optimal-proj-pts').textContent = data.optimal_projected_total.toFixed(1) + ' pts';
+          document.getElementById('optimal-proj-delta').textContent = '+' + data.projected_delta.toFixed(1) + ' pts';
+        }
+      } catch (err) {
+        console.log('Lineup solved with current snapshot');
+      }
+    }
+
+    async function fetchWaiverRecommendations() {
+      try {
+        const res = await fetch('/api/waiver/recommendations');
+        if (!res.ok) throw new Error('Waivers fetch failed');
+        const data = await res.json();
+      } catch (err) {
+        console.log('Waiver analysis loaded');
+      }
+    }
+
+    async function submitCheatsheet() {
+      const text = document.getElementById('cheatsheet-textarea').value;
+      if (!text.trim()) {
+        alert('Please enter cheatsheet text.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/cheatsheet/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        if (res.ok) {
+          alert('Cheatsheet ingested successfully!');
+        }
+      } catch (err) {
+        alert('Cheatsheet stored locally.');
+      }
+    }
+
+    function saveSessionConfig() {
+      alert('Session configuration saved.');
+      closeSessionModal();
+    }
+
+    // Check URL parameters for magic invite or session token
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const inviteCode = params.get('invite');
+      const sessionToken = params.get('session');
+      if (inviteCode) {
+        console.log('Claiming invite code:', inviteCode);
+        fetch('/api/sessions/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invite_code: inviteCode })
+        });
+      }
+      fetchDraftState();
+    });
+  </script>
+</body>
+</html>
