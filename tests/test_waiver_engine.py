@@ -75,8 +75,15 @@ def test_generate_waiver_recommendations_ranking() -> None:
     assert len(analysis.dst_streaming) >= 3
     assert len(analysis.kicker_streaming) >= 3
 
-    # Check that drops never break roster minimums
+    # Check that drops never break roster minimums and have rich reasons
     for rec in analysis.top_add_drop_pairs:
         assert rec.drop_player is not None
         assert rec.net_projected_gain is not None
         assert rec.matchup_advantage_3wk > 0
+        assert len(rec.reason) > 5
+
+    for dst in analysis.dst_streaming:
+        assert len(dst.reason) > 5
+
+    for k in analysis.kicker_streaming:
+        assert len(k.reason) > 5
