@@ -65,7 +65,7 @@
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 1rem;
     }
     .btn {
       background-color: var(--bg-secondary);
@@ -238,14 +238,6 @@
       gap: 0.5rem;
     }
 
-    .player-note-tag {
-      display: block;
-      font-size: 0.75rem;
-      color: var(--accent-amber);
-      margin-top: 0.2rem;
-      font-style: italic;
-    }
-
     table.data-table {
       width: 100%;
       border-collapse: collapse;
@@ -336,6 +328,7 @@
     </div>
     <div class="header-actions">
       <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted);">Team: <strong id="current-team-name" style="color: var(--text-main);">My Squad</strong></span>
+      <button id="admin-settings-header-btn" class="btn btn-primary" onclick="switchTab('settings')">⚙️ Settings & Cheatsheets</button>
     </div>
   </header>
 
@@ -343,7 +336,6 @@
     <button class="tab-btn active" onclick="switchTab('draft')">🎯 Live Draft Board</button>
     <button class="tab-btn" onclick="switchTab('lineup')">⚡ Lineup Optimizer</button>
     <button class="tab-btn" onclick="switchTab('waivers')">🔍 3-Week Waiver & Streaming</button>
-    <button id="admin-settings-tab-btn" class="tab-btn" onclick="switchTab('settings')">⚙️ Settings & Cheatsheets</button>
   </nav>
 
   <main>
@@ -408,6 +400,7 @@
                 <th>Rank</th>
                 <th>Player</th>
                 <th>Pos</th>
+                <th>Tier</th>
                 <th>Proj Pts</th>
                 <th>Reason</th>
               </tr>
@@ -415,21 +408,17 @@
             <tbody id="draft-suggestions-tbody">
               <tr>
                 <td><strong>1</strong></td>
-                <td>
-                  <strong>Amon-Ra St. Brown</strong>
-                  <span class="player-note-tag">📝 Tier 1 WR anchor</span>
-                </td>
+                <td><strong>Amon-Ra St. Brown</strong></td>
                 <td><span class="pos-tag pos-WR">WR</span></td>
+                <td><strong>Tier 1</strong></td>
                 <td>17.8</td>
                 <td>Tier 1 WR cliff defense; 3 left before 9-pick turn gap</td>
               </tr>
               <tr>
                 <td><strong>2</strong></td>
-                <td>
-                  <strong>Jonathan Taylor</strong>
-                  <span class="player-note-tag">📝 Must target Tier 2 RB</span>
-                </td>
+                <td><strong>Jonathan Taylor</strong></td>
                 <td><span class="pos-tag pos-RB">RB</span></td>
+                <td><strong>Tier 2</strong></td>
                 <td>16.5</td>
                 <td>Top remaining Tier 2 RB value</td>
               </tr>
@@ -780,7 +769,7 @@
           <span class="badge badge-admin">Single-Use</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.85rem;">
-          Generate a single-use invite link for your friend's Sleeper league. Once claimed, they can view their draft/team independently without seeing this Settings tab.
+          Generate a single-use invite link for your friend's Sleeper league. Once claimed, they can view their draft/team independently without seeing this Settings page.
         </p>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.85rem;">
           <div class="form-group">
@@ -816,7 +805,7 @@
           <button class="btn" style="font-size: 0.8rem;" onclick="loadSampleCheatsheet()">Load Sample Cheatsheet</button>
         </div>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
-          Paste your custom rankings, tiers, injury markers (<code>*</code>), player notes (<code>Player - Note</code>), and macro strategy rules.
+          Paste your custom rankings, tiers, injury markers (<code>*</code>), and macro strategy rules.
         </p>
         <div class="form-group">
           <textarea id="cheatsheet-textarea" class="form-control" rows="8" placeholder="Paste your plain-text cheatsheet, OCR table, CSV, or JSON here..."></textarea>
@@ -830,7 +819,7 @@
       <!-- Parsed Cheatsheet Player Directory -->
       <div id="cheatsheet-directory-card" class="card" style="display: none;">
         <div class="card-header">
-          <div class="card-title">📖 Loaded Cheatsheet Player Directory & Notes</div>
+          <div class="card-title">📖 Loaded Cheatsheet Player Directory & Tiers</div>
           <span id="directory-count-badge" class="badge badge-claimed">0 Players</span>
         </div>
         <table class="data-table">
@@ -839,9 +828,8 @@
               <th>Player</th>
               <th>Pos</th>
               <th>Team</th>
-              <th>Custom Tier</th>
+              <th>Tier</th>
               <th>ADP</th>
-              <th>Notes / Tags</th>
             </tr>
           </thead>
           <tbody id="cheatsheet-directory-tbody"></tbody>
@@ -865,7 +853,7 @@
       
       const tabBtns = document.querySelectorAll('.tab-btn');
       tabBtns.forEach(btn => {
-        if (btn.getAttribute('onclick').includes(tabId)) {
+        if (btn.getAttribute('onclick')?.includes(`'${tabId}'`)) {
           btn.classList.add('active');
         }
       });
@@ -903,34 +891,34 @@
 
     function loadSampleCheatsheet() {
       const sample = `QB
-Allen BUF 34.8 - Target early QB advantage
+Allen BUF 34.8
 
 Jackson BAL 69.1
-Burrow CIN 65.5 - Elite pocket passer
+Burrow CIN 65.5
 
 RB
-Gibbs DET 1.1 - Tier 1 workhorse
+Gibbs DET 1.1
 Robinson ATL 2.1
 
 McCaffrey SF 8.7
-Taylor IND 8.9 - Must target Tier 2 RB
+Taylor IND 8.9
 Cook BUF 9.3
 
 Hampton LAC 16.1
 Barkley PHI 16.8
-Achane MIA 16.5 - Explosive upside
+Achane MIA 16.5
 
 WR
 Chase CIN 3.1
 Nacua LAR 4.8
-St Brown DET 5.9 - Tier 1 WR anchor
+St Brown DET 5.9
 Smith-Njigba SEA 5.5
 
 Lamb DAL 11.3
-Jefferson MIN 12.3 - Elite WR1 target
+Jefferson MIN 12.3
 
 TE
-Bowers LV 21.6 - Generational tight end
+Bowers LV 21.6
 McBride ARI 28.4
 Loveland CHI 43.8
 Warren IND 56.3
@@ -974,7 +962,6 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           entries.forEach(e => {
             const posClass = `pos-${e.position || 'WR'}`;
             const injTag = e.is_injured ? '<span style="color: var(--accent-red); font-weight: 700;"> (Injured)</span>' : '';
-            const notesText = e.notes ? `<span class="player-note-tag">📝 ${e.notes}</span>` : '<span style="color: var(--text-muted); font-size: 0.8rem;">—</span>';
             
             rowsHtml += `<tr>
               <td><strong>${e.player_name}</strong>${injTag}</td>
@@ -982,7 +969,6 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
               <td>${e.team || '—'}</td>
               <td><strong>Tier ${e.tier}</strong></td>
               <td>${e.adp ? e.adp.toFixed(1) : '—'}</td>
-              <td>${notesText}</td>
             </tr>`;
           });
           dirTbody.innerHTML = rowsHtml;
@@ -1005,7 +991,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
     async function submitCheatsheet() {
       const text = document.getElementById('cheatsheet-textarea').value;
       if (!text.trim()) {
-        alert('Please enter cheatsheet notes or table.');
+        alert('Please enter cheatsheet text.');
         return;
       }
       try {
@@ -1095,7 +1081,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       if (inviteCode) {
         document.getElementById('role-badge').textContent = 'Guest Session';
         document.getElementById('role-badge').className = 'badge badge-claimed';
-        const adminBtn = document.getElementById('admin-settings-tab-btn');
+        const adminBtn = document.getElementById('admin-settings-header-btn');
         if (adminBtn) adminBtn.style.display = 'none';
         if (platformParam) {
           document.getElementById('platform-badge').textContent = platformParam.toUpperCase();
