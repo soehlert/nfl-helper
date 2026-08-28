@@ -1,4 +1,3 @@
-import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -12,6 +11,12 @@ from nfl_helper.adapters import get_adapter_for_profile
 from nfl_helper.api.draft_poller import poller_registry
 from nfl_helper.api.ws_manager import ws_manager
 from nfl_helper.core.cheatsheet import apply_cheatsheet_context, parse_cheatsheet_content, parse_pdf_cheatsheet
+from nfl_helper.core.db import (
+    get_active_cheatsheet,
+    get_cheatsheet_history,
+    init_db,
+    save_cheatsheet,
+)
 from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.core.lineup_optimizer import solve_optimal_lineup
 from nfl_helper.core.waiver_engine import generate_waiver_recommendations
@@ -44,36 +49,20 @@ app.add_middleware(
 )
 
 FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "frontend" / "index.html"
-_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
-_CHEATSHEET_FILE = _DATA_DIR / "active_cheatsheet.json"
+
+# Initialize SQLite database schema
+init_db()
 
 
-def _load_persisted_cheatsheet() -> CheatsheetContext | None:
-    try:
-        if _CHEATSHEET_FILE.exists():
-            data = json.loads(_CHEATSHEET_FILE.read_text(encoding="utf-8"))
-            return CheatsheetContext.model_validate(data)
-    except Exception as err:
-        logger.warning("Failed to load persisted cheatsheet from %s: %s", _CHEATSHEET_FILE, err)
-    return None
-
-
-def _save_persisted_cheatsheet(ctx: CheatsheetContext) -> None:
-    try:
-        _DATA_DIR.mkdir(parents=True, exist_ok=True)
-        _CHEATSHEET_FILE.write_text(ctx.model_dump_json(indent=2), encoding="utf-8")
-    except Exception as err:
-        logger.warning("Failed to persist cheatsheet to %s: %s", _CHEATSHEET_FILE, err)
-
-
-# Persistent active cheatsheet store
-_ACTIVE_CHEATSHEET: CheatsheetContext | None = _load_persisted_cheatsheet()
+# Persistent active cheatsheet store loaded directly from SQLite
+_ACTIVE_CHEATSHEET: CheatsheetContext | None = get_active_cheatsheet()
 
 
 class CheatsheetUploadRequest(BaseModel):
     """Request model for plain-text / CSV / JSON cheatsheet ingestion."""
 
     text: str
+    name: str = "Pasted Cheatsheet"
 
 
 class ClaimInviteRequest(BaseModel):
@@ -360,18 +349,18 @@ async def get_waiver_recommendations(session_id: str | None = None) -> WaiverAna
 
 @app.post("/api/cheatsheet/upload", response_model=CheatsheetContext)
 async def upload_cheatsheet(payload: CheatsheetUploadRequest) -> CheatsheetContext:
-    """Ingest and parse plain-text, CSV, or JSON cheatsheet, storing active context."""
+    """Ingest and parse plain-text, CSV, or JSON cheatsheet, storing active context in SQLite."""
     global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     context = parse_cheatsheet_content(payload.text)
     _ACTIVE_CHEATSHEET = context
-    _save_persisted_cheatsheet(context)
+    save_cheatsheet(context, raw_text=payload.text, name=payload.name)
     _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
     return context
 
 
 @app.post("/api/cheatsheet/upload-file", response_model=CheatsheetContext)
 async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
-    """Ingest uploaded PDF, CSV, TXT, or JSON cheatsheet file."""
+    """Ingest uploaded PDF, CSV, TXT, or JSON cheatsheet file into SQLite."""
     global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     filename = (file.filename or "").lower()
     content_bytes = await file.read()
@@ -379,12 +368,14 @@ async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
     try:
         if filename.endswith(".pdf"):
             context = parse_pdf_cheatsheet(content_bytes)
+            raw_preview = "[Binary PDF File]"
         else:
             text_str = content_bytes.decode("utf-8", errors="replace")
             context = parse_cheatsheet_content(text_str)
+            raw_preview = text_str
 
         _ACTIVE_CHEATSHEET = context
-        _save_persisted_cheatsheet(context)
+        save_cheatsheet(context, raw_text=raw_preview, name=file.filename or "Uploaded File")
         _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
         logger.info(
             "Successfully parsed cheatsheet file %s: %d players, %d rules",
@@ -401,8 +392,17 @@ async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
 
 @app.get("/api/cheatsheet", response_model=CheatsheetContext | None)
 async def get_current_cheatsheet() -> CheatsheetContext | None:
-    """Fetch currently active cheatsheet tiers, rules, and parsed entries."""
+    """Fetch currently active cheatsheet tiers, rules, and parsed entries from SQLite."""
+    global _ACTIVE_CHEATSHEET
+    if _ACTIVE_CHEATSHEET is None:
+        _ACTIVE_CHEATSHEET = get_active_cheatsheet()
     return _ACTIVE_CHEATSHEET
+
+
+@app.get("/api/cheatsheet/history")
+async def get_cheatsheet_upload_history() -> list[dict[str, Any]]:
+    """Fetch upload history of all persisted cheatsheets in SQLite."""
+    return get_cheatsheet_history()
 
 
 @app.post("/api/sessions/claim")

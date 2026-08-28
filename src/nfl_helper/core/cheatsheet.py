@@ -187,7 +187,7 @@ def _parse_strategy_rule(line: str) -> tuple[DraftRoundTarget | None, Positional
     round_target = None
     pos_target = None
 
-    if norm_line.lower().startswith("rounds"):
+    if norm_line.lower().startswith(("rounds", "round", "target", "wait")):
         rounds_match = re.search(r"rounds?\s+(\d+)(?:\s*-\s*(\d+))?", norm_line, re.IGNORECASE)
         if rounds_match:
             start_rnd = int(rounds_match.group(1))
@@ -201,6 +201,7 @@ def _parse_strategy_rule(line: str) -> tuple[DraftRoundTarget | None, Positional
                 min_counts=min_counts,
                 rule_description=norm_line,
             )
+
     elif any(norm_line.upper().startswith(f"{pos} -") for pos in ("TE", "QB", "RB", "WR")):
         pos = norm_line[:2].upper()
         top_n = 4 if "top 4" in norm_line.lower() else None
@@ -277,8 +278,26 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
         # Strategy rule headers
         if any(
             line.startswith(prefix)
-            for prefix in ("Rounds", "TE -", "QB -", "RB -", "WR -", "K -", "DST -", "D/ST -", "Strategy:")
+            for prefix in (
+                "Rounds",
+                "Round",
+                "Rule",
+                "Rules",
+                "Strategy",
+                "Target",
+                "TE -",
+                "QB -",
+                "RB -",
+                "WR -",
+                "K -",
+                "DST -",
+                "D/ST -",
+            )
         ):
+            if line.startswith(("Strategy:", "Rules:", "Rule:")):
+                line = re.sub(r"^(Strategy:|Rules:|Rule:)\s*", "", line).strip()
+            if not line:
+                continue
             context.strategy_rules.append(line)
             rnd_rule, pos_rule = _parse_strategy_rule(line)
             if rnd_rule:
