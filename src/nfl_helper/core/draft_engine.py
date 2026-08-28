@@ -283,7 +283,7 @@ def generate_draft_suggestions(
         cliff = cliff_by_pos.get(str(p.position))
         is_cliff_defense = cliff is not None and (cliff.current_tier == (p.cheatsheet_tier or p.tier or 1))
 
-        score = vorp
+        score = vorp + (p.projected_points * 0.005)
         if is_cliff_defense:
             score += 3.5 if cliff.cliff_risk == "CRITICAL" else 2.0
 
@@ -315,11 +315,11 @@ def generate_draft_suggestions(
         if p.cheatsheet_notes:
             nl = p.cheatsheet_notes.lower()
             if "breakout" in nl:
-                note_delta = 0.20 * demand_weight
+                note_delta = 0.08 * demand_weight
             elif "sleeper" in nl or "pick" in nl or "target" in nl:
-                note_delta = 0.10 * demand_weight
+                note_delta = 0.04 * demand_weight
             elif "bust" in nl or "fade" in nl:
-                note_delta = -0.15 * demand_weight
+                note_delta = -0.05 * demand_weight
         score += note_delta
 
         adp_delta = 0.0

@@ -1762,10 +1762,11 @@
         html += '<table class="data-table" style="font-size: 0.8rem;"><thead><tr><th>Player</th><th>Pos</th><th>Team</th><th>Old Rank</th><th>New Rank</th><th>Shift</th><th>Reason / Note</th></tr></thead><tbody>';
         risers.forEach(r => {
           const tierChange = (r.old_tier && r.new_tier && r.old_tier !== r.new_tier) ? `<span style="font-size: 0.72rem; color: var(--accent-green); margin-left: 0.25rem;">(Tier ${r.old_tier} → ${r.new_tier})</span>` : '';
+          const isElevated = r.note === 'Elevated by Fallers';
           const isBreakout = r.note && r.note.toLowerCase().includes('breakout');
-          const borderColor = isBreakout ? '#06b6d4' : '#22c55e';
-          const bgColor = isBreakout ? 'rgba(6, 182, 212, 0.12)' : 'rgba(34, 197, 94, 0.12)';
-          const textColor = isBreakout ? '#22d3ee' : '#4ade80';
+          const borderColor = isElevated ? '#f59e0b' : (isBreakout ? '#06b6d4' : '#22c55e');
+          const bgColor = isElevated ? 'rgba(245, 158, 11, 0.12)' : (isBreakout ? 'rgba(6, 182, 212, 0.12)' : 'rgba(34, 197, 94, 0.12)');
+          const textColor = isElevated ? '#fbbf24' : (isBreakout ? '#22d3ee' : '#4ade80');
           const noteBadge = r.note ? `<span class="badge" style="white-space: nowrap; background: ${bgColor}; border: 1px solid ${borderColor}; color: ${textColor}; font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 9999px; display: inline-block;">${r.note}</span>` : '—';
           html += `<tr><td><strong>${r.player_name}</strong>${tierChange}</td><td><span class="pos-tag pos-${r.position}">${r.position}</span></td><td>${r.team || '—'}</td><td>#${r.old_rank}</td><td>#${r.new_rank}</td><td><span style="color: var(--accent-green); font-weight: 600;">+${r.rank_delta} spots</span></td><td>${noteBadge}</td></tr>`;
         });
@@ -1820,6 +1821,22 @@
       const modalEl = document.getElementById('cheatsheet-diff-modal');
       if (modalEl) modalEl.style.display = 'none';
     }
+
+    // Global Escape key listener to close any open modal or dropdown
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' || e.key === 'Esc' || e.keyCode === 27) {
+        closeDiffModal();
+        const badgeModal = document.getElementById('badge-definitions-modal');
+        if (badgeModal && badgeModal.style.display !== 'none') {
+          badgeModal.style.display = 'none';
+        }
+        const stratDropdown = document.getElementById('strategy-dropdown-menu');
+        if (stratDropdown && stratDropdown.style.display !== 'none') {
+          stratDropdown.style.display = 'none';
+        }
+      }
+    });
+
 
     async function applyDiffChanges() {
       closeDiffModal();

@@ -76,7 +76,7 @@ def compute_cheatsheet_diff(
         if not mover_note and rank_delta < 0:
             mover_note = "Displaced by Risers"
         elif not mover_note and rank_delta > 0:
-            mover_note = "Cheatsheet Rank"
+            mover_note = "Elevated by Fallers"
 
         if rank_delta != 0 or tier_delta != 0 or injury_changed:
             movers.append(
