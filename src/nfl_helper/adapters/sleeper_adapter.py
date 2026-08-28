@@ -43,6 +43,7 @@ class SleeperAdapter(BaseLeagueAdapter):
         player_id: str,
         meta_override: dict[str, object] | None = None,
         is_starter: bool = False,
+        pos_rank: int | None = None,
     ) -> Player:
         """Convert Sleeper player ID and metadata dictionary into canonical Player model."""
         db = self._ensure_player_db()
@@ -81,19 +82,22 @@ class SleeperAdapter(BaseLeagueAdapter):
         search_rank = raw_meta.get("search_rank")
         adp_val = float(search_rank) if search_rank is not None else None
 
-        # Derive realistic baseline fantasy projection if platform database lacks raw weekly projections
+        # Derive realistic baseline fantasy projection differentiated by positional rank
         if raw_proj <= 0.0:
-            rank = adp_val if adp_val is not None and adp_val > 0 else 100.0
+            rank = (
+                float(pos_rank) if pos_rank is not None else (adp_val if adp_val is not None and adp_val > 0 else 50.0)
+            )
+            r = max(1.0, rank)
             if pos_str == "QB":
-                proj_pts = max(12.0, 24.5 - 2.8 * math.log(max(1.0, rank * 0.15)))
+                proj_pts = max(12.0, 25.5 - 2.5 * math.log(r))
             elif pos_str == "RB":
-                proj_pts = max(6.0, 20.5 - 3.2 * math.log(max(1.0, rank * 0.2)))
+                proj_pts = max(6.0, 21.5 - 3.2 * math.log(r))
             elif pos_str == "WR":
-                proj_pts = max(6.0, 19.5 - 3.0 * math.log(max(1.0, rank * 0.2)))
+                proj_pts = max(6.0, 20.8 - 2.8 * math.log(r))
             elif pos_str == "TE":
-                proj_pts = max(5.0, 14.5 - 2.5 * math.log(max(1.0, rank * 0.1)))
+                proj_pts = max(5.0, 15.2 - 2.4 * math.log(r))
             elif pos_str in ("K", "D/ST", "DST", "DEF"):
-                proj_pts = max(5.0, 9.5 - 0.8 * math.log(max(1.0, rank * 0.05)))
+                proj_pts = max(5.0, 9.5 - 0.7 * math.log(r))
             else:
                 proj_pts = 10.0
         else:
@@ -272,5 +276,18 @@ class SleeperAdapter(BaseLeagueAdapter):
                 rank_val = int(search_rank) if search_rank is not None else 99999
                 valid_candidates.append((rank_val, pid, meta))
 
-        valid_candidates.sort(key=lambda x: x[0])
-        return [self._map_player(pid, meta_override=meta) for _, pid, meta in valid_candidates[:limit]]
+        # Group by canonical position to determine true positional rank
+        by_pos_candidates: dict[str, list[tuple[int, str, dict[str, object]]]] = {}
+        for rank_val, pid, meta in valid_candidates:
+            raw_pos = str(meta.get("position", "")).upper()
+            pos_key = "D/ST" if raw_pos in ("DEF", "DST") else ("RB" if raw_pos == "FB" else raw_pos)
+            by_pos_candidates.setdefault(pos_key, []).append((rank_val, pid, meta))
+
+        mapped_players: list[Player] = []
+        for candidates in by_pos_candidates.values():
+            candidates.sort(key=lambda x: x[0])
+            for pos_rank, (_, pid, meta) in enumerate(candidates, start=1):
+                mapped_players.append(self._map_player(pid, meta_override=meta, pos_rank=pos_rank))
+
+        mapped_players.sort(key=lambda p: p.adp if p.adp is not None else 999)
+        return mapped_players[:limit]
