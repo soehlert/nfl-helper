@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -43,9 +44,30 @@ app.add_middleware(
 )
 
 FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "frontend" / "index.html"
+_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+_CHEATSHEET_FILE = _DATA_DIR / "active_cheatsheet.json"
 
-# In-memory active cheatsheet store
-_ACTIVE_CHEATSHEET: CheatsheetContext | None = None
+
+def _load_persisted_cheatsheet() -> CheatsheetContext | None:
+    try:
+        if _CHEATSHEET_FILE.exists():
+            data = json.loads(_CHEATSHEET_FILE.read_text(encoding="utf-8"))
+            return CheatsheetContext.model_validate(data)
+    except Exception as err:
+        logger.warning("Failed to load persisted cheatsheet from %s: %s", _CHEATSHEET_FILE, err)
+    return None
+
+
+def _save_persisted_cheatsheet(ctx: CheatsheetContext) -> None:
+    try:
+        _DATA_DIR.mkdir(parents=True, exist_ok=True)
+        _CHEATSHEET_FILE.write_text(ctx.model_dump_json(indent=2), encoding="utf-8")
+    except Exception as err:
+        logger.warning("Failed to persist cheatsheet to %s: %s", _CHEATSHEET_FILE, err)
+
+
+# Persistent active cheatsheet store
+_ACTIVE_CHEATSHEET: CheatsheetContext | None = _load_persisted_cheatsheet()
 
 
 class CheatsheetUploadRequest(BaseModel):
@@ -342,6 +364,7 @@ async def upload_cheatsheet(payload: CheatsheetUploadRequest) -> CheatsheetConte
     global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     context = parse_cheatsheet_content(payload.text)
     _ACTIVE_CHEATSHEET = context
+    _save_persisted_cheatsheet(context)
     _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
     return context
 
@@ -361,6 +384,7 @@ async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
             context = parse_cheatsheet_content(text_str)
 
         _ACTIVE_CHEATSHEET = context
+        _save_persisted_cheatsheet(context)
         _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
         logger.info(
             "Successfully parsed cheatsheet file %s: %d players, %d rules",
@@ -369,6 +393,7 @@ async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
             len(context.strategy_rules),
         )
         return context
+
     except Exception as exc:
         logger.exception("Failed to parse uploaded cheatsheet file %s: %s", filename, exc)
         raise HTTPException(status_code=400, detail=f"Failed to parse file: {exc}") from exc

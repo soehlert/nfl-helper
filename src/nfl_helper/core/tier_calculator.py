@@ -6,14 +6,14 @@ from nfl_helper.models.player import Player
 
 # Refined realistic drop-off thresholds (single step drop, maximum tier span)
 _DROP_THRESHOLDS: dict[str, tuple[float, float]] = {
-    "QB": (2.2, 4.5),
-    "RB": (1.8, 4.0),
-    "WR": (1.8, 4.0),
-    "TE": (2.0, 4.5),
-    "K": (0.8, 1.8),
-    "D/ST": (0.8, 1.8),
+    "QB": (2.5, 5.0),
+    "RB": (2.3, 4.5),
+    "WR": (2.3, 4.5),
+    "TE": (2.3, 4.5),
+    "K": (1.0, 2.0),
+    "D/ST": (1.0, 2.0),
 }
-_DEFAULT_THRESHOLD: tuple[float, float] = (1.8, 4.0)
+_DEFAULT_THRESHOLD: tuple[float, float] = (2.3, 4.5)
 
 
 def _cluster_hybrid(players: list[Player], position: str) -> list[PlayerTier]:
@@ -92,23 +92,25 @@ def _evaluate_on_the_clock_cliff(
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is currently on the clock."""
     drop = calculate_tier_drop(tier, next_tier)
-    if drop < 0.8:
+    if drop < 1.0:
         return None
 
     remaining = len(tier.players)
     tier_size = max(remaining, tier.count)
-    is_percentage_scarce = (remaining / tier_size) <= 0.35 if tier_size > 0 else False
+    # Require true tier depletion or <= 2 players remaining to trigger an active cliff
+    is_percentage_scarce = (remaining / tier_size) <= 0.50 if tier_size > 0 else False
     is_gap_scarce = remaining <= max(2, (snake_turn_gap + 2) // 3)
 
-    if not (is_percentage_scarce or is_gap_scarce or remaining <= 2):
+    if not ((is_percentage_scarce and is_gap_scarce) or remaining <= 2):
         return None
 
-    risk = "CRITICAL" if (remaining == 1 or drop >= 2.5) else "HIGH"
+    risk = "CRITICAL" if (remaining == 1 or drop >= 3.0) else "HIGH"
     next_num = next_tier.tier_num if next_tier else tier.tier_num + 1
     action = (
         f"Only {remaining} of {tier_size} Tier {tier.tier_num} {tier.position} remaining ({round(remaining / tier_size * 100)}% left) "
         f"before a {snake_turn_gap}-pick turn gap. Draft now to avoid dropping -{drop:.1f} pts to Tier {next_num}."
     )
+
     return TierCliffWarning(
         position=tier.position,
         current_tier=tier.tier_num,

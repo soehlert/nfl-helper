@@ -58,3 +58,5 @@ artifacts/
 backlog.md
 dev_notes.md
 *.log
+data/
+
