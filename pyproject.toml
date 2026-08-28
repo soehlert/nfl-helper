@@ -32,6 +32,11 @@ dependencies = [
 [project.scripts]
 nfl-helper = "nfl_helper.cli:main"
 
+[dependency-groups]
+dev = [
+    "fonttools>=4.63.0",
+]
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
