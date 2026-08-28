@@ -1055,19 +1055,19 @@
           <input type="url" id="cheatsheet-url-input" class="form-control" placeholder="https://www.espn.com/fantasy/football/story/_/id/..." />
         </div>
 
-        <!-- Middle: Two Equal-Height Columns for File Upload & Copy/Paste -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+        <!-- Middle: Responsive Columns for File Upload & Copy/Paste -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem; align-items: stretch;">
           
           <!-- Left Column: File Upload Dropzone -->
           <div style="display: flex; flex-direction: column;">
             <label class="form-label" style="font-weight: 600;">
               Upload File (PDF, CSV, TXT, JSON)
             </label>
-            <div class="dropzone" style="height: 160px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; border-radius: 8px; text-align: center;" onclick="document.getElementById('cheatsheet-file-input').click()">
-              <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-main); margin-bottom: 0.35rem;">Click or Drop File Here</div>
-              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Supports PDF, CSV, TXT, or JSON formats</div>
-              <div style="font-size: 0.74rem; color: var(--text-muted);">Extracts multi-column tiers, ADPs, and strategy rules</div>
-              <input type="file" id="cheatsheet-file-input" accept=".pdf,.csv,.txt,.json" style="display: none;" onchange="handleFileUpload(event)">
+            <div id="cheatsheet-dropzone-box" class="dropzone" style="flex: 1; min-height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.25rem 1rem; border-radius: 8px; text-align: center; box-sizing: border-box;" onclick="document.getElementById('cheatsheet-file-input').click()">
+              <div id="dropzone-main-text" style="font-weight: 600; font-size: 0.92rem; color: var(--text-main); margin-bottom: 0.35rem;">Click or Drop File Here</div>
+              <div id="dropzone-sub-text" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Supports PDF, CSV, TXT, or JSON formats</div>
+              <div id="dropzone-detail-text" style="font-size: 0.74rem; color: var(--text-muted);">Extracts multi-column tiers, ADPs, and strategy rules</div>
+              <input type="file" id="cheatsheet-file-input" accept=".pdf,.csv,.txt,.json" style="display: none;" onchange="handleFileSelected(event)">
             </div>
           </div>
 
@@ -1076,10 +1076,11 @@
             <label class="form-label" style="font-weight: 600;">
               Paste Text (Plain Text, CSV, JSON, OCR)
             </label>
-            <textarea id="cheatsheet-textarea" class="form-control" style="height: 160px; box-sizing: border-box; resize: none;" placeholder="Paste plain text, CSV, JSON, or OCR rankings here..."></textarea>
+            <textarea id="cheatsheet-textarea" class="form-control" style="flex: 1; min-height: 140px; box-sizing: border-box; resize: vertical;" placeholder="Paste plain text, CSV, JSON, or OCR rankings here..."></textarea>
           </div>
 
         </div>
+
 
         <!-- Bottom: Single Unified Action Bar -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.85rem; flex-wrap: wrap; gap: 0.75rem;">
@@ -1219,15 +1220,57 @@
 
 
 
-    async function handleFileUpload(event) {
+    let selectedCheatsheetFile = null;
+
+    function handleFileSelected(event) {
       const file = event.target.files[0];
       if (!file) return;
+      selectedCheatsheetFile = file;
+
+      const mainText = document.getElementById('dropzone-main-text');
+      const subText = document.getElementById('dropzone-sub-text');
+      const statusMsg = document.getElementById('cheatsheet-status-msg');
+
+      if (mainText) mainText.textContent = `Selected: ${file.name}`;
+      if (subText) subText.textContent = `${(file.size / 1024).toFixed(1)} KB ready`;
+      if (statusMsg) statusMsg.textContent = `File "${file.name}" ready. Click "Preview Diff" or "Save & Apply".`;
+    }
+
+    async function previewFileCheatsheetDiff(file) {
+      const statusEl = document.getElementById('cheatsheet-status-msg');
+      if (statusEl) statusEl.textContent = `Calculating diff for "${file.name}"...`;
 
       const formData = new FormData();
       formData.append('file', file);
 
       try {
-        document.getElementById('cheatsheet-status-msg').textContent = 'Parsing file...';
+        const res = await fetch('/api/cheatsheet/file-diff', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          alert('File diff preview failed: ' + (err.detail || 'Unknown error'));
+          if (statusEl) statusEl.textContent = '';
+          return;
+        }
+        const diff = await res.json();
+        renderDiffModal(diff);
+        if (statusEl) statusEl.textContent = '';
+      } catch (err) {
+        alert('Error generating diff: ' + err.message);
+        if (statusEl) statusEl.textContent = '';
+      }
+    }
+
+    async function uploadStagedFile(file) {
+      const statusEl = document.getElementById('cheatsheet-status-msg');
+      if (statusEl) statusEl.textContent = `Parsing and applying "${file.name}"...`;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
         const res = await fetch('/api/cheatsheet/upload-file', {
           method: 'POST',
           body: formData,
@@ -1235,18 +1278,21 @@
         if (res.ok) {
           const data = await res.json();
           const pCount = Object.keys(data.entries || {}).length;
-          document.getElementById('cheatsheet-status-msg').textContent = `Successfully parsed "${file.name}" (${pCount} players, ${data.strategy_rules?.length || 0} rules)!`;
+          if (statusEl) statusEl.textContent = `Successfully parsed "${file.name}" (${pCount} players, ${data.strategy_rules?.length || 0} rules)!`;
           renderCheatsheetContext(data);
           fetchDraftState();
+          selectedCheatsheetFile = null;
+          const mainText = document.getElementById('dropzone-main-text');
+          const subText = document.getElementById('dropzone-sub-text');
+          if (mainText) mainText.textContent = 'Click or Drop File Here';
+          if (subText) subText.textContent = 'Supports PDF, CSV, TXT, or JSON formats';
         } else {
           const errJson = await res.json().catch(() => ({}));
           const detail = errJson.detail || 'Failed to parse uploaded file.';
-          document.getElementById('cheatsheet-status-msg').textContent = `Failed: ${detail}`;
-          console.error('Cheatsheet upload failed:', detail);
+          if (statusEl) statusEl.textContent = `Failed: ${detail}`;
         }
       } catch (err) {
-        document.getElementById('cheatsheet-status-msg').textContent = `Upload error: ${err.message}`;
-        console.error('Cheatsheet upload exception:', err);
+        if (statusEl) statusEl.textContent = `Upload error: ${err.message}`;
       }
     }
 
@@ -1280,8 +1326,8 @@
           
           let rowsHtml = '';
           entries.forEach(e => {
-            const rawPos = e.position || 'WR';
-            const cleanPos = rawPos.replace('/', '-');
+            const rawPos = e.position || '';
+            const cleanPos = rawPos ? rawPos.replace('/', '-') : 'none';
             const posClass = `pos-${cleanPos}`;
             const injTag = e.is_injured ? '<span style="color: var(--accent-red); font-weight: 700;"> (Injured)</span>' : '';
             
@@ -1304,12 +1350,14 @@
       const textInput = document.getElementById('cheatsheet-textarea');
       const textVal = textInput ? textInput.value.trim() : '';
 
-      if (urlVal) {
+      if (selectedCheatsheetFile) {
+        await previewFileCheatsheetDiff(selectedCheatsheetFile);
+      } else if (urlVal) {
         await previewUrlCheatsheetDiff();
       } else if (textVal) {
         await previewCheatsheetDiff();
       } else {
-        alert('Please enter a Web URL, paste text, or upload a file to preview diff.');
+        document.getElementById('cheatsheet-file-input').click();
       }
     }
 
@@ -1319,7 +1367,9 @@
       const textInput = document.getElementById('cheatsheet-textarea');
       const textVal = textInput ? textInput.value.trim() : '';
 
-      if (urlVal) {
+      if (selectedCheatsheetFile) {
+        await uploadStagedFile(selectedCheatsheetFile);
+      } else if (urlVal) {
         await importFromWebUrl();
       } else if (textVal) {
         await submitCheatsheet();
@@ -1327,6 +1377,7 @@
         document.getElementById('cheatsheet-file-input').click();
       }
     }
+
 
 
     async function fetchCheatsheet() {

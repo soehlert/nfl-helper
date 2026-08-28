@@ -483,6 +483,31 @@ async def preview_cheatsheet_url_diff(payload: CheatsheetURLRequest) -> Cheatshe
         raise HTTPException(status_code=400, detail=f"Failed to generate diff from URL: {exc}") from exc
 
 
+@app.post("/api/cheatsheet/file-diff", response_model=CheatsheetDiffReport)
+async def preview_cheatsheet_file_diff(file: UploadFile) -> CheatsheetDiffReport:
+    """Dry-run diff comparing uploaded file rankings against active baseline without DB writes."""
+    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
+    filename = (file.filename or "").lower()
+    content_bytes = await file.read()
+
+    try:
+        if filename.endswith(".pdf"):
+            candidate_context = parse_pdf_cheatsheet(content_bytes)
+        else:
+            text_str = content_bytes.decode("utf-8", errors="replace")
+            candidate_context = parse_cheatsheet_content(text_str)
+
+        active = _ACTIVE_CHEATSHEET or get_active_cheatsheet()
+        return compute_cheatsheet_diff(
+            active_context=active,
+            candidate_context=candidate_context,
+            player_pool=_SAMPLE_PLAYERS,
+            top_n=5,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Failed to generate file diff: {exc}") from exc
+
+
 @app.get("/api/cheatsheet", response_model=CheatsheetContext | None)
 async def get_current_cheatsheet() -> CheatsheetContext | None:
     """Fetch currently active cheatsheet tiers, rules, and parsed entries from SQLite."""

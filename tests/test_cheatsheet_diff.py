@@ -93,3 +93,19 @@ def test_qa_mode_toggle_and_config_endpoint() -> None:
     res_normal = client.get("/api/draft/state?simulate_cliff=true")
     assert res_normal.status_code == 200
     assert len(res_normal.json()["cliff_warnings"]) == 0
+
+
+def test_api_cheatsheet_file_diff_endpoint() -> None:
+    """Verify POST /api/cheatsheet/file-diff calculates diff report without modifying DB."""
+    client = TestClient(app)
+    csv_bytes = b"player,position,team,tier,adp\nJosh Allen,QB,BUF,1,15.0\nBijan Robinson,RB,ATL,1,3.0\n"
+
+    response = client.post(
+        "/api/cheatsheet/file-diff",
+        files={"file": ("test_rankings.csv", csv_bytes, "text/csv")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "top_risers" in data
+    assert "top_fallers" in data
+    assert "total_players_affected" in data
