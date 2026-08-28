@@ -213,16 +213,21 @@ def _build_suggestion_reason(
     else:
         lines.append(f"+{t_pts:.1f} pts (Tier {p_tier})")
 
-    # Row 3: ADP Value / Reach Points
+    # Row 3: ADP Market Context (Steal / Good Pick / Reach)
     if player.adp:
         discount = overall_pick - player.adp
-        if discount >= 2.0:
+        if discount >= 8.0:
             adp_pts = min(2.0, discount * 0.1)
-            lines.append(f"+{adp_pts:.1f} pts (+{discount:.1f} pick discount vs {player.adp:.1f} ADP)")
-        elif discount <= -3.0:
-            lines.append(f"ADP {player.adp:.1f} (-{abs(discount):.1f} reach)")
+            lines.append(f"+{adp_pts:.1f} pts (ADP {player.adp:.1f} • Steal: +{discount:.1f} picks past ADP)")
+        elif discount >= 3.0:
+            adp_pts = min(2.0, discount * 0.1)
+            lines.append(f"+{adp_pts:.1f} pts (ADP {player.adp:.1f} • Good Value: +{discount:.1f} pick discount)")
+        elif discount >= -2.0:
+            lines.append(f"ADP {player.adp:.1f} (Good Pick • Fair Value)")
+        elif discount >= -6.0:
+            lines.append(f"ADP {player.adp:.1f} (Minor Reach • {abs(discount):.1f} picks early)")
         else:
-            lines.append(f"ADP {player.adp:.1f} (Fair Value)")
+            lines.append(f"ADP {player.adp:.1f} (Reach • {abs(discount):.1f} picks early)")
 
     # Row 4: Strategy Delta & Stadium Environment
     is_dome = player.game_context and player.game_context.is_dome
