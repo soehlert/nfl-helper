@@ -358,7 +358,12 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
     previous_was_blank = False
     legend_notes: dict[str, str] = {}
 
-    lines = [ln.strip() for ln in text.splitlines()]
+    # Strip markdown link formatting [Player Name](https://...) -> Player Name
+    clean_text = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
+    clean_text = re.sub(r"https?://\S+", "", clean_text)
+
+    lines = [ln.strip() for ln in clean_text.splitlines()]
+
     i = 0
     while i < len(lines):
         raw_line = lines[i]

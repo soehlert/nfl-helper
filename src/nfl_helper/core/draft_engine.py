@@ -305,6 +305,18 @@ def generate_draft_suggestions(
         rule_delta, rule_note = _evaluate_strategy_rule_adjustments(p, cheatsheet_context, current_round)
         score += rule_delta
 
+        # Cheatsheet Note Tactical Adjustment (Sleeper, Breakout, Target, Bust, Fade)
+        note_delta = 0.0
+        if p.cheatsheet_notes:
+            nl = p.cheatsheet_notes.lower()
+            if "breakout" in nl:
+                note_delta = 1.8 * demand_weight
+            elif "sleeper" in nl or "pick" in nl or "target" in nl:
+                note_delta = 1.2 * demand_weight
+            elif "bust" in nl or "fade" in nl:
+                note_delta = -1.8 * demand_weight
+        score += note_delta
+
         adp_delta = 0.0
         if p.cheatsheet_rank:
             adp_delta = overall_pick - p.cheatsheet_rank
