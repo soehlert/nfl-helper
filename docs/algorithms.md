@@ -1,6 +1,6 @@
 # Core Mathematical & Deterministic Algorithms
 
-This document details all algorithmic logic, mathematical formulas, edge-case handling, and step-by-step procedures powering the **Fantasy War Room** engine. All logic is strictly deterministic (zero external LLM/cloud dependencies).
+This document details all algorithmic logic, mathematical formulas, edge-case handling, and step-by-step procedures powering the **Craftroom Draftroom** engine. All logic is strictly deterministic (zero external LLM/cloud dependencies).
 
 ---
 

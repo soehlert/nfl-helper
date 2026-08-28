@@ -1,3 +1,3 @@
-"""Fantasy War Room package."""
+"""Craftroom Draftroom package."""
 
 __version__ = "0.1.0"

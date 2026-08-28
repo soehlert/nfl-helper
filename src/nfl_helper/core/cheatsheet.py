@@ -541,6 +541,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
         if any(
             line.startswith(prefix)
             for prefix in (
+                "#",
                 "Rounds",
                 "Round",
                 "Rule",
@@ -556,8 +557,8 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
                 "D/ST -",
             )
         ):
-            if line.startswith(("Strategy:", "Rules:", "Rule:")):
-                line = re.sub(r"^(Strategy:|Rules:|Rule:)\s*", "", line).strip()
+            if line.startswith(("#", "Strategy:", "Rules:", "Rule:")):
+                line = re.sub(r"^(#\s*|Strategy:\s*|Rules:\s*|Rule:\s*)", "", line).strip()
             if not line:
                 i += 1
                 continue
@@ -750,3 +751,70 @@ def apply_cheatsheet_context(players: list[Player], context: CheatsheetContext) 
                     player.cheatsheet_notes = "Injured (multi-week recovery / out a while)"
 
     return players
+
+
+def merge_cheatsheet_contexts(contexts: list[CheatsheetContext]) -> CheatsheetContext:
+    """Consolidate multiple active cheatsheet contexts into a single unified context."""
+    valid_contexts = [c for c in contexts if c is not None]
+    if not valid_contexts:
+        return CheatsheetContext()
+    if len(valid_contexts) == 1:
+        return valid_contexts[0].model_copy(deep=True)
+
+    merged_entries: dict[str, CheatsheetEntry] = {}
+    merged_rules: list[str] = []
+    seen_rules: set[str] = set()
+    merged_round_targets: list[DraftRoundTarget] = []
+    seen_round_keys: set[tuple[tuple[int, ...], tuple[str, ...]]] = set()
+    merged_pos_strategy: list[PositionalStrategyRule] = []
+    seen_pos_keys: set[tuple[str, tuple[int, ...]]] = set()
+    merged_positional_tiers: dict[str, list[list[str]]] = {}
+
+    for ctx in valid_contexts:
+        for key, entry in ctx.entries.items():
+            if key not in merged_entries:
+                merged_entries[key] = entry.model_copy()
+            else:
+                existing = merged_entries[key]
+                if entry.notes:
+                    if not existing.notes:
+                        existing.notes = entry.notes
+                    elif entry.notes not in existing.notes:
+                        existing.notes = f"{existing.notes}; {entry.notes}"
+                if entry.tier is not None:
+                    existing.tier = entry.tier
+                if entry.adp is not None:
+                    existing.adp = entry.adp
+                existing.is_injured = existing.is_injured or entry.is_injured
+                if not existing.position and entry.position:
+                    existing.position = entry.position
+                if not existing.team and entry.team:
+                    existing.team = entry.team
+
+        for rule in ctx.strategy_rules:
+            if rule not in seen_rules:
+                seen_rules.add(rule)
+                merged_rules.append(rule)
+
+        for rt in ctx.round_targets:
+            rkey = (tuple(rt.target_rounds), tuple(rt.allowed_positions))
+            if rkey not in seen_round_keys:
+                seen_round_keys.add(rkey)
+                merged_round_targets.append(rt.model_copy())
+
+        for ps in ctx.positional_strategy:
+            pkey = (ps.position, tuple(ps.target_rounds))
+            if pkey not in seen_pos_keys:
+                seen_pos_keys.add(pkey)
+                merged_pos_strategy.append(ps.model_copy())
+
+        for pos, tiers in ctx.positional_tiers.items():
+            merged_positional_tiers[pos] = [list(t) for t in tiers]
+
+    return CheatsheetContext(
+        entries=merged_entries,
+        strategy_rules=merged_rules,
+        round_targets=merged_round_targets,
+        positional_strategy=merged_pos_strategy,
+        positional_tiers=merged_positional_tiers,
+    )

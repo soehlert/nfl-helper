@@ -22,6 +22,7 @@ from nfl_helper.core.db import (
     get_cheatsheet_history,
     init_db,
     save_cheatsheet,
+    toggle_cheatsheet_active,
 )
 from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.core.lineup_optimizer import solve_optimal_lineup
@@ -43,7 +44,7 @@ logger = logging.getLogger("nfl_helper.api")
 
 
 app = FastAPI(
-    title="Fantasy War Room",
+    title="Craftroom Draftroom",
     description="Self-hosted deterministic draft and weekly fantasy football optimization manager",
     version="0.1.0",
 )
@@ -74,6 +75,7 @@ class CheatsheetUploadRequest(BaseModel):
 
     text: str
     name: str = "Pasted Cheatsheet"
+    layer_mode: bool = True
 
 
 class CheatsheetURLRequest(BaseModel):
@@ -81,6 +83,13 @@ class CheatsheetURLRequest(BaseModel):
 
     url: str
     name: str | None = None
+    layer_mode: bool = True
+
+
+class CheatsheetToggleRequest(BaseModel):
+    """Request model for explicitly toggling or setting a cheatsheet active status."""
+
+    active: bool | None = None
 
 
 class QAModeRequest(BaseModel):
@@ -533,14 +542,15 @@ async def upload_cheatsheet(payload: CheatsheetUploadRequest) -> CheatsheetConte
     """Ingest and parse plain-text, CSV, or JSON cheatsheet, storing active context in SQLite."""
     global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     context = parse_cheatsheet_content(payload.text)
-    _ACTIVE_CHEATSHEET = context
-    save_cheatsheet(context, raw_text=payload.text, name=payload.name)
-    _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
-    return context
+    save_cheatsheet(context, raw_text=payload.text, name=payload.name, layer_mode=payload.layer_mode)
+    _ACTIVE_CHEATSHEET = get_active_cheatsheet()
+    if _ACTIVE_CHEATSHEET:
+        _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, _ACTIVE_CHEATSHEET)
+    return _ACTIVE_CHEATSHEET or context
 
 
 @app.post("/api/cheatsheet/upload-file", response_model=CheatsheetContext)
-async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
+async def upload_cheatsheet_file(file: UploadFile, layer_mode: bool = True) -> CheatsheetContext:
     """Ingest uploaded PDF, CSV, TXT, or JSON cheatsheet file into SQLite."""
     global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     filename = (file.filename or "").lower()
@@ -555,16 +565,17 @@ async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
             context = parse_cheatsheet_content(text_str)
             raw_preview = text_str
 
-        _ACTIVE_CHEATSHEET = context
-        save_cheatsheet(context, raw_text=raw_preview, name=file.filename or "Uploaded File")
-        _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
+        save_cheatsheet(context, raw_text=raw_preview, name=file.filename or "Uploaded File", layer_mode=layer_mode)
+        _ACTIVE_CHEATSHEET = get_active_cheatsheet()
+        if _ACTIVE_CHEATSHEET:
+            _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, _ACTIVE_CHEATSHEET)
         logger.info(
             "Successfully parsed cheatsheet file %s: %d players, %d rules",
             filename,
             len(context.entries),
             len(context.strategy_rules),
         )
-        return context
+        return _ACTIVE_CHEATSHEET or context
     except Exception as exc:
         logger.exception("Failed to parse uploaded cheatsheet file %s: %s", filename, exc)
         raise HTTPException(status_code=400, detail=f"Failed to parse file: {exc}") from exc
@@ -576,17 +587,18 @@ async def upload_cheatsheet_url(payload: CheatsheetURLRequest) -> CheatsheetCont
     global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     try:
         context, title, raw_text = await fetch_web_cheatsheet(payload.url)
-        _ACTIVE_CHEATSHEET = context
         sheet_name = payload.name or title or "Web Cheatsheet"
-        save_cheatsheet(context, raw_text=raw_text, name=sheet_name)
-        _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
+        save_cheatsheet(context, raw_text=raw_text, name=sheet_name, layer_mode=payload.layer_mode)
+        _ACTIVE_CHEATSHEET = get_active_cheatsheet()
+        if _ACTIVE_CHEATSHEET:
+            _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, _ACTIVE_CHEATSHEET)
         logger.info(
             "Successfully fetched web cheatsheet from %s: %d players, %d rules",
             payload.url,
             len(context.entries),
             len(context.strategy_rules),
         )
-        return context
+        return _ACTIVE_CHEATSHEET or context
     except Exception as exc:
         logger.exception("Failed to fetch web cheatsheet from %s: %s", payload.url, exc)
         raise HTTPException(status_code=400, detail=f"Failed to fetch and parse URL: {exc}") from exc
@@ -688,7 +700,7 @@ async def clear_cheatsheet() -> dict[str, Any]:
 
 @app.post("/api/cheatsheet/{cheatsheet_id}/activate")
 async def set_active_cheatsheet(cheatsheet_id: int) -> dict[str, Any]:
-    """Activate a specific saved cheatsheet by ID and update draft calculations."""
+    """Activate a specific saved cheatsheet by ID (single mode) and update draft calculations."""
     global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     context = activate_cheatsheet(cheatsheet_id)
     if not context:
@@ -696,6 +708,30 @@ async def set_active_cheatsheet(cheatsheet_id: int) -> dict[str, Any]:
     _ACTIVE_CHEATSHEET = context
     _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
     return {"status": "activated", "id": cheatsheet_id}
+
+
+@app.post("/api/cheatsheet/{cheatsheet_id}/toggle")
+async def toggle_cheatsheet(
+    cheatsheet_id: int,
+    payload: CheatsheetToggleRequest | None = None,
+) -> dict[str, Any]:
+    """Toggle or update active state of a specific cheatsheet and recalculate active layers."""
+    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
+    active_val = payload.active if payload is not None else None
+    toggle_cheatsheet_active(cheatsheet_id, active=active_val)
+    _ACTIVE_CHEATSHEET = get_active_cheatsheet()
+    if _ACTIVE_CHEATSHEET:
+        _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, _ACTIVE_CHEATSHEET)
+    history = get_cheatsheet_history()
+    current_item = next((h for h in history if h["id"] == cheatsheet_id), None)
+    active_count = sum(1 for h in history if h.get("is_active") == 1)
+    return {
+        "status": "toggled",
+        "id": cheatsheet_id,
+        "is_active": bool(current_item["is_active"]) if current_item else False,
+        "active_count": active_count,
+        "player_count": len(_ACTIVE_CHEATSHEET.entries) if _ACTIVE_CHEATSHEET else 0,
+    }
 
 
 @app.delete("/api/cheatsheet/all")
@@ -710,9 +746,11 @@ async def remove_all_cheatsheets() -> dict[str, Any]:
 @app.delete("/api/cheatsheet/{cheatsheet_id}")
 async def remove_cheatsheet(cheatsheet_id: int) -> dict[str, Any]:
     """Permanently delete a cheatsheet entry by ID."""
-    global _ACTIVE_CHEATSHEET
+    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     delete_cheatsheet(cheatsheet_id)
     _ACTIVE_CHEATSHEET = get_active_cheatsheet()
+    if _ACTIVE_CHEATSHEET:
+        _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, _ACTIVE_CHEATSHEET)
     return {"status": "deleted", "id": cheatsheet_id}
 
 

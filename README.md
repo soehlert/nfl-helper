@@ -1,3 +1,3 @@
-# Fantasy War Room
+# Craftroom Draftroom
 
-Self-hosted fantasy football draft & weekly optimization manager.
+Self-hosted fantasy football draft, cheatsheet layering & weekly optimization manager.

@@ -23,7 +23,7 @@ def test_root_serves_html() -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
-    assert "Fantasy War Room" in response.text
+    assert "Craftroom Draftroom" in response.text
 
 
 def test_draft_state_endpoint() -> None:
@@ -169,3 +169,67 @@ def test_get_league_teams_endpoint() -> None:
     assert len(teams) >= 1
     assert "team_id" in teams[0]
     assert "team_name" in teams[0]
+
+
+def test_multi_cheatsheet_layering_and_toggle_endpoints() -> None:
+    """Verify multi-cheatsheet layering, independent toggle endpoints, and active consolidation."""
+    client.delete("/api/cheatsheet/all")
+
+    # Upload Sheet #1: Sleepers
+    res1 = client.post(
+        "/api/cheatsheet/upload",
+        json={
+            "name": "Sleepers",
+            "text": "RB\nBucky Irving TB 80.0\n# Target upside handcuffs in rounds 7-9",
+            "layer_mode": True,
+        },
+    )
+    assert res1.status_code == 200
+
+    # Upload Sheet #2: Breakouts (layered on top)
+    res2 = client.post(
+        "/api/cheatsheet/upload",
+        json={
+            "name": "Breakouts",
+            "text": "WR\nMalik Nabers NYG 25.0\n# Draft WR early",
+            "layer_mode": True,
+        },
+    )
+    assert res2.status_code == 200
+
+    # Verify GET /api/cheatsheet returns consolidated layers
+    get_res = client.get("/api/cheatsheet")
+    assert get_res.status_code == 200
+    active_data = get_res.json()
+    assert "bucky irving" in active_data["entries"]
+    assert "malik nabers" in active_data["entries"]
+    assert len(active_data["strategy_rules"]) == 2
+
+    # Check history has both sheets active
+    hist_res = client.get("/api/cheatsheet/history")
+    assert hist_res.status_code == 200
+    history = hist_res.json()
+    assert len(history) == 2
+    assert all(h["is_active"] == 1 for h in history)
+    sheet1_id = next(h["id"] for h in history if h["name"] == "Sleepers")
+
+    # Toggle Sheet #1 OFF
+    toggle_res = client.post(f"/api/cheatsheet/{sheet1_id}/toggle", json={"active": False})
+    assert toggle_res.status_code == 200
+    toggled_data = toggle_res.json()
+    assert toggled_data["is_active"] is False
+    assert toggled_data["active_count"] == 1
+
+    # Verify GET /api/cheatsheet now only contains Sheet #2 (Breakouts)
+    get_res_after = client.get("/api/cheatsheet")
+    assert get_res_after.status_code == 200
+    active_after = get_res_after.json()
+    assert "bucky irving" not in active_after["entries"]
+    assert "malik nabers" in active_after["entries"]
+    assert len(active_after["strategy_rules"]) == 1
+
+    # Toggle Sheet #1 back ON
+    toggle_on = client.post(f"/api/cheatsheet/{sheet1_id}/toggle")
+    assert toggle_on.status_code == 200
+    assert toggle_on.json()["is_active"] is True
+    assert toggle_on.json()["active_count"] == 2

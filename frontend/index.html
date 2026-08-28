@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fantasy War Room</title>
+  <title>Craftroom Draftroom</title>
   <style>
     :root {
       --bg-primary: #0f172a;
@@ -49,15 +49,40 @@
       font-weight: 700;
       color: var(--accent-blue);
     }
+    .brand-logo {
+      display: inline-block;
+      flex-shrink: 0;
+    }
     .badge {
       display: inline-block;
-      padding: 0.2rem 0.55rem;
+      padding: 0.2rem 0.6rem;
       border-radius: 9999px;
       font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
+      letter-spacing: 0.03em;
+      line-height: 1.2;
     }
-    .badge-claimed { background: rgba(16, 185, 129, 0.12); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .badge-espn {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+    }
+    .badge-sleeper {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
+    }
+    .badge-claimed {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid #22c55e;
+    }
+    .badge-inactive {
+      background: rgba(148, 163, 184, 0.12);
+      color: #94a3b8;
+      border: 1px solid #64748b;
+    }
 
     .btn-danger-pill {
       display: inline-block;
@@ -65,16 +90,16 @@
       border-radius: 9999px;
       font-size: 0.75rem;
       font-weight: 600;
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid var(--accent-red);
-      color: var(--accent-red);
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #ef4444;
       cursor: pointer;
       transition: all 0.15s ease;
       text-align: center;
       line-height: 1.2;
     }
     .btn-danger-pill:hover {
-      background: rgba(239, 68, 68, 0.25);
+      background: rgba(239, 68, 68, 0.28);
       border-color: #f87171;
       color: #fca5a5;
     }
@@ -84,18 +109,36 @@
       border-radius: 9999px;
       font-size: 0.75rem;
       font-weight: 600;
-      background: rgba(59, 130, 246, 0.12);
-      border: 1px solid var(--accent-blue);
-      color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
       cursor: pointer;
       transition: all 0.15s ease;
       text-align: center;
       line-height: 1.2;
     }
     .btn-activate-pill:hover {
-      background: rgba(59, 130, 246, 0.25);
+      background: rgba(56, 189, 248, 0.28);
       border-color: #60a5fa;
       color: #93c5fd;
+    }
+    .btn-toggle-pill-active {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid #22c55e;
+      color: #4ade80;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .btn-toggle-pill-active:hover {
+      background: rgba(34, 197, 94, 0.28);
+      border-color: #4ade80;
     }
 
     /* Toast Notifications */
@@ -398,39 +441,42 @@
 
     .pos-tag {
       font-weight: 700;
-      padding: 0.15rem 0.4rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      display: inline-block;
+      letter-spacing: 0.02em;
     }
-    .pos-QB { background: #3b82f6; color: #fff; }
-    .pos-RB { background: #10b981; color: #fff; }
-    .pos-WR { background: #8b5cf6; color: #fff; }
-    .pos-TE { background: #f59e0b; color: #000; }
-    .pos-DST, .pos-D-ST { background: #64748b; color: #fff; }
-    .pos-K { background: #ec4899; color: #fff; }
+    .pos-QB { background: rgba(59, 130, 246, 0.18); border: 1px solid #3b82f6; color: #60a5fa; }
+    .pos-RB { background: rgba(16, 185, 129, 0.18); border: 1px solid #10b981; color: #34d399; }
+    .pos-WR { background: rgba(168, 85, 247, 0.18); border: 1px solid #a855f7; color: #c084fc; }
+    .pos-TE { background: rgba(245, 158, 11, 0.18); border: 1px solid #f59e0b; color: #fbbf24; }
+    .pos-DST, .pos-D-ST { background: rgba(100, 116, 139, 0.22); border: 1px solid #94a3b8; color: #cbd5e1; }
+    .pos-K { background: rgba(236, 72, 153, 0.18); border: 1px solid #ec4899; color: #f472b6; }
 
 
     .delta-pill {
       font-weight: 700;
       padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.82rem;
     }
-    .delta-plus { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .delta-plus { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #4ade80; }
 
     .context-badge {
       display: inline-block;
       font-size: 0.72rem;
-      padding: 0.12rem 0.38rem;
-      border-radius: 4px;
+      padding: 0.14rem 0.45rem;
+      border-radius: 9999px;
       margin: 0.15rem 0.15rem 0 0;
       font-weight: 600;
       white-space: nowrap;
+      line-height: 1.2;
     }
-    .badge-boost { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
-    .badge-penalty { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .badge-info { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
-    .badge-warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-boost { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid #22c55e; }
+    .badge-penalty { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid #ef4444; }
+    .badge-info { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
+    .badge-warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid #f59e0b; }
     .reason-text { color: var(--text-muted) !important; font-size: 0.85rem; font-weight: normal; }
 
     .form-group {
@@ -544,7 +590,26 @@
 
   <header>
     <div class="brand">
-      <span>🏈</span> Fantasy War Room
+      <svg class="brand-logo" width="30" height="30" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="craftGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#6366f1" />
+          </linearGradient>
+          <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#22c55e" />
+            <stop offset="100%" stop-color="#38bdf8" />
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="28" height="28" rx="7" fill="#1e293b" stroke="url(#craftGrad)" stroke-width="1.75"/>
+        <path d="M7 10H25M7 16H25M7 22H25" stroke="#334155" stroke-width="1" stroke-linecap="round" />
+        <path d="M12 7V25M20 7V25" stroke="#334155" stroke-width="1" stroke-linecap="round" />
+        <path d="M16 6C22.5 6 26 12 26 16C26 20 22.5 26 16 26C9.5 26 6 20 6 16C6 12 9.5 6 16 6Z" stroke="url(#craftGrad)" stroke-width="1.5" fill="rgba(56, 189, 248, 0.08)"/>
+        <path d="M16 11V21" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M13 13.5H19M13 16H19M13 18.5H19" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round"/>
+        <circle cx="25" cy="7" r="2.5" fill="url(#accentGrad)"/>
+      </svg>
+      <span>Craftroom Draftroom</span>
       <span id="platform-badge" class="badge badge-espn">ESPN</span>
     </div>
     <div class="header-actions">
@@ -1161,7 +1226,13 @@
 
         <!-- Bottom: Single Unified Action Bar -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.85rem; flex-wrap: wrap; gap: 0.75rem;">
-          <span id="cheatsheet-status-msg" style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;"></span>
+          <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 0.45rem; cursor: pointer; font-size: 0.82rem; color: var(--text-main); font-weight: 600; background: rgba(56, 189, 248, 0.1); border: 1px solid var(--accent-blue); padding: 0.3rem 0.65rem; border-radius: 9999px;">
+              <input type="checkbox" id="cheatsheet-layer-toggle" checked style="accent-color: var(--accent-blue); width: 15px; height: 15px; cursor: pointer;">
+              <span>Layer / Merge with active sheets</span>
+            </label>
+            <span id="cheatsheet-status-msg" style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;"></span>
+          </div>
           <div style="display: flex; gap: 0.5rem;">
             <button class="btn btn-secondary" style="font-size: 0.85rem;" onclick="executeUnifiedDiff()">Preview Diff (Dry Run)</button>
             <button class="btn btn-primary" style="font-size: 0.85rem;" onclick="executeUnifiedApply()">Save & Apply</button>
@@ -1172,7 +1243,10 @@
       <!-- Saved Cheatsheets Library Card -->
       <div id="cheatsheet-history-card" class="card" style="display: none;">
         <div class="card-header">
-          <div class="card-title">Saved Cheatsheets Library</div>
+          <div style="display: flex; align-items: center; gap: 0.65rem;">
+            <div class="card-title">Saved Cheatsheets Library</div>
+            <span id="library-active-badge" class="badge badge-claimed">0 Active</span>
+          </div>
           <button class="btn-danger-pill" onclick="deleteAllCheatsheets()">Delete All</button>
         </div>
         <table class="data-table">
@@ -1183,6 +1257,7 @@
               <th>Players</th>
               <th>Rules</th>
               <th>Status</th>
+              <th>Layer Active</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -1442,11 +1517,12 @@
       const statusEl = document.getElementById('cheatsheet-status-msg');
       if (statusEl) statusEl.textContent = `Parsing and applying "${file.name}"...`;
 
+      const layerMode = document.getElementById('cheatsheet-layer-toggle')?.checked ?? true;
       const formData = new FormData();
       formData.append('file', file);
 
       try {
-        const res = await fetch('/api/cheatsheet/upload-file', {
+        const res = await fetch(`/api/cheatsheet/upload-file?layer_mode=${layerMode}`, {
           method: 'POST',
           body: formData,
         });
@@ -1608,6 +1684,7 @@
     function renderCheatsheetHistory(history) {
       const card = document.getElementById('cheatsheet-history-card');
       const tbody = document.getElementById('cheatsheet-history-tbody');
+      const activeBadge = document.getElementById('library-active-badge');
       if (!card || !tbody) return;
 
       if (!history || history.length === 0) {
@@ -1616,18 +1693,21 @@
       }
 
       card.style.display = 'block';
+      const activeCount = history.filter(h => h.is_active === 1 || h.is_active === true).length;
+      if (activeBadge) activeBadge.textContent = `${activeCount} Active`;
+
       let html = '';
       history.forEach(item => {
-        const statusBadge = item.is_active
+        const isActive = item.is_active === 1 || item.is_active === true;
+        const statusBadge = isActive
           ? '<span class="badge badge-claimed">Active</span>'
-          : '<span class="badge" style="background: rgba(255,255,255,0.08); color: var(--text-muted);">Inactive</span>';
+          : '<span class="badge badge-inactive">Inactive</span>';
         
-        const activateBtn = item.is_active
-          ? ''
-          : `<button class="btn-activate-pill" onclick="activateCheatsheet(${item.id})">Activate</button>`;
+        const toggleBtn = isActive
+          ? `<button class="btn-toggle-pill-active" onclick="toggleSingleCheatsheet(${item.id})" title="Click to Layer OFF">ACTIVE (ON)</button>`
+          : `<button class="btn-activate-pill" onclick="toggleSingleCheatsheet(${item.id})" title="Click to Layer ON">INACTIVE (OFF)</button>`;
 
         const deleteBtn = `<button class="btn-danger-pill" onclick="deleteSingleCheatsheet(${item.id})">Delete</button>`;
-
 
         html += `<tr>
           <td>#${item.id}</td>
@@ -1635,15 +1715,33 @@
           <td>${item.player_count}</td>
           <td>${item.rule_count}</td>
           <td>${statusBadge}</td>
+          <td>${toggleBtn}</td>
           <td>
             <div style="display: flex; gap: 0.4rem;">
-              ${activateBtn}
               ${deleteBtn}
             </div>
           </td>
         </tr>`;
       });
       tbody.innerHTML = html;
+    }
+
+    async function toggleSingleCheatsheet(id) {
+      try {
+        const res = await fetch(`/api/cheatsheet/${id}/toggle`, { method: 'POST' });
+        if (res.ok) {
+          const result = await res.json();
+          const stateStr = result.is_active ? 'ON (Layered)' : 'OFF';
+          showToast(`Cheatsheet #${id} toggled ${stateStr}! (${result.active_count} active)`, 'success');
+          fetchCheatsheet();
+          loadCheatsheetHistory();
+          fetchDraftState();
+        } else {
+          showToast('Failed to toggle cheatsheet', 'error');
+        }
+      } catch (e) {
+        showToast('Failed to toggle cheatsheet: ' + e.message, 'error');
+      }
     }
 
     async function activateCheatsheet(id) {
@@ -1717,6 +1815,7 @@
         showToast('Please enter cheatsheet text.', 'error');
         return;
       }
+      const layerMode = document.getElementById('cheatsheet-layer-toggle')?.checked ?? true;
       try {
         localStorage.setItem('fwr_cheatsheet_text', text);
       } catch (e) {}
@@ -1725,7 +1824,7 @@
         const res = await fetch('/api/cheatsheet/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
+          body: JSON.stringify({ text, layer_mode: layerMode })
         });
         if (res.ok) {
           const data = await res.json();
@@ -1755,6 +1854,7 @@
         showToast('Please enter a valid web article or rankings URL (e.g. ESPN, Yahoo, FantasyPros).', 'error');
         return;
       }
+      const layerMode = document.getElementById('cheatsheet-layer-toggle')?.checked ?? true;
 
       const statusEl = document.getElementById('cheatsheet-status-msg');
       if (statusEl) statusEl.textContent = 'Fetching and parsing web cheatsheet...';
@@ -1763,7 +1863,7 @@
         const res = await fetch('/api/cheatsheet/url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
+          body: JSON.stringify({ url, layer_mode: layerMode })
         });
         if (res.ok) {
           const data = await res.json();

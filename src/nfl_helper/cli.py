@@ -107,7 +107,7 @@ def qa_command(args: argparse.Namespace) -> None:
                 print(f"[ERROR] Failed to fetch config: {res.status_code} {res.text}")
     except httpx.ConnectError:
         print(f"[ERROR] Could not connect to running server at {base_url}.")
-        print("Ensure the Fantasy War Room server is running with 'uv run python -m nfl_helper.cli serve'.")
+        print("Ensure the Craftroom Draftroom server is running with 'uv run python -m nfl_helper.cli serve'.")
 
 
 def diff_cheatsheet_command(args: argparse.Namespace) -> None:
@@ -212,7 +212,7 @@ def serve_command(args: argparse.Namespace) -> None:
 
         nfl_helper.main._QA_MODE = True
         print("🧪 Starting server with QA TESTING MODE ENABLED.")
-    print(f"🚀 Starting Fantasy War Room on http://{args.host}:{args.port}...")
+    print(f"🚀 Starting Craftroom Draftroom on http://{args.host}:{args.port}...")
     uvicorn.run("nfl_helper.main:app", host=args.host, port=args.port, reload=args.reload)
 
 
@@ -220,7 +220,7 @@ def main(argv: list[str] | None = None) -> None:
     """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
         prog="nfl-helper",
-        description="Fantasy War Room administrative CLI and server launcher",
+        description="Craftroom Draftroom administrative CLI and server launcher",
     )
     subparsers = parser.add_subparsers(dest="subcommand", help="Available commands")
 

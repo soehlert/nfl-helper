@@ -205,3 +205,83 @@ def test_parse_multi_column_and_broken_ocr_kerning() -> None:
 
     # Assert header noise was filtered
     assert "adp adp" not in context.entries
+
+
+def test_merge_cheatsheet_contexts_layering() -> None:
+    """Verify merging multiple cheatsheet contexts consolidates notes, tiers, ADP, injury flags, and rules."""
+    from nfl_helper.core.cheatsheet import merge_cheatsheet_contexts
+    from nfl_helper.models.cheatsheet import CheatsheetContext, CheatsheetEntry
+
+    sheet1 = CheatsheetContext(
+        entries={
+            "malik nabers": CheatsheetEntry(
+                player_name="Malik Nabers",
+                normalized_name="malik nabers",
+                position="WR",
+                team="NYG",
+                tier=2,
+                adp=24.5,
+                notes="Target alpha WR1",
+            ),
+            "isaiah likely": CheatsheetEntry(
+                player_name="Isaiah Likely",
+                normalized_name="isaiah likely",
+                position="TE",
+                team="BAL",
+                tier=5,
+                notes="Red-zone upside",
+            ),
+        },
+        strategy_rules=["Draft WR early in rounds 1-3"],
+    )
+
+    sheet2 = CheatsheetContext(
+        entries={
+            "malik nabers": CheatsheetEntry(
+                player_name="Malik Nabers",
+                normalized_name="malik nabers",
+                position="WR",
+                team="NYG",
+                tier=1,
+                is_injured=True,
+                notes="Elite target share",
+            ),
+            "bucky irving": CheatsheetEntry(
+                player_name="Bucky Irving",
+                normalized_name="bucky irving",
+                position="RB",
+                team="TB",
+                tier=3,
+                adp=85.0,
+                notes="Breakout candidate",
+            ),
+        },
+        strategy_rules=["Target upside handcuffs in rounds 8-10"],
+    )
+
+    merged = merge_cheatsheet_contexts([sheet1, sheet2])
+
+    assert len(merged.entries) == 3
+    # Check Malik Nabers: notes merged, tier updated to 1, injury flag set to True
+    nabers = merged.entries["malik nabers"]
+    assert nabers.tier == 1
+    assert nabers.is_injured is True
+    assert "Target alpha WR1" in nabers.notes
+    assert "Elite target share" in nabers.notes
+    assert nabers.adp == 24.5
+
+    # Check Isaiah Likely preserved from sheet 1
+    likely = merged.entries["isaiah likely"]
+    assert likely.position == "TE"
+    assert likely.notes == "Red-zone upside"
+
+    # Check Bucky Irving added from sheet 2
+    bucky = merged.entries["bucky irving"]
+    assert bucky.position == "RB"
+    assert bucky.tier == 3
+    assert bucky.notes == "Breakout candidate"
+
+    # Check strategy rules merged
+    assert len(merged.strategy_rules) == 2
+    assert "Draft WR early in rounds 1-3" in merged.strategy_rules
+    assert "Target upside handcuffs in rounds 8-10" in merged.strategy_rules
