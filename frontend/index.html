@@ -1044,39 +1044,39 @@
       <!-- Cheatsheet & PDF Ingestion -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">📝 Cheatsheet & PDF Ingestion</div>
+          <div class="card-title">Cheatsheet & Rankings Ingestion</div>
         </div>
         
         <!-- Top: Full-Width Web URL Ingestion -->
         <div style="margin-bottom: 1.25rem;">
-          <label class="form-label" style="font-weight: 600; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.4rem;">
-            <span>🌐</span> Ingest from Web Article / Online Rankings URL (ESPN, Yahoo, FantasyPros, Substack)
+          <label class="form-label" style="font-weight: 600; color: var(--accent-cyan);">
+            Web Article or Online Rankings URL (ESPN, Yahoo, FantasyPros, Substack)
           </label>
           <input type="url" id="cheatsheet-url-input" class="form-control" placeholder="https://www.espn.com/fantasy/football/story/_/id/..." />
         </div>
 
-        <!-- Middle: Two Half-Width Columns for File Upload & Copy/Paste -->
+        <!-- Middle: Two Equal-Height Columns for File Upload & Copy/Paste -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
           
           <!-- Left Column: File Upload Dropzone -->
           <div style="display: flex; flex-direction: column;">
-            <label class="form-label" style="font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
-              <span>📄</span> Upload Cheatsheet File
+            <label class="form-label" style="font-weight: 600;">
+              Upload File (PDF, CSV, TXT, JSON)
             </label>
-            <div class="dropzone" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.5rem 1rem; border-radius: 8px;" onclick="document.getElementById('cheatsheet-file-input').click()">
-              <div style="font-size: 2rem; margin-bottom: 0.25rem;">📄</div>
-              <div style="font-weight: 600; font-size: 0.88rem;">Drop PDF, CSV, or TXT here</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Extracts multi-column tiers, ADPs, & rules</div>
+            <div class="dropzone" style="height: 160px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; border-radius: 8px; text-align: center;" onclick="document.getElementById('cheatsheet-file-input').click()">
+              <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-main); margin-bottom: 0.35rem;">Click or Drop File Here</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Supports PDF, CSV, TXT, or JSON formats</div>
+              <div style="font-size: 0.74rem; color: var(--text-muted);">Extracts multi-column tiers, ADPs, and strategy rules</div>
               <input type="file" id="cheatsheet-file-input" accept=".pdf,.csv,.txt,.json" style="display: none;" onchange="handleFileUpload(event)">
             </div>
           </div>
 
           <!-- Right Column: Copy/Paste Textarea -->
           <div style="display: flex; flex-direction: column;">
-            <label class="form-label" style="font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
-              <span>✍️</span> Or Paste Text / CSV / OCR Output
+            <label class="form-label" style="font-weight: 600;">
+              Paste Text (Plain Text, CSV, JSON, OCR)
             </label>
-            <textarea id="cheatsheet-textarea" class="form-control" style="flex: 1; min-height: 120px; resize: vertical;" placeholder="Paste plain-text rankings, CSV, OCR text, or custom rules here..."></textarea>
+            <textarea id="cheatsheet-textarea" class="form-control" style="height: 160px; box-sizing: border-box; resize: none;" placeholder="Paste plain text, CSV, JSON, or OCR rankings here..."></textarea>
           </div>
 
         </div>
@@ -1085,11 +1085,12 @@
         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.85rem; flex-wrap: wrap; gap: 0.75rem;">
           <span id="cheatsheet-status-msg" style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;"></span>
           <div style="display: flex; gap: 0.5rem;">
-            <button class="btn btn-secondary" style="font-size: 0.85rem;" onclick="executeUnifiedDiff()">📊 Preview Diff (Dry Run)</button>
-            <button class="btn btn-primary" style="font-size: 0.85rem;" onclick="executeUnifiedApply()">💾 Save & Apply</button>
+            <button class="btn btn-secondary" style="font-size: 0.85rem;" onclick="executeUnifiedDiff()">Preview Diff (Dry Run)</button>
+            <button class="btn btn-primary" style="font-size: 0.85rem;" onclick="executeUnifiedApply()">Save & Apply</button>
           </div>
         </div>
       </div>
+
 
 
 
@@ -1499,7 +1500,7 @@
 
       // Top Risers
       html += '<div style="margin-bottom: 1.25rem;">';
-      html += '<div style="font-weight: 600; font-size: 0.9rem; color: var(--accent-green); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">🚀 TOP 5 BIGGEST RISERS (Rank Improved)</div>';
+      html += '<div style="font-weight: 600; font-size: 0.9rem; color: var(--accent-green); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">TOP 5 BIGGEST RISERS (Rank Improved)</div>';
       if (risers.length === 0) {
         html += '<div style="color: var(--text-muted); font-size: 0.82rem;">No significant rank increases.</div>';
       } else {
@@ -1514,7 +1515,7 @@
 
       // Top Fallers
       html += '<div style="margin-bottom: 1.25rem;">';
-      html += '<div style="font-weight: 600; font-size: 0.9rem; color: var(--accent-amber); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">📉 TOP 5 BIGGEST FALLERS (Rank Dropped)</div>';
+      html += '<div style="font-weight: 600; font-size: 0.9rem; color: var(--accent-amber); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">TOP 5 BIGGEST FALLERS (Rank Dropped)</div>';
       if (fallers.length === 0) {
         html += '<div style="color: var(--text-muted); font-size: 0.82rem;">No significant rank drops.</div>';
       } else {
@@ -1530,7 +1531,7 @@
       // Rules Delta
       if (addedRules.length > 0 || removedRules.length > 0) {
         html += '<div style="margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">';
-        html += '<div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">📋 Strategy Rule Changes:</div>';
+        html += '<div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">Strategy Rule Changes:</div>';
         addedRules.forEach(r => {
           html += `<div style="font-size: 0.8rem; color: var(--accent-green); margin-bottom: 0.2rem;">[+] ADDED: ${r}</div>`;
         });
@@ -1541,6 +1542,7 @@
       }
 
       html += `<div style="font-size: 0.78rem; color: var(--text-muted); text-align: right;">Total affected players: ${diff.total_players_affected || 0} | Strategy rule deltas: ${diff.total_rules_affected || 0}</div>`;
+
 
       contentEl.innerHTML = html;
       modalEl.style.display = 'flex';
@@ -2461,8 +2463,8 @@
     <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; max-width: 720px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
         <div>
-          <h3 style="font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-            <span>📊</span> Cheatsheet Impact Preview (Dry Run)
+          <h3 style="font-size: 1.15rem; margin: 0;">
+            Cheatsheet Impact Preview (Dry Run)
           </h3>
           <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.25rem 0 0 0;">Comparing candidate rankings against active baseline without modifying production data.</p>
         </div>
@@ -2475,10 +2477,11 @@
 
       <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
         <button class="btn btn-secondary" onclick="closeDiffModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="applyDiffChanges()">💾 Apply Changes to Active Draft</button>
+        <button class="btn btn-primary" onclick="applyDiffChanges()">Apply Changes to Active Draft</button>
       </div>
     </div>
   </div>
+
 </body>
 </html>
 
