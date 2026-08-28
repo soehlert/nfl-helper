@@ -252,34 +252,34 @@ def _build_suggestion_reason(
 
 
 def _calculate_sliding_note_shift(idx: int, note_type: str) -> int:
-    """Calculate realistic sliding window pick shift based on board position (early vs late rounds)."""
+    """Calculate calibrated sliding window pick shift tailored for 10-team leagues (1-3 Rd 1, 4-8 Rds 2-3)."""
     if note_type == "bust":
-        if idx < 6:
-            return 4 + (idx // 2)
-        elif idx < 20:
-            return 6 + ((idx - 6) // 3)
-        elif idx < 40:
-            return 10 + ((idx - 20) // 4)
-        else:
-            return 16 + min(6, (idx - 40) // 15)
+        if idx < 10:  # Round 1 (Picks 1-10)
+            return 1 + (idx // 4)  # 1 to 3 picks
+        elif idx < 30:  # Rounds 2-3 (Picks 11-30)
+            return 4 + int((idx - 10) * 4 / 20)  # 4 to 8 picks
+        elif idx < 60:  # Rounds 4-6 (Picks 31-60)
+            return 8 + int((idx - 30) * 6 / 30)  # 8 to 14 picks
+        else:  # Rounds 7+
+            return 14 + min(6, (idx - 60) // 15)  # 14 to 20 picks
     elif note_type == "breakout":
-        if idx < 6:
-            return 3 + (idx // 3)
-        elif idx < 20:
-            return 4 + ((idx - 6) // 3)
-        elif idx < 40:
-            return 8 + ((idx - 20) // 5)
-        else:
-            return 14 + min(6, (idx - 40) // 15)
+        if idx < 10:  # Round 1
+            return 1 + (idx // 4)  # 1 to 3 picks
+        elif idx < 30:  # Rounds 2-3
+            return 4 + int((idx - 10) * 3 / 20)  # 4 to 7 picks
+        elif idx < 60:  # Rounds 4-6
+            return 7 + int((idx - 30) * 5 / 30)  # 7 to 12 picks
+        else:  # Rounds 7+
+            return 12 + min(6, (idx - 60) // 15)  # 12 to 18 picks
     elif note_type == "sleeper":
-        if idx < 6:
-            return 2 + (idx // 3)
-        elif idx < 20:
-            return 3 + ((idx - 6) // 4)
-        elif idx < 40:
-            return 6 + ((idx - 20) // 6)
-        else:
-            return 10 + min(5, (idx - 40) // 15)
+        if idx < 10:  # Round 1
+            return 1 + (idx // 6)  # 1 to 2 picks
+        elif idx < 30:  # Rounds 2-3
+            return 3 + int((idx - 10) * 2 / 20)  # 3 to 5 picks
+        elif idx < 60:  # Rounds 4-6
+            return 5 + int((idx - 30) * 4 / 30)  # 5 to 9 picks
+        else:  # Rounds 7+
+            return 9 + min(5, (idx - 60) // 15)  # 9 to 14 picks
     return 0
 
 

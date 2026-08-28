@@ -230,26 +230,34 @@ def test_cheatsheet_note_calibrated_board_movements() -> None:
     base_state = build_draft_state("test", None, 1, 1, 12, 16, [], [p.model_copy() for p in pool], None)
     base_ranks = {s.player.id: s.rank for s in base_state.top_suggestions}
 
-    # Test Breakout (~14-20 pick boost) at rank #50
+    # Test Round 1 Bust (1-3 pick drop) at rank #3
+    p_bust_r1 = [p.model_copy() for p in pool]
+    p_bust_r1[2].cheatsheet_notes = "Bust"
+    cand_bust_r1 = build_draft_state("test", None, 1, 1, 10, 16, [], p_bust_r1, None)
+    bust_r1_ranks = {s.player.id: s.rank for s in cand_bust_r1.top_suggestions}
+    bust_r1_shift = base_ranks["p_3"] - bust_r1_ranks["p_3"]
+    assert -3 <= bust_r1_shift <= -1
+
+    # Test Rounds 2-3 Bust (4-8 pick drop) at rank #20
+    p_bust_r2 = [p.model_copy() for p in pool]
+    p_bust_r2[19].cheatsheet_notes = "Bust"
+    cand_bust_r2 = build_draft_state("test", None, 1, 1, 10, 16, [], p_bust_r2, None)
+    bust_r2_ranks = {s.player.id: s.rank for s in cand_bust_r2.top_suggestions}
+    bust_r2_shift = base_ranks["p_20"] - bust_r2_ranks["p_20"]
+    assert -8 <= bust_r2_shift <= -4
+
+    # Test Middle Round Breakout (7-12 pick boost) at rank #50
     p_breakout = [p.model_copy() for p in pool]
     p_breakout[49].cheatsheet_notes = "Breakout"
-    cand_breakout = build_draft_state("test", None, 1, 1, 12, 16, [], p_breakout, None)
+    cand_breakout = build_draft_state("test", None, 1, 1, 10, 16, [], p_breakout, None)
     breakout_ranks = {s.player.id: s.rank for s in cand_breakout.top_suggestions}
     breakout_shift = base_ranks["p_50"] - breakout_ranks["p_50"]
-    assert 14 <= breakout_shift <= 20
+    assert 7 <= breakout_shift <= 12
 
-    # Test Sleeper (~9-14 pick boost) at rank #50
+    # Test Middle Round Sleeper (5-9 pick boost) at rank #50
     p_sleeper = [p.model_copy() for p in pool]
     p_sleeper[49].cheatsheet_notes = "Sleeper"
-    cand_sleeper = build_draft_state("test", None, 1, 1, 12, 16, [], p_sleeper, None)
+    cand_sleeper = build_draft_state("test", None, 1, 1, 10, 16, [], p_sleeper, None)
     sleeper_ranks = {s.player.id: s.rank for s in cand_sleeper.top_suggestions}
     sleeper_shift = base_ranks["p_50"] - sleeper_ranks["p_50"]
-    assert 9 <= sleeper_shift <= 14
-
-    # Test Bust (~1-2 round drop / 14-24 pick drop) at rank #50
-    p_bust = [p.model_copy() for p in pool]
-    p_bust[49].cheatsheet_notes = "Bust"
-    cand_bust = build_draft_state("test", None, 1, 1, 12, 16, [], p_bust, None)
-    bust_ranks = {s.player.id: s.rank for s in cand_bust.top_suggestions}
-    bust_shift = base_ranks["p_50"] - bust_ranks["p_50"]
-    assert -24 <= bust_shift <= -14
+    assert 5 <= sleeper_shift <= 9
