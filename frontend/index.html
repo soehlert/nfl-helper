@@ -57,9 +57,47 @@
       font-weight: 600;
       text-transform: uppercase;
     }
-    .badge-espn { background: #dc2626; color: #fff; }
-    .badge-sleeper { background: #6366f1; color: #fff; font-weight: 700; }
     .badge-claimed { background: rgba(16, 185, 129, 0.12); color: var(--accent-green); border: 1px solid var(--accent-green); }
+
+    .btn-danger-pill {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid var(--accent-red);
+      color: var(--accent-red);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .btn-danger-pill:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: #f87171;
+      color: #fca5a5;
+    }
+    .btn-activate-pill {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid var(--accent-blue);
+      color: var(--accent-blue);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .btn-activate-pill:hover {
+      background: rgba(59, 130, 246, 0.25);
+      border-color: #60a5fa;
+      color: #93c5fd;
+    }
+
 
 
     .header-actions {
@@ -1097,7 +1135,7 @@
       <div id="cheatsheet-history-card" class="card" style="display: none;">
         <div class="card-header">
           <div class="card-title">Saved Cheatsheets Library</div>
-          <button class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.2rem 0.6rem; color: var(--accent-red);" onclick="deleteAllCheatsheets()">Delete All</button>
+          <button class="btn-danger-pill" onclick="deleteAllCheatsheets()">Delete All</button>
         </div>
         <table class="data-table">
           <thead>
@@ -1121,9 +1159,10 @@
           <div class="card-title">Loaded Cheatsheet Tiers</div>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <span id="directory-count-badge" class="badge badge-claimed">0 Players</span>
-            <button class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.2rem 0.6rem;" onclick="clearActiveCheatsheet()">Clear Cheatsheet</button>
+            <button class="btn-danger-pill" onclick="clearActiveCheatsheet()">Clear Cheatsheet</button>
           </div>
         </div>
+
 
         <table class="data-table">
           <thead>
@@ -1482,9 +1521,10 @@
         
         const activateBtn = item.is_active
           ? ''
-          : `<button class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="activateCheatsheet(${item.id})">Activate</button>`;
+          : `<button class="btn-activate-pill" onclick="activateCheatsheet(${item.id})">Activate</button>`;
 
-        const deleteBtn = `<button class="btn" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; color: var(--accent-red);" onclick="deleteSingleCheatsheet(${item.id})">Delete</button>`;
+        const deleteBtn = `<button class="btn-danger-pill" onclick="deleteSingleCheatsheet(${item.id})">Delete</button>`;
+
 
         html += `<tr>
           <td>#${item.id}</td>
