@@ -1092,12 +1092,30 @@
         </div>
       </div>
 
-
-
-
+      <!-- Saved Cheatsheets Library Card -->
+      <div id="cheatsheet-history-card" class="card" style="display: none;">
+        <div class="card-header">
+          <div class="card-title">Saved Cheatsheets Library</div>
+          <button class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.2rem 0.6rem; color: var(--accent-red);" onclick="deleteAllCheatsheets()">Delete All</button>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Players</th>
+              <th>Rules</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cheatsheet-history-tbody"></tbody>
+        </table>
+      </div>
 
       <!-- Parsed Cheatsheet Player Directory -->
       <div id="cheatsheet-directory-card" class="card" style="display: none;">
+
         <div class="card-header">
           <div class="card-title">Loaded Cheatsheet Tiers</div>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -1285,11 +1303,13 @@
           if (statusEl) statusEl.textContent = `Successfully parsed "${file.name}" (${pCount} players, ${data.strategy_rules?.length || 0} rules)!`;
           renderCheatsheetContext(data);
           fetchDraftState();
+          loadCheatsheetHistory();
           selectedCheatsheetFile = null;
           const mainText = document.getElementById('dropzone-main-text');
           const subText = document.getElementById('dropzone-sub-text');
           if (mainText) mainText.textContent = 'Click or Drop File Here';
           if (subText) subText.textContent = 'Supports PDF, CSV, TXT, or JSON formats';
+
         } else {
           const errJson = await res.json().catch(() => ({}));
           const detail = errJson.detail || 'Failed to parse uploaded file.';
@@ -1410,11 +1430,110 @@
           if (rulesContainer) rulesContainer.style.display = 'none';
           if (statusMsg) statusMsg.textContent = 'Active cheatsheet removed.';
           fetchDraftState();
+          loadCheatsheetHistory();
         }
       } catch (e) {
         alert('Failed to clear cheatsheet: ' + e.message);
       }
     }
+
+    async function loadCheatsheetHistory() {
+      try {
+        const res = await fetch('/api/cheatsheet/history');
+        if (res.ok) {
+          const history = await res.json();
+          renderCheatsheetHistory(history);
+        }
+      } catch (e) {}
+    }
+
+    function renderCheatsheetHistory(history) {
+      const card = document.getElementById('cheatsheet-history-card');
+      const tbody = document.getElementById('cheatsheet-history-tbody');
+      if (!card || !tbody) return;
+
+      if (!history || history.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+
+      card.style.display = 'block';
+      let html = '';
+      history.forEach(item => {
+        const statusBadge = item.is_active
+          ? '<span class="badge badge-claimed">Active</span>'
+          : '<span class="badge" style="background: rgba(255,255,255,0.08); color: var(--text-muted);">Inactive</span>';
+        
+        const activateBtn = item.is_active
+          ? ''
+          : `<button class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="activateCheatsheet(${item.id})">Activate</button>`;
+
+        const deleteBtn = `<button class="btn" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; color: var(--accent-red);" onclick="deleteSingleCheatsheet(${item.id})">Delete</button>`;
+
+        html += `<tr>
+          <td>#${item.id}</td>
+          <td><strong>${item.name || 'Cheatsheet'}</strong></td>
+          <td>${item.player_count}</td>
+          <td>${item.rule_count}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display: flex; gap: 0.4rem;">
+              ${activateBtn}
+              ${deleteBtn}
+            </div>
+          </td>
+        </tr>`;
+      });
+      tbody.innerHTML = html;
+    }
+
+    async function activateCheatsheet(id) {
+      try {
+        const res = await fetch(`/api/cheatsheet/${id}/activate`, { method: 'POST' });
+        if (res.ok) {
+          fetchCheatsheet();
+          loadCheatsheetHistory();
+          fetchDraftState();
+        }
+      } catch (e) {
+        alert('Failed to activate cheatsheet: ' + e.message);
+      }
+    }
+
+    async function deleteSingleCheatsheet(id) {
+      if (!confirm('Are you sure you want to delete this cheatsheet?')) return;
+      try {
+        const res = await fetch(`/api/cheatsheet/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          fetchCheatsheet();
+          loadCheatsheetHistory();
+          fetchDraftState();
+        }
+      } catch (e) {
+        alert('Failed to delete cheatsheet: ' + e.message);
+      }
+    }
+
+    async function deleteAllCheatsheets() {
+      if (!confirm('Are you sure you want to permanently delete ALL saved cheatsheets?')) return;
+      try {
+        const res = await fetch('/api/cheatsheet/all', { method: 'DELETE' });
+        if (res.ok) {
+          const dirCard = document.getElementById('cheatsheet-directory-card');
+          const rulesContainer = document.getElementById('cheatsheet-rules-container');
+          const historyCard = document.getElementById('cheatsheet-history-card');
+          const statusMsg = document.getElementById('cheatsheet-status-msg');
+          if (dirCard) dirCard.style.display = 'none';
+          if (rulesContainer) rulesContainer.style.display = 'none';
+          if (historyCard) historyCard.style.display = 'none';
+          if (statusMsg) statusMsg.textContent = 'All cheatsheets deleted.';
+          fetchDraftState();
+        }
+      } catch (e) {
+        alert('Failed to delete all cheatsheets: ' + e.message);
+      }
+    }
+
 
 
 
@@ -1440,6 +1559,7 @@
           document.getElementById('cheatsheet-status-msg').textContent = `Loaded ${pCount} players & ${data.strategy_rules?.length || 0} strategy rules!`;
           renderCheatsheetContext(data);
           fetchDraftState();
+          loadCheatsheetHistory();
         } else {
           const errJson = await res.json().catch(() => ({}));
           const detail = errJson.detail || 'Failed to parse text.';
@@ -1473,12 +1593,14 @@
           if (statusEl) statusEl.textContent = `Successfully imported from URL (${pCount} players, ${data.strategy_rules?.length || 0} rules)!`;
           renderCheatsheetContext(data);
           fetchDraftState();
+          loadCheatsheetHistory();
         } else {
           const errJson = await res.json().catch(() => ({}));
           const detail = errJson.detail || 'Failed to parse URL.';
           if (statusEl) statusEl.textContent = `Failed: ${detail}`;
         }
       } catch (err) {
+
         if (statusEl) statusEl.textContent = `Error: ${err.message}`;
       }
     }
@@ -2517,7 +2639,9 @@
       fetchLineupOptimization();
       fetchWaiverRecommendations();
       fetchCheatsheet();
+      loadCheatsheetHistory();
       initWebSocket();
+
       autoRefreshInterval = setInterval(() => {
         fetchDraftState();
         checkQAConfig();

@@ -126,6 +126,27 @@ Rounds 1-2 - Only RB/WR at least 1 RB
     assert get_cleared.status_code == 200
     assert get_cleared.json() is None
 
+    # Test history endpoint
+    hist_res = client.get("/api/cheatsheet/history")
+    assert hist_res.status_code == 200
+    hist_data = hist_res.json()
+    assert len(hist_data) >= 1
+    sheet_id = hist_data[0]["id"]
+
+    # Test activate endpoint
+    act_res = client.post(f"/api/cheatsheet/{sheet_id}/activate")
+    assert act_res.status_code == 200
+    assert act_res.json()["status"] == "activated"
+
+    # Test delete all endpoint
+    del_all_res = client.delete("/api/cheatsheet/all")
+    assert del_all_res.status_code == 200
+    assert del_all_res.json()["status"] == "deleted_all"
+
+    hist_empty = client.get("/api/cheatsheet/history")
+    assert hist_empty.status_code == 200
+    assert len(hist_empty.json()) == 0
+
 
 def test_cheatsheet_file_upload_endpoint() -> None:
     """Verify file upload endpoint parsing text/csv content."""

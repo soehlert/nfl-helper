@@ -153,3 +153,31 @@ def delete_cheatsheet(cheatsheet_id: int, db_path: Path | str | None = None) -> 
         return True
     finally:
         conn.close()
+
+
+def activate_cheatsheet(cheatsheet_id: int, db_path: Path | str | None = None) -> CheatsheetContext | None:
+    """Switch the active cheatsheet to a specific saved cheatsheet by ID."""
+    init_db(db_path)
+    conn = get_db_connection(db_path)
+    try:
+        conn.execute("UPDATE cheatsheets SET is_active = 0 WHERE is_active = 1;")
+        conn.execute("UPDATE cheatsheets SET is_active = 1 WHERE id = ?;", (cheatsheet_id,))
+        conn.commit()
+        row = conn.execute("SELECT parsed_json FROM cheatsheets WHERE id = ?;", (cheatsheet_id,)).fetchone()
+        if row and row["parsed_json"]:
+            return CheatsheetContext.model_validate(json.loads(row["parsed_json"]))
+    finally:
+        conn.close()
+    return None
+
+
+def delete_all_cheatsheets(db_path: Path | str | None = None) -> bool:
+    """Permanently delete all cheatsheet records from SQLite."""
+    init_db(db_path)
+    conn = get_db_connection(db_path)
+    try:
+        conn.execute("DELETE FROM cheatsheets;")
+        conn.commit()
+        return True
+    finally:
+        conn.close()

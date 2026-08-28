@@ -13,7 +13,9 @@ from nfl_helper.api.ws_manager import ws_manager
 from nfl_helper.core.cheatsheet import apply_cheatsheet_context, parse_cheatsheet_content, parse_pdf_cheatsheet
 from nfl_helper.core.cheatsheet_diff import compute_cheatsheet_diff
 from nfl_helper.core.db import (
+    activate_cheatsheet,
     clear_active_cheatsheet,
+    delete_all_cheatsheets,
     delete_cheatsheet,
     get_active_cheatsheet,
     get_cheatsheet_history,
@@ -532,6 +534,27 @@ async def clear_cheatsheet() -> dict[str, Any]:
     _ACTIVE_CHEATSHEET = None
     clear_active_cheatsheet()
     return {"status": "cleared", "message": "Active cheatsheet removed"}
+
+
+@app.post("/api/cheatsheet/{cheatsheet_id}/activate")
+async def set_active_cheatsheet(cheatsheet_id: int) -> dict[str, Any]:
+    """Activate a specific saved cheatsheet by ID and update draft calculations."""
+    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
+    context = activate_cheatsheet(cheatsheet_id)
+    if not context:
+        raise HTTPException(status_code=404, detail="Cheatsheet not found")
+    _ACTIVE_CHEATSHEET = context
+    _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
+    return {"status": "activated", "id": cheatsheet_id}
+
+
+@app.delete("/api/cheatsheet/all")
+async def remove_all_cheatsheets() -> dict[str, Any]:
+    """Permanently delete all cheatsheets from SQLite."""
+    global _ACTIVE_CHEATSHEET
+    _ACTIVE_CHEATSHEET = None
+    delete_all_cheatsheets()
+    return {"status": "deleted_all", "message": "All cheatsheets deleted"}
 
 
 @app.delete("/api/cheatsheet/{cheatsheet_id}")
