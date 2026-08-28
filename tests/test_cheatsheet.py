@@ -164,15 +164,15 @@ Tyson* NO 123.5
 def test_parse_multi_column_and_broken_ocr_kerning() -> None:
     """Verify multi-column horizontal merges and fragmented OCR kerning are disentangled."""
     sample_text = """
-    ADP ADP co n't ADP
-    Allen 34.8 Gibbs 1.1 Price
-    Robi n son 2.1 Corum
-    Burrow 65.5 Taylor 8.9 Hubbard
-    Cook 9.3 P ollard
-    P re scott 94.9 Jeanty 22.1 Mitchell
-    He n ry 22.4 Marks
-    P urdy 118.7 White
+    Allen BUF 34.8 Gibbs DET 1.1 Price SEA 61.6
+    Robinson ATL 2.1 Corum LAR 82.9
+    Burrow CIN 65.5 Taylor IND 8.9 Hubbard CAR 110.5
+    Cook BUF 9.3 Pollard TEN 83.1
+    Prescott DAL 94.9 Jeanty LV 22.1 Mitchell LAC 127.3
+    Henry BAL 22.4 Marks HOU 133.6
+    Purdy SF 118.7 White TB 114.1
     """
+
     context = parse_plain_text_cheatsheet(sample_text)
 
     # Assert players were disentangled and mapped to canonical records

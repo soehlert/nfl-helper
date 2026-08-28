@@ -121,18 +121,26 @@ KNOWN_PLAYER_LOOKUP: dict[str, tuple[str, str, str]] = {
 }
 
 
-def _clean_position_header(raw_header: str) -> str | None:
-    """Extract standard position from header line (e.g. 'RUNNING BACKS', 'RB con't' -> 'RB')."""
-    cleaned = re.sub(r"[^A-Za-z0-9/ ]", "", raw_header).strip().upper()
+def _clean_position_header(raw_header: str | None) -> tuple[str, bool] | None:
+    """Extract standard position from header line, returning (position, is_continuation)."""
+    if not raw_header or not isinstance(raw_header, str):
+        return None
+    norm_header = raw_header.replace("\u2019", "'").replace("`", "'")
+    cleaned = re.sub(r"[^A-Za-z0-9/ ']", "", norm_header).strip()
     tokens = cleaned.split()
     if not tokens:
         return None
 
-    first = tokens[0]
+    is_continuation = any(w in norm_header.lower() for w in ("con't", "cont", "continued"))
+    first = tokens[0].upper()
     if first in POSITION_HEADERS:
-        return POSITION_HEADERS[first]
-    if len(tokens) >= 2 and f"{tokens[0]} {tokens[1]}" in ("RUNNING BACKS", "WIDE RECEIVERS", "TIGHT ENDS"):
-        return POSITION_HEADERS[tokens[0]]
+        return POSITION_HEADERS[first], is_continuation
+    if len(tokens) >= 2 and f"{tokens[0]} {tokens[1]}".upper() in (
+        "RUNNING BACKS",
+        "WIDE RECEIVERS",
+        "TIGHT ENDS",
+    ):
+        return POSITION_HEADERS[tokens[0].upper()], is_continuation
 
     return None
 
@@ -298,54 +306,12 @@ def _record_player_entry(entry: CheatsheetEntry, pos_key: str, context: Cheatshe
 
 
 def _clean_kerning(text: str) -> str:
-    """Repair fragmented OCR spaces and broken word tokens."""
-    if any(
-        text.startswith(p)
-        for p in (
-            "Rounds",
-            "Round",
-            "Rule",
-            "Rules",
-            "Strategy",
-            "Target",
-            "TE -",
-            "QB -",
-            "RB -",
-            "WR -",
-            "K -",
-            "DST -",
-            "D/ST -",
-            "Wait",
-        )
-    ):
-        return text
-
-    t = text
-    # Fix broken team codes e.g. 'P HI' -> 'PHI', 'S EA' -> 'SEA', 'S F' -> 'SF', 'N YJ' -> 'NYJ'
-    t = re.sub(r"\b([A-Z])\s+([A-Z]{2})\b", r"\1\2", t)
-    t = re.sub(r"\b([A-Z]{2})\s+([A-Z])\b", r"\1\2", t)
-    t = re.sub(r"\b([A-Z])\s+([A-Z])\s+([A-Z])\b", r"\1\2\3", t)
-    t = re.sub(r"\b([A-Z])\s+([A-Z])\b", r"\1\2", t)
-
-    # Specific broken OCR names from PDF scans
-    ocr_fixes = {
-        "robi n son": "Robinson",
-        "he n ry": "Henry",
-        "he rbe rt": "Herbert",
-        "p re scott": "Prescott",
-        "mon an gai": "Monangai",
-        "croske y-me rri tt": "Croskey-Merritt",
-        "p urdy": "Purdy",
-        "p ollard": "Pollard",
-    }
-    for broken, fixed in ocr_fixes.items():
-        t = re.sub(re.escape(broken), fixed, t, flags=re.IGNORECASE)
-
-    return t
+    """Normalize whitespace and basic characters."""
+    return text.strip() if text else ""
 
 
 def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
-    """Parse plain-text cheatsheet tracking blank-line tiers, ADPs, multi-column splits, and strategy rules."""
+    """Parse plain-text cheatsheet tracking blank-line tiers, ADPs, and strategy rules."""
     context = CheatsheetContext()
     current_pos = ""
     current_tier = 1
@@ -353,7 +319,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
     legend_notes: dict[str, str] = {}
 
     for raw_line in text.splitlines():
-        line = _clean_kerning(raw_line.strip())
+        line = raw_line.strip()
         if not line:
             if current_pos and not previous_was_blank:
                 current_tier += 1
@@ -362,14 +328,18 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
 
         previous_was_blank = False
 
-        # Filter repeated header noise
         if re.search(r"\badp\s+adp\b", line, re.IGNORECASE) or re.search(r"\btier\s+adp\b", line, re.IGNORECASE):
             continue
 
-        pos_header = _clean_position_header(line)
-        if pos_header and len(line.split()) <= 3 and not re.search(r"\d", line):
+        pos_info = _clean_position_header(line)
+        if pos_info and len(line.split()) <= 4 and not re.search(r"\d", line):
+            pos_header, is_continuation = pos_info
             current_pos = pos_header
-            current_tier = 1
+            if not is_continuation:
+                current_tier = 1
+            else:
+                current_tier += 1
+            previous_was_blank = True
             continue
 
         # Legend / footnote definitions (e.g. '* = injured a while', '^ = rookie target')
@@ -411,13 +381,13 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
             continue
 
         # Strict continuation lines (only 'or ...' / 'and ...' that are not player lines)
-        is_continuation = (
+        is_rule_continuation = (
             bool(context.strategy_rules)
-            and not pos_header
+            and _clean_position_header(line) is None
             and (line.lower().startswith("or ") or line.lower().startswith("and "))
             and not any(f" {team} " in f" {line} " for team in NFL_TEAMS)
         )
-        if is_continuation:
+        if is_rule_continuation:
             combined = f"{context.strategy_rules[-1]} {line}"
             context.strategy_rules[-1] = combined
             rnd_rule, pos_rule = _parse_strategy_rule(combined)
@@ -519,9 +489,9 @@ def parse_pdf_cheatsheet(pdf_bytes: bytes) -> CheatsheetContext:
     page_texts: list[str] = []
     for page in reader.pages:
         try:
-            txt = page.extract_text(extraction_mode="layout") or ""
-        except Exception:
             txt = page.extract_text() or ""
+        except Exception:
+            txt = ""
         page_texts.append(txt)
     full_text = "\n".join(page_texts)
     return parse_plain_text_cheatsheet(full_text)

@@ -1061,22 +1061,23 @@
           <!-- Left Column: File Upload Dropzone -->
           <div style="display: flex; flex-direction: column;">
             <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem;">
-              Upload File (PDF, CSV, TXT, JSON)
+              Upload File (CSV, TXT, JSON)
             </label>
             <div id="cheatsheet-dropzone-box" class="dropzone" style="height: 130px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; border-radius: 8px; text-align: center;" onclick="document.getElementById('cheatsheet-file-input').click()">
               <div id="dropzone-main-text" style="font-weight: 600; font-size: 0.92rem; color: var(--text-main); margin-bottom: 0.35rem;">Click or Drop File Here</div>
-              <div id="dropzone-sub-text" style="font-size: 0.8rem; color: var(--text-muted);">Supports PDF, CSV, TXT, or JSON formats</div>
-              <input type="file" id="cheatsheet-file-input" accept=".pdf,.csv,.txt,.json" style="display: none;" onchange="handleFileSelected(event)">
+              <div id="dropzone-sub-text" style="font-size: 0.8rem; color: var(--text-muted);">Supports CSV, TXT, or JSON formats</div>
+              <input type="file" id="cheatsheet-file-input" accept=".csv,.txt,.json" style="display: none;" onchange="handleFileSelected(event)">
             </div>
           </div>
 
           <!-- Right Column: Copy/Paste Textarea -->
           <div style="display: flex; flex-direction: column;">
             <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem;">
-              Paste Text (Plain Text, CSV, JSON, OCR)
+              Paste Text (CSV, JSON, Plain Text)
             </label>
-            <textarea id="cheatsheet-textarea" class="form-control" style="height: 130px; box-sizing: border-box; resize: none; margin: 0; padding: 0.75rem;" placeholder="Paste plain text, CSV, JSON, or OCR rankings here..."></textarea>
+            <textarea id="cheatsheet-textarea" class="form-control" style="height: 130px; box-sizing: border-box; resize: none; margin: 0; padding: 0.75rem;" placeholder="Paste CSV, JSON, or plain text rankings here..."></textarea>
           </div>
+
 
         </div>
 
