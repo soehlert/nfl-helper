@@ -2178,6 +2178,10 @@
         if (isInjured) {
           tagsHtml += `<span style="font-size: 0.65rem; color: #f87171; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); padding: 0.08rem 0.35rem; border-radius: 3px; font-weight: 600; text-transform: uppercase;">${p.injury_status}</span>`;
         }
+        const playerCellPill = tagsHtml ? `<div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.2rem;">${tagsHtml}</div>` : '';
+
+        // Prepare styled note badge for Reason column
+        let noteBadgeHtml = '';
         if (p.cheatsheet_notes) {
           const notesLower = p.cheatsheet_notes.toLowerCase();
           let noteBg = 'rgba(148, 163, 184, 0.15)';
@@ -2196,9 +2200,8 @@
             noteBorder = '#22c55e';
             noteColor = '#4ade80';
           }
-          tagsHtml += `<span class="badge" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; background: ${noteBg}; border: 1px solid ${noteBorder}; color: ${noteColor}; font-weight: 700; text-transform: uppercase;">${p.cheatsheet_notes}</span>`;
+          noteBadgeHtml = `<span class="badge" style="font-size: 0.68rem; padding: 0.12rem 0.45rem; background: ${noteBg}; border: 1px solid ${noteBorder}; color: ${noteColor}; font-weight: 700; text-transform: uppercase; border-radius: 4px; display: inline-block;">${p.cheatsheet_notes}</span>`;
         }
-        const playerCellPill = tagsHtml ? `<div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.2rem;">${tagsHtml}</div>` : '';
 
         // Parse structured multi-line reason rows
         const reasonParts = (s.reason || '').split(/\n/).map(r => r.trim()).filter(Boolean);
@@ -2206,6 +2209,17 @@
         reasonParts.forEach((part, idx) => {
           let rowColor = 'var(--text-muted)';
           let fontWeight = '400';
+
+          if (p.cheatsheet_notes && part.includes(p.cheatsheet_notes)) {
+            const cleanedPart = part.replace(p.cheatsheet_notes, '').replace(/^\s*•\s*/, '').replace(/\s*•\s*$/, '').trim();
+            if (cleanedPart) {
+              reasonRowsHtml += `<div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.1rem;">${noteBadgeHtml}<span style="color: var(--text-muted); font-size: 0.78rem;">• ${cleanedPart}</span></div>`;
+            } else {
+              reasonRowsHtml += `<div style="margin-top: 0.1rem;">${noteBadgeHtml}</div>`;
+            }
+            return;
+          }
+
           if (idx === 0) {
             rowColor = 'var(--text-main)';
             fontWeight = '600';
