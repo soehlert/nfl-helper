@@ -1557,10 +1557,8 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         if (isInjured) {
           tagsHtml += `<span style="font-size: 0.65rem; color: #f87171; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); padding: 0.08rem 0.35rem; border-radius: 3px; font-weight: 600; text-transform: uppercase;">${p.injury_status}</span>`;
         }
-        if (p.cheatsheet_notes) {
-          tagsHtml += `<span style="font-size: 0.65rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); padding: 0.08rem 0.35rem; border-radius: 3px; font-weight: 600; text-transform: uppercase;">${p.cheatsheet_notes}</span>`;
-        }
         const playerCellPill = tagsHtml ? `<div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.2rem;">${tagsHtml}</div>` : '';
+
 
         // Parse structured multi-line reason rows
         const reasonParts = (s.reason || '').split(/\n/).map(r => r.trim()).filter(Boolean);
