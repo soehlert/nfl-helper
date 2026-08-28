@@ -251,6 +251,38 @@ def _build_suggestion_reason(
     return "\n".join(lines)
 
 
+def _calculate_sliding_note_shift(idx: int, note_type: str) -> int:
+    """Calculate realistic sliding window pick shift based on board position (early vs late rounds)."""
+    if note_type == "bust":
+        if idx < 6:
+            return 4 + (idx // 2)
+        elif idx < 20:
+            return 6 + ((idx - 6) // 3)
+        elif idx < 40:
+            return 10 + ((idx - 20) // 4)
+        else:
+            return 16 + min(6, (idx - 40) // 15)
+    elif note_type == "breakout":
+        if idx < 6:
+            return 3 + (idx // 3)
+        elif idx < 20:
+            return 4 + ((idx - 6) // 3)
+        elif idx < 40:
+            return 8 + ((idx - 20) // 5)
+        else:
+            return 14 + min(6, (idx - 40) // 15)
+    elif note_type == "sleeper":
+        if idx < 6:
+            return 2 + (idx // 3)
+        elif idx < 20:
+            return 3 + ((idx - 6) // 4)
+        elif idx < 40:
+            return 6 + ((idx - 20) // 6)
+        else:
+            return 10 + min(5, (idx - 40) // 15)
+    return 0
+
+
 def generate_draft_suggestions(
     available_players: list[Player],
     tiers_by_pos: dict[str, list[PlayerTier]],
@@ -343,10 +375,7 @@ def generate_draft_suggestions(
     raw_scored.sort(key=lambda item: item[0], reverse=True)
     base_scores = [item[0] for item in raw_scored]
 
-    # Pass 2: Apply calibrated note adjustments
-    # Breakout: ~10-12 picks in early rounds, ~16 picks in later rounds
-    # Sleeper: ~7-10 picks in early rounds, ~12 picks in later rounds
-    # Bust: ~12-14 picks in early rounds, ~18 picks in later rounds
+    # Pass 2: Apply realistic sliding-window note adjustments
     scored_players: list[
         tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]
     ] = []
@@ -356,20 +385,19 @@ def generate_draft_suggestions(
         if p.cheatsheet_notes:
             nl = p.cheatsheet_notes.lower()
             if "breakout" in nl:
-                shift = 10 if idx < 35 else 16
+                shift = _calculate_sliding_note_shift(idx, "breakout")
                 target_idx = max(0, idx - shift)
                 target_score = base_scores[target_idx]
                 note_delta = (target_score - b_score) + 0.0001
             elif "sleeper" in nl or "pick" in nl or "target" in nl:
-                shift = 7 if idx < 35 else 12
+                shift = _calculate_sliding_note_shift(idx, "sleeper")
                 target_idx = max(0, idx - shift)
                 target_score = base_scores[target_idx]
                 note_delta = (target_score - b_score) + 0.0001
             elif "bust" in nl or "fade" in nl:
-                shift = 12 if idx < 35 else 18
+                shift = _calculate_sliding_note_shift(idx, "bust")
                 target_idx = min(len(base_scores) - 1, idx + shift)
-                target_score = base_scores[target_idx]
-                note_delta = (target_score - b_score) - 0.0001
+                note_delta = (base_scores[target_idx] - b_score) - 0.0001
 
         final_score = b_score + note_delta
         scored_players.append(
