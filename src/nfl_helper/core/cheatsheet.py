@@ -429,10 +429,31 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
 
 
 def parse_csv_cheatsheet(csv_text: str) -> CheatsheetContext:
-    """Parse CSV format cheatsheet with Player, Position, Team, Tier, ADP, Notes headers."""
-    entries: dict[str, CheatsheetEntry] = {}
-    reader = csv.DictReader(io.StringIO(csv_text.strip()))
+    """Parse CSV format cheatsheet with Player, Position, Team, Tier, ADP, Notes headers and # Rule comments."""
+    context = CheatsheetContext()
+    csv_lines: list[str] = []
 
+    for raw_line in csv_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("#"):
+            rule_text = line.lstrip("#").strip()
+            if rule_text:
+                context.strategy_rules.append(rule_text)
+                rnd_tgt, pos_tgt = _parse_strategy_rule(rule_text)
+                if rnd_tgt:
+                    context.round_targets.append(rnd_tgt)
+                if pos_tgt:
+                    context.positional_strategy.append(pos_tgt)
+            continue
+
+        csv_lines.append(raw_line)
+
+    if not csv_lines:
+        return context
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_lines)))
     for row in reader:
         norm_row = {k.lower().strip(): (v.strip() if v else "") for k, v in row.items() if k}
         name = norm_row.get("player") or norm_row.get("name", "")
@@ -447,18 +468,19 @@ def parse_csv_cheatsheet(csv_text: str) -> CheatsheetContext:
         except ValueError:
             adp_val = None
 
+        pos_str = norm_row.get("position", "").upper()
         entry = CheatsheetEntry(
             player_name=name,
             normalized_name=norm_name,
-            position=norm_row.get("position", "").upper(),
+            position=pos_str,
             team=norm_row.get("team", "").upper(),
             tier=tier_val,
             adp=adp_val,
             notes=norm_row.get("notes"),
         )
-        entries[norm_name] = entry
+        _record_player_entry(entry, pos_str, context)
 
-    return CheatsheetContext(entries=entries)
+    return context
 
 
 def parse_json_cheatsheet(json_text: str) -> CheatsheetContext:
