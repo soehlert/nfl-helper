@@ -179,13 +179,18 @@ def _evaluate_strategy_rule_adjustments(
             # Check if this rule defines specific target tiers (e.g. tiers 3-4 for late-round approach)
             elif pos_rule.target_tiers:
                 if current_round <= 3 and min(pos_rule.target_tiers) >= 3:
-                    delta -= 1.2
+                    delta -= 1.5
                     specific_notes.append(
                         f"Strategy Hint: Late-Round {pos_rule.position} (targeting Tiers {','.join(map(str, pos_rule.target_tiers))})"
                     )
-                elif current_round >= 4 and p_tier in pos_rule.target_tiers:
-                    delta += 0.8
+                elif p_tier in pos_rule.target_tiers:
+                    delta += 1.5
                     specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
+                else:
+                    delta -= 2.0
+                    specific_notes.append(
+                        f"Strategy Fade: Rule targets Tier {','.join(map(str, pos_rule.target_tiers))} {pos_rule.position}"
+                    )
 
     # Clamp total strategy delta to prevent extreme distortions
     clamped_delta = round(max(-3.0, min(3.0, delta)), 2)
@@ -300,6 +305,67 @@ def _calculate_sliding_note_shift(idx: int, note_type: str) -> int:
     return 0
 
 
+def _calculate_required_positions(
+    current_round: int,
+    total_rounds: int,
+    roster: dict[str, int],
+    active_rules: list[str],
+) -> set[str] | None:
+    """Calculate mandatory positions that MUST be drafted now to satisfy roster legality & strategy minimums."""
+    rounds_remaining = max(1, total_rounds - current_round + 1)
+    needed_slots: list[str] = []
+
+    # 1. Mandatory Starters (K, D/ST, QB, TE)
+    if roster.get("K", 0) < 1:
+        needed_slots.append("K")
+    if roster.get("D/ST", 0) < 1:
+        needed_slots.append("D/ST")
+    if roster.get("QB", 0) < 1:
+        needed_slots.append("QB")
+    if roster.get("TE", 0) < 1:
+        needed_slots.append("TE")
+
+    # 2. Strategy Rule Minimums
+    mins: dict[str, int] = {}
+    for r in active_rules:
+        r_lower = r.lower()
+        if "one from tier 3 and one from tier 4" in r_lower or "two qb" in r_lower or "2 qb" in r_lower:
+            mins["QB"] = max(mins.get("QB", 0), 2)
+        m = re.search(r"(QB|RB|WR|TE|K|D/ST|DEF)\s*[-:]?\s*.*minimum\s+(\d+)", r, re.IGNORECASE)
+        if not m:
+            m = re.search(r"(QB|RB|WR|TE|K|D/ST|DEF)\s*[-:]?\s*Get\s+(\d+)", r, re.IGNORECASE)
+        if m:
+            pos = m.group(1).upper()
+            pos = "D/ST" if pos in ("DEF", "DST") else pos
+            count = int(m.group(2))
+            mins[pos] = max(mins.get(pos, 0), count)
+
+    for pos, target_min in mins.items():
+        curr_count = roster.get(pos, 0)
+        if curr_count < target_min:
+            needed = target_min - curr_count
+            already_counted = needed_slots.count(pos)
+            additional_needed = max(0, needed - already_counted)
+            needed_slots.extend([pos] * additional_needed)
+
+    # 3. Check mid-draft round deadlines (e.g. 4 RBs in the first 10 rounds)
+    for r in active_rules:
+        m = re.search(r"(RB|WR|QB|TE)\s*[-:]?\s*Get\s+(\d+)\s+in\s+the\s+first\s+(\d+)\s+rounds", r, re.IGNORECASE)
+        if m:
+            pos = m.group(1).upper()
+            quota = int(m.group(2))
+            deadline_rnd = int(m.group(3))
+            if current_round <= deadline_rnd:
+                rounds_left_to_deadline = deadline_rnd - current_round + 1
+                curr_count = roster.get(pos, 0)
+                if curr_count < quota and rounds_left_to_deadline <= (quota - curr_count):
+                    return {pos}
+
+    if rounds_remaining <= len(needed_slots):
+        return set(needed_slots)
+    return None
+
+
 def generate_draft_suggestions(
     available_players: list[Player],
     tiers_by_pos: dict[str, list[PlayerTier]],
@@ -324,6 +390,16 @@ def generate_draft_suggestions(
         unfilled_mandatory.append("K")
     if roster.get("D/ST", 0) < 1:
         unfilled_mandatory.append("D/ST")
+
+    # Draft deadline & quota enforcement: filter suggestions when remaining rounds equals required slots
+    required_positions = _calculate_required_positions(current_round, total_rounds, roster, active_rules)
+    if required_positions:
+        available_players = [
+            p
+            for p in available_players
+            if str(p.position).upper() in required_positions
+            or (str(p.position).upper() in ("DEF", "DST") and "D/ST" in required_positions)
+        ]
 
     top_tier_info: dict[str, tuple[int, int, float]] = {}
     for pos, pos_tiers in tiers_by_pos.items():
@@ -364,8 +440,8 @@ def generate_draft_suggestions(
             has_2qb_rule = any(
                 "one from tier 4" in r.lower() or "two qb" in r.lower() or "2nd qb" in r.lower() for r in active_rules
             )
-            if has_2qb_rule and p_tier == 4 and current_round >= 10:
-                base_score += 0.8  # Target second QB in round 10+
+            if has_2qb_rule and p_tier in (3, 4) and current_round >= 8:
+                base_score += 1.2  # Target second QB from designated late tiers
             else:
                 base_score -= 3.5 if current_round < 12 else 1.0
         elif pos_str == "TE" and roster.get("TE", 0) >= 1:
@@ -373,8 +449,6 @@ def generate_draft_suggestions(
         elif pos_str in ("K", "D/ST"):
             if roster.get(pos_str, 0) >= 1:
                 base_score -= 10.0  # Already drafted K/DST, never draft a second one
-            elif rounds_remaining > 2:
-                base_score -= 10.0  # Never draft K/DST before the final 2 rounds (Rounds 14-15 of 15)
             elif rounds_remaining <= len(unfilled_mandatory):
                 base_score += 15.0  # Highest priority to fill mandatory starter in final round
             elif rounds_remaining <= len(unfilled_mandatory) + 1:

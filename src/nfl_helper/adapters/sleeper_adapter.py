@@ -177,6 +177,12 @@ class SleeperAdapter(BaseLeagueAdapter):
             raw_adp = raw_meta.get("search_rank") or raw_meta.get("years_exp")
             if raw_adp and str(raw_adp).isdigit():
                 adp_val = float(raw_adp)
+            elif pos_enum == Position.DST:
+                r = float(pos_rank) if pos_rank is not None else 10.0
+                adp_val = round(85.0 + 8.0 * (r - 1), 1)
+            elif pos_enum == Position.K:
+                r = float(pos_rank) if pos_rank is not None else 10.0
+                adp_val = round(130.0 + 3.0 * (r - 1), 1)
 
         return Player(
             id=str(player_id),

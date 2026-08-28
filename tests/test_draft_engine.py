@@ -2,7 +2,9 @@
 
 import time
 
+from nfl_helper.core.cheatsheet import parse_plain_text_cheatsheet
 from nfl_helper.core.draft_engine import (
+    _calculate_required_positions,
     _evaluate_strategy_rule_adjustments,
     build_draft_state,
     calculate_lookahead,
@@ -309,3 +311,50 @@ def test_strategy_rule_round_deferral_and_activation() -> None:
     d_qb_r4, note_qb_r4 = _evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=4)
     assert d_qb_r4 == 1.5  # Target round activation bonus
     assert "Strategy Target: Josh Allen in Rd 4" in (note_qb_r4 or "")
+
+
+def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
+    """Verify strategy rules fade non-target tiers and strictly lock suggestions to required positions at draft deadline."""
+    rules_text = """
+    Rules:
+    TE - Target the top 4 in rounds 3-5, no second TE if you have a tier 1 TE
+    QB - Get one from tier 3 and one from tier 4 or Josh Allen in the fourth round
+    RB - Get 4 in the first 10 rounds and minimum 4 for the whole draft
+    WR - Get 4 minimum
+    """
+    ctx = parse_plain_text_cheatsheet(rules_text)
+
+    # 1. Target Tier boosting vs non-target tier fading
+    p_t2_qb = Player(id="q2", name="Jaxson Dart", position=Position.QB, team="NYG", projected_points=20.6, tier=2)
+    p_t3_qb = Player(id="q3", name="Matthew Stafford", position=Position.QB, team="LAR", projected_points=18.5, tier=3)
+    p_t4_qb = Player(id="q4", name="Baker Mayfield", position=Position.QB, team="TB", projected_points=16.5, tier=4)
+
+    d_t2, note_t2 = _evaluate_strategy_rule_adjustments(p_t2_qb, ctx, current_round=6)
+    d_t3, note_t3 = _evaluate_strategy_rule_adjustments(p_t3_qb, ctx, current_round=6)
+    d_t4, note_t4 = _evaluate_strategy_rule_adjustments(p_t4_qb, ctx, current_round=6)
+
+    assert d_t2 == -2.0
+    assert "Strategy Fade: Rule targets Tier 3,4 QB" in (note_t2 or "")
+    assert d_t3 == 1.5
+    assert "Strategy Target: Tier 3 QB" in (note_t3 or "")
+    assert d_t4 == 1.5
+    assert "Strategy Target: Tier 4 QB" in (note_t4 or "")
+
+    # 2. Deadline minimums calculation
+    # In Round 14 of 15 with 0 K and 0 D/ST (2 picks left): must exclusively lock to K and D/ST
+    req_rd14 = _calculate_required_positions(
+        current_round=14,
+        total_rounds=15,
+        roster={"QB": 2, "RB": 4, "WR": 6, "TE": 1, "K": 0, "D/ST": 0},
+        active_rules=ctx.strategy_rules,
+    )
+    assert req_rd14 == {"K", "D/ST"}
+
+    # In Round 9 with only 2 RBs (rule requires 4 in first 10 rounds, 2 rounds left to deadline)
+    req_rd9 = _calculate_required_positions(
+        current_round=9,
+        total_rounds=15,
+        roster={"QB": 1, "RB": 2, "WR": 4, "TE": 1, "K": 0, "D/ST": 0},
+        active_rules=ctx.strategy_rules,
+    )
+    assert req_rd9 == {"RB"}
