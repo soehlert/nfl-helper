@@ -138,7 +138,7 @@ def _evaluate_strategy_rule_adjustments(
                 t_name, t_rnd = name_target_match.group(1).lower(), int(name_target_match.group(2))
                 if t_name in player.name.lower():
                     if current_round >= t_rnd:
-                        delta += 1.0
+                        delta += 1.5
                         notes.append(f"Strategy Target: {player.name} in Rd {t_rnd}")
                     else:
                         notes.append(f"Target {player.name} in Rd {t_rnd}")
@@ -150,28 +150,28 @@ def _evaluate_strategy_rule_adjustments(
                     if (
                         pos_rule.top_n_target and (player.cheatsheet_rank or 99) <= pos_rule.top_n_target
                     ) or p_tier == 1:
-                        delta += 0.8
+                        delta += 1.2
                         notes.append(f"Strategy Target: Top {pos_rule.position} in Rd {current_round}")
                     elif pos_rule.target_tiers and p_tier in pos_rule.target_tiers:
-                        delta += 0.5
+                        delta += 0.8
                         notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
                 elif current_round < min(pos_rule.target_rounds):
-                    delta -= 0.5
+                    delta -= 1.2
                     notes.append(f"Strategy Hint: {pos_rule.position} targeted in Rd {min(pos_rule.target_rounds)}+")
 
             # Check if this rule defines specific target tiers (e.g. tiers 3-4 for late-round approach)
             elif pos_rule.target_tiers:
                 if current_round <= 3 and min(pos_rule.target_tiers) >= 3:
-                    delta -= 0.5
+                    delta -= 1.2
                     notes.append(
                         f"Strategy Hint: Late-Round {pos_rule.position} (targeting Tiers {','.join(map(str, pos_rule.target_tiers))})"
                     )
                 elif current_round >= 4 and p_tier in pos_rule.target_tiers:
-                    delta += 0.5
+                    delta += 0.8
                     notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
 
     # Clamp total strategy delta to prevent extreme distortions
-    clamped_delta = max(-1.0, min(1.5, delta))
+    clamped_delta = max(-2.0, min(2.0, delta))
     final_note = notes[0] if notes else None
     return clamped_delta, final_note
 
@@ -252,10 +252,10 @@ def _build_suggestion_reason(
 
 
 def _calculate_sliding_note_shift(idx: int, note_type: str) -> int:
-    """Calculate calibrated sliding window pick shift tailored for 10-team leagues (1-3 Rd 1, 4-8 Rds 2-3)."""
+    """Calculate calibrated sliding window pick shift tailored for 10-team leagues (2-4 Rd 1, 4-8 Rds 2-3)."""
     if note_type == "bust":
         if idx < 10:  # Round 1 (Picks 1-10)
-            return 1 + (idx // 4)  # 1 to 3 picks
+            return 2 + (idx // 4)  # 2 to 4 picks
         elif idx < 30:  # Rounds 2-3 (Picks 11-30)
             return 4 + int((idx - 10) * 4 / 20)  # 4 to 8 picks
         elif idx < 60:  # Rounds 4-6 (Picks 31-60)
@@ -264,7 +264,7 @@ def _calculate_sliding_note_shift(idx: int, note_type: str) -> int:
             return 14 + min(6, (idx - 60) // 15)  # 14 to 20 picks
     elif note_type == "breakout":
         if idx < 10:  # Round 1
-            return 1 + (idx // 4)  # 1 to 3 picks
+            return 2 + (idx // 5)  # 2 to 3 picks
         elif idx < 30:  # Rounds 2-3
             return 4 + int((idx - 10) * 3 / 20)  # 4 to 7 picks
         elif idx < 60:  # Rounds 4-6
