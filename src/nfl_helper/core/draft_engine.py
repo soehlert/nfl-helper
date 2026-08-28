@@ -234,12 +234,17 @@ def _build_suggestion_reason(
         else:
             lines.append(f"Market Consensus: Round {target_round}, Pick {target_pick} (ADP {player.adp:.1f})")
 
-    # Row 4: Strategy Delta & Stadium Environment
+    # Row 4: Tactical Note, Strategy Delta & Stadium Environment
     is_dome = player.game_context and player.game_context.is_dome
     env_label = "Dome Stadium" if is_dome else f"Outdoor ({player.team})"
+    note_parts = []
+    if player.cheatsheet_notes:
+        note_parts.append(player.cheatsheet_notes)
     if rule_note and rule_delta != 0.0:
         sign = "+" if rule_delta > 0 else ""
-        lines.append(f"{sign}{rule_delta:.1f} pts ({rule_note}) • {env_label}")
+        note_parts.append(f"{sign}{rule_delta:.1f} pts {rule_note}")
+    if note_parts:
+        lines.append(f"{' • '.join(note_parts)} • {env_label}")
     else:
         lines.append(env_label)
 
@@ -310,11 +315,11 @@ def generate_draft_suggestions(
         if p.cheatsheet_notes:
             nl = p.cheatsheet_notes.lower()
             if "breakout" in nl:
-                note_delta = 1.8 * demand_weight
+                note_delta = 0.20 * demand_weight
             elif "sleeper" in nl or "pick" in nl or "target" in nl:
-                note_delta = 1.2 * demand_weight
+                note_delta = 0.10 * demand_weight
             elif "bust" in nl or "fade" in nl:
-                note_delta = -1.8 * demand_weight
+                note_delta = -0.15 * demand_weight
         score += note_delta
 
         adp_delta = 0.0

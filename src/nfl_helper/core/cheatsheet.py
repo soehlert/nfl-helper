@@ -437,7 +437,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
                                 normalized_name=norm,
                                 position=pos,
                                 tier=None,
-                                notes=f"{current_section_note or 'Analyst Pick'} ({analyst})",
+                                notes=f"{current_section_note or 'ESPN Sleeper'} ({analyst})",
                             )
                             _record_player_entry(entry, pos, context)
                 else:
@@ -475,9 +475,10 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
                             normalized_name=norm,
                             position=pos,
                             tier=None,
-                            notes=f"{current_section_note or 'Analyst Pick'} ({analyst})",
+                            notes=f"{current_section_note or 'ESPN Breakout'} ({analyst})",
                         )
                         _record_player_entry(entry, pos, context)
+
                 else:
                     break
             continue

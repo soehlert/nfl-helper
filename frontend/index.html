@@ -1719,10 +1719,11 @@
       if (risers.length === 0) {
         html += '<div style="color: var(--text-muted); font-size: 0.82rem;">No significant rank increases.</div>';
       } else {
-        html += '<table class="data-table" style="font-size: 0.8rem;"><thead><tr><th>Player</th><th>Pos</th><th>Team</th><th>Old Rank</th><th>New Rank</th><th>Shift</th></tr></thead><tbody>';
+        html += '<table class="data-table" style="font-size: 0.8rem;"><thead><tr><th>Player</th><th>Pos</th><th>Team</th><th>Old Rank</th><th>New Rank</th><th>Shift</th><th>Reason / Note</th></tr></thead><tbody>';
         risers.forEach(r => {
           const tierChange = (r.old_tier && r.new_tier && r.old_tier !== r.new_tier) ? `<span style="font-size: 0.72rem; color: var(--accent-green); margin-left: 0.25rem;">(Tier ${r.old_tier} → ${r.new_tier})</span>` : '';
-          html += `<tr><td><strong>${r.player_name}</strong>${tierChange}</td><td><span class="pos-tag pos-${r.position}">${r.position}</span></td><td>${r.team || '—'}</td><td>#${r.old_rank}</td><td>#${r.new_rank}</td><td><span style="color: var(--accent-green); font-weight: 600;">+${r.rank_delta} spots</span></td></tr>`;
+          const noteBadge = r.note ? `<span class="badge" style="background: rgba(34, 197, 94, 0.15); color: var(--accent-green); font-size: 0.72rem;">${r.note}</span>` : '—';
+          html += `<tr><td><strong>${r.player_name}</strong>${tierChange}</td><td><span class="pos-tag pos-${r.position}">${r.position}</span></td><td>${r.team || '—'}</td><td>#${r.old_rank}</td><td>#${r.new_rank}</td><td><span style="color: var(--accent-green); font-weight: 600;">+${r.rank_delta} spots</span></td><td>${noteBadge}</td></tr>`;
         });
         html += '</tbody></table>';
       }
@@ -1734,14 +1735,16 @@
       if (fallers.length === 0) {
         html += '<div style="color: var(--text-muted); font-size: 0.82rem;">No significant rank drops.</div>';
       } else {
-        html += '<table class="data-table" style="font-size: 0.8rem;"><thead><tr><th>Player</th><th>Pos</th><th>Team</th><th>Old Rank</th><th>New Rank</th><th>Shift</th></tr></thead><tbody>';
+        html += '<table class="data-table" style="font-size: 0.8rem;"><thead><tr><th>Player</th><th>Pos</th><th>Team</th><th>Old Rank</th><th>New Rank</th><th>Shift</th><th>Reason / Note</th></tr></thead><tbody>';
         fallers.forEach(f => {
           const tierChange = (f.old_tier && f.new_tier && f.old_tier !== f.new_tier) ? `<span style="font-size: 0.72rem; color: var(--accent-amber); margin-left: 0.25rem;">(Tier ${f.old_tier} → ${f.new_tier})</span>` : '';
-          html += `<tr><td><strong>${f.player_name}</strong>${tierChange}</td><td><span class="pos-tag pos-${f.position}">${f.position}</span></td><td>${f.team || '—'}</td><td>#${f.old_rank}</td><td>#${f.new_rank}</td><td><span style="color: var(--accent-amber); font-weight: 600;">${f.rank_delta} spots</span></td></tr>`;
+          const noteBadge = f.note ? `<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--accent-red); font-size: 0.72rem;">${f.note}</span>` : '—';
+          html += `<tr><td><strong>${f.player_name}</strong>${tierChange}</td><td><span class="pos-tag pos-${f.position}">${f.position}</span></td><td>${f.team || '—'}</td><td>#${f.old_rank}</td><td>#${f.new_rank}</td><td><span style="color: var(--accent-amber); font-weight: 600;">${f.rank_delta} spots</span></td><td>${noteBadge}</td></tr>`;
         });
         html += '</tbody></table>';
       }
       html += '</div>';
+
 
       // Rules Delta
       if (addedRules.length > 0 || removedRules.length > 0) {
