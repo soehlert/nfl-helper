@@ -274,18 +274,17 @@ def generate_draft_suggestions(
             t_drop = calculate_tier_drop(top_t, next_t)
             top_tier_info[pos] = (top_t.tier_num, len(top_t.players), t_drop)
 
-    scored_players: list[
-        tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]
-    ] = []
+    # Pass 1: Compute baseline score without note_delta to establish board density & ranks
+    raw_scored: list[tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]] = []
 
     for p in available_players:
         vorp = vorp_scores.get(p.id, 0.0)
         cliff = cliff_by_pos.get(str(p.position))
         is_cliff_defense = cliff is not None and (cliff.current_tier == (p.cheatsheet_tier or p.tier or 1))
 
-        score = vorp + (p.projected_points * 0.005)
+        base_score = vorp + (p.projected_points * 0.005)
         if is_cliff_defense:
-            score += 3.5 if cliff.cliff_risk == "CRITICAL" else 2.0
+            base_score += 3.5 if cliff.cliff_risk == "CRITICAL" else 2.0
 
         demand_weight = _POS_DEMAND_WEIGHT.get(str(p.position), 1.0)
         p_tier = p.cheatsheet_tier or p.tier or 1
@@ -294,7 +293,7 @@ def generate_draft_suggestions(
             tier_bonus = 1.5 * demand_weight
         elif p_tier == 2:
             tier_bonus = 0.8 * demand_weight
-        score += tier_bonus
+        base_score += tier_bonus
 
         # Positional Scarcity Weighting: if player is in top active tier and only 1-2 players remain
         scarcity_bonus = 0.0
@@ -304,35 +303,21 @@ def generate_draft_suggestions(
             if p_tier == top_num and remaining_in_top <= 2 and tier_drop >= 1.2:
                 scarcity_val = 2.0 if remaining_in_top == 1 else 1.2
                 scarcity_bonus = scarcity_val * demand_weight
-                score += scarcity_bonus
+                base_score += scarcity_bonus
 
         # Strategy Rules Adjustment
         rule_delta, rule_note = _evaluate_strategy_rule_adjustments(p, cheatsheet_context, current_round)
-        score += rule_delta
-
-        # Cheatsheet Note Tactical Adjustment (Sleeper, Breakout, Target, Bust, Fade)
-        note_delta = 0.0
-        if p.cheatsheet_notes:
-            nl = p.cheatsheet_notes.lower()
-            is_starter = vorp > 0.4
-            base_unit = 0.40 if is_starter else 0.03
-            if "breakout" in nl:
-                note_delta = base_unit * 1.5 * demand_weight
-            elif "sleeper" in nl or "pick" in nl or "target" in nl:
-                note_delta = base_unit * 0.8 * demand_weight
-            elif "bust" in nl or "fade" in nl:
-                note_delta = -base_unit * 1.2 * demand_weight
-        score += note_delta
+        base_score += rule_delta
 
         adp_delta = 0.0
         if p.cheatsheet_rank:
             adp_delta = overall_pick - p.cheatsheet_rank
             if adp_delta > 0:
-                score += min(2.0, adp_delta * 0.1)
+                base_score += min(2.0, adp_delta * 0.1)
 
-        scored_players.append(
+        raw_scored.append(
             (
-                score,
+                base_score,
                 p,
                 vorp,
                 tier_bonus,
@@ -341,6 +326,50 @@ def generate_draft_suggestions(
                 adp_delta,
                 rule_delta,
                 rule_note,
+            )
+        )
+
+    # Sort baseline board by base_score to get baseline ranks
+    raw_scored.sort(key=lambda item: item[0], reverse=True)
+    base_scores = [item[0] for item in raw_scored]
+
+    # Pass 2: Apply calibrated note adjustments
+    # Breakout: ~14-20 pick boost (target: 17 picks)
+    # Sleeper: ~9-14 pick boost (target: 12 picks)
+    # Bust: ~1-2 round drop (target: 18 picks)
+    scored_players: list[
+        tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]
+    ] = []
+
+    for idx, (b_score, p, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note) in enumerate(raw_scored):
+        note_delta = 0.0
+        if p.cheatsheet_notes:
+            nl = p.cheatsheet_notes.lower()
+            if "breakout" in nl:
+                target_idx = max(0, idx - 17)
+                target_score = base_scores[target_idx]
+                note_delta = max(0.20, (target_score - b_score) + 0.001)
+            elif "sleeper" in nl or "pick" in nl or "target" in nl:
+                target_idx = max(0, idx - 12)
+                target_score = base_scores[target_idx]
+                note_delta = max(0.12, (target_score - b_score) + 0.001)
+            elif "bust" in nl or "fade" in nl:
+                target_idx = min(len(base_scores) - 1, idx + 18)
+                target_score = base_scores[target_idx]
+                note_delta = min(-0.15, (target_score - b_score) - 0.001)
+
+        final_score = b_score + note_delta
+        scored_players.append(
+            (
+                final_score,
+                p,
+                vorp,
+                t_bonus,
+                s_bonus,
+                cliff,
+                adp_delta,
+                r_delta,
+                r_note,
             )
         )
 

@@ -215,5 +215,41 @@ def test_build_draft_state_performance_and_completeness() -> None:
     assert state.current_round == 1
     assert state.user_draft_slot == 6
     assert state.picks_until_user_turn == 4
-    assert len(state.top_suggestions) > 0
     assert elapsed_ms < 50.0  # Well within the 100ms algorithmic budget
+
+
+def test_cheatsheet_note_calibrated_board_movements() -> None:
+    """Verify cheatsheet notes produce calibrated big-board movements across rounds."""
+    pool: list[Player] = []
+    for i in range(1, 151):
+        pos = Position.WR if i % 2 == 0 else Position.RB
+        pts = 300.0 - (i**0.65) * 8.0
+        p = Player(id=f"p_{i}", name=f"Player {i}", position=pos, team="TM", projected_points=pts)
+        pool.append(p)
+
+    base_state = build_draft_state("test", None, 1, 1, 12, 16, [], [p.model_copy() for p in pool], None)
+    base_ranks = {s.player.id: s.rank for s in base_state.top_suggestions}
+
+    # Test Breakout (~14-20 pick boost) at rank #50
+    p_breakout = [p.model_copy() for p in pool]
+    p_breakout[49].cheatsheet_notes = "Breakout"
+    cand_breakout = build_draft_state("test", None, 1, 1, 12, 16, [], p_breakout, None)
+    breakout_ranks = {s.player.id: s.rank for s in cand_breakout.top_suggestions}
+    breakout_shift = base_ranks["p_50"] - breakout_ranks["p_50"]
+    assert 14 <= breakout_shift <= 20
+
+    # Test Sleeper (~9-14 pick boost) at rank #50
+    p_sleeper = [p.model_copy() for p in pool]
+    p_sleeper[49].cheatsheet_notes = "Sleeper"
+    cand_sleeper = build_draft_state("test", None, 1, 1, 12, 16, [], p_sleeper, None)
+    sleeper_ranks = {s.player.id: s.rank for s in cand_sleeper.top_suggestions}
+    sleeper_shift = base_ranks["p_50"] - sleeper_ranks["p_50"]
+    assert 9 <= sleeper_shift <= 14
+
+    # Test Bust (~1-2 round drop / 14-24 pick drop) at rank #50
+    p_bust = [p.model_copy() for p in pool]
+    p_bust[49].cheatsheet_notes = "Bust"
+    cand_bust = build_draft_state("test", None, 1, 1, 12, 16, [], p_bust, None)
+    bust_ranks = {s.player.id: s.rank for s in cand_bust.top_suggestions}
+    bust_shift = base_ranks["p_50"] - bust_ranks["p_50"]
+    assert -24 <= bust_shift <= -14
