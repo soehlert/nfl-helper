@@ -394,7 +394,18 @@ def generate_draft_suggestions(
 
     for idx, (b_score, p, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note) in enumerate(raw_scored):
         note_delta = 0.0
-        if p.cheatsheet_notes:
+
+        # Check strategy target round anchoring when pick is earlier than designated target round
+        target_round_match = re.search(r"(?:targeted in Rd|Target .* in Rd)\s+(\d+)", r_note or "")
+        if target_round_match:
+            t_rnd = int(target_round_match.group(1))
+            if current_round < t_rnd:
+                min_target_idx = (t_rnd - 1) * total_teams
+                if idx < min_target_idx and min_target_idx < len(base_scores):
+                    target_idx = min(len(base_scores) - 1, min_target_idx + 1 + (idx % 6))
+                    note_delta = (base_scores[target_idx] - b_score) - 0.0001
+
+        if note_delta == 0.0 and p.cheatsheet_notes:
             nl = p.cheatsheet_notes.lower()
             if "breakout" in nl:
                 shift = _calculate_sliding_note_shift(idx, "breakout")
