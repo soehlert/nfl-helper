@@ -314,12 +314,14 @@ def generate_draft_suggestions(
         note_delta = 0.0
         if p.cheatsheet_notes:
             nl = p.cheatsheet_notes.lower()
+            is_starter = vorp > 0.4
+            base_unit = 0.40 if is_starter else 0.03
             if "breakout" in nl:
-                note_delta = 0.08 * demand_weight
+                note_delta = base_unit * 1.5 * demand_weight
             elif "sleeper" in nl or "pick" in nl or "target" in nl:
-                note_delta = 0.04 * demand_weight
+                note_delta = base_unit * 0.8 * demand_weight
             elif "bust" in nl or "fade" in nl:
-                note_delta = -0.05 * demand_weight
+                note_delta = -base_unit * 1.2 * demand_weight
         score += note_delta
 
         adp_delta = 0.0
