@@ -120,6 +120,31 @@ KNOWN_PLAYER_LOOKUP: dict[str, tuple[str, str, str]] = {
 }
 
 
+KNOWN_ANALYSTS = {
+    "bell",
+    "bowen",
+    "clay",
+    "cockcroft",
+    "dopp",
+    "fulghum",
+    "karabell",
+    "loza",
+    "moody",
+    "yates",
+    "stephania bell",
+    "matt bowen",
+    "mike clay",
+    "tristan cockcroft",
+    "tristan h cockcroft",
+    "daniel dopp",
+    "tyler fulghum",
+    "eric karabell",
+    "liz loza",
+    "eric moody",
+    "field yates",
+}
+
+
 def _clean_position_header(raw_header: str | None) -> tuple[str, bool] | None:
     """Extract standard position from header line, returning (position, is_continuation)."""
     if not raw_header or not isinstance(raw_header, str):
@@ -138,6 +163,9 @@ def _clean_position_header(raw_header: str | None) -> tuple[str, bool] | None:
         "RUNNING BACKS",
         "WIDE RECEIVERS",
         "TIGHT ENDS",
+        "RUNNING BACK",
+        "WIDE RECEIVER",
+        "TIGHT END",
     ):
         return POSITION_HEADERS[tokens[0].upper()], is_continuation
 
@@ -147,8 +175,9 @@ def _clean_position_header(raw_header: str | None) -> tuple[str, bool] | None:
 def _parse_player_line(
     line: str,
     current_pos: str,
-    current_tier: int,
+    current_tier: int | None,
     legend_notes: dict[str, str] | None = None,
+    default_notes: str | None = None,
 ) -> CheatsheetEntry | None:
     """Parse flexible line formats into CheatsheetEntry."""
     cleaned = line.strip()
@@ -160,7 +189,7 @@ def _parse_player_line(
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
     # Check for notes separated by hyphen or colon
-    notes = None
+    notes = default_notes
     if " - " in cleaned:
         parts = cleaned.split(" - ", 1)
         cleaned = parts[0].strip()
@@ -216,13 +245,21 @@ def _parse_player_line(
     if len(player_name) < 2:
         return None
 
-    # Filter noise and header rows
+    norm_key = normalize_player_name(player_name)
+
+    # Filter noise, analyst names, and header rows
+    if norm_key in KNOWN_ANALYSTS:
+        return None
     name_lower = player_name.lower()
-    if ("adp" in name_lower or "tier" in name_lower or name_lower.startswith("page")) and len(player_name.split()) <= 4:
+    if (
+        "adp" in name_lower
+        or "tier" in name_lower
+        or name_lower.startswith("page")
+        or name_lower in ("pos., player", "pos, player", "pos. player")
+    ) and len(player_name.split()) <= 4:
         return None
 
     # Canonical player resolution for ambiguous names
-    norm_key = normalize_player_name(player_name)
     if norm_key in KNOWN_PLAYER_LOOKUP:
         full_name, can_pos, can_team = KNOWN_PLAYER_LOOKUP[norm_key]
         player_name = full_name
@@ -231,7 +268,7 @@ def _parse_player_line(
 
     return CheatsheetEntry(
         player_name=player_name,
-        normalized_name=normalize_player_name(player_name),
+        normalized_name=norm_key,
         position=pos_found or current_pos or "",
         team=team_found or "",
         tier=current_tier,
@@ -296,7 +333,10 @@ def _parse_strategy_rule(line: str) -> tuple[DraftRoundTarget | None, Positional
 def _record_player_entry(entry: CheatsheetEntry, pos_key: str, context: CheatsheetContext) -> None:
     """Store parsed player entry and index into positional tier list."""
     context.entries[entry.normalized_name] = entry
-    if pos_key:
+    norm_full = normalize_player_name(entry.player_name)
+    if norm_full != entry.normalized_name:
+        context.entries[norm_full] = entry
+    if pos_key and entry.tier is not None and entry.tier > 0:
         if pos_key not in context.positional_tiers:
             context.positional_tiers[pos_key] = []
         while len(context.positional_tiers[pos_key]) < entry.tier:
@@ -310,24 +350,146 @@ def _clean_kerning(text: str) -> str:
 
 
 def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
-    """Parse plain-text cheatsheet tracking blank-line tiers, ADPs, and strategy rules."""
+    """Parse plain-text cheatsheet tracking blank-line tiers, ADPs, multi-column tables, and strategy rules."""
     context = CheatsheetContext()
     current_pos = ""
-    current_tier = 1
+    current_tier: int | None = 1
+    current_section_note: str | None = None
     previous_was_blank = False
     legend_notes: dict[str, str] = {}
 
-    for raw_line in text.splitlines():
+    lines = [ln.strip() for ln in text.splitlines()]
+    i = 0
+    while i < len(lines):
+        raw_line = lines[i]
         line = raw_line.strip()
         if not line:
-            if current_pos and not previous_was_blank:
+            if current_pos and current_tier is not None and not previous_was_blank:
                 current_tier += 1
             previous_was_blank = True
+            i += 1
             continue
 
         previous_was_blank = False
 
+        line_lower = line.lower()
+        if line_lower in ("sleepers", "sleeper", "top sleepers", "sleepers:", "sleeper:"):
+            current_section_note = "ESPN Sleeper"
+            current_tier = None
+            current_pos = ""
+            i += 1
+            continue
+        if line_lower in ("busts", "bust", "top busts", "busts:", "bust:"):
+            current_section_note = "ESPN Bust"
+            current_tier = None
+            current_pos = ""
+            i += 1
+            continue
+        if line_lower in ("breakouts", "breakout", "top breakouts", "breakouts:", "breakout:"):
+            current_section_note = "ESPN Breakout"
+            current_tier = None
+            current_pos = ""
+            i += 1
+            continue
+
+        # Check for 4-column table header: Quarterback, Running back, Wide Receiver, Tight end
+        if i + 3 < len(lines) and [
+            lines[i].lower(),
+            lines[i + 1].lower(),
+            lines[i + 2].lower(),
+            lines[i + 3].lower(),
+        ] == ["quarterback", "running back", "wide receiver", "tight end"]:
+            i += 4
+            while i < len(lines):
+                if lines[i].lower() in (
+                    "quarterback",
+                    "running back",
+                    "wide receiver",
+                    "tight end",
+                    "pos., player",
+                    "pos, player",
+                ):
+                    break
+                analyst = lines[i].strip()
+                if not analyst:
+                    i += 1
+                    continue
+                i += 1
+                if i + 3 < len(lines):
+                    row_players = [
+                        ("QB", lines[i]),
+                        ("RB", lines[i + 1]),
+                        ("WR", lines[i + 2]),
+                        ("TE", lines[i + 3]),
+                    ]
+                    i += 4
+                    for pos, p_name in row_players:
+                        clean_p = p_name.strip()
+                        if clean_p and len(clean_p) >= 2:
+                            norm = normalize_player_name(clean_p)
+                            entry = CheatsheetEntry(
+                                player_name=clean_p,
+                                normalized_name=norm,
+                                position=pos,
+                                tier=None,
+                                notes=f"{current_section_note or 'Analyst Pick'} ({analyst})",
+                            )
+                            _record_player_entry(entry, pos, context)
+                else:
+                    break
+            continue
+
+        # Check for 2-column header: Pos., Player
+        if lines[i].lower() in ("pos., player", "pos, player", "pos. player"):
+            i += 1
+            if i < len(lines) and lines[i].lower() in ("pos., player", "pos, player", "pos. player"):
+                i += 1
+            while i < len(lines):
+                if lines[i].lower() in ("quarterback", "running back", "wide receiver", "tight end"):
+                    break
+                analyst = lines[i].strip()
+                if not analyst:
+                    i += 1
+                    continue
+                i += 1
+                if i < len(lines):
+                    pos_player = lines[i].strip()
+                    i += 1
+                    tokens = pos_player.split()
+                    pos = (
+                        tokens[0].upper()
+                        if tokens and tokens[0].upper() in ("RB", "WR", "QB", "TE", "K", "DST")
+                        else ""
+                    )
+                    pname = " ".join(tokens[1:]) if pos else pos_player
+                    clean_p = pname.strip()
+                    if clean_p and len(clean_p) >= 2:
+                        norm = normalize_player_name(clean_p)
+                        entry = CheatsheetEntry(
+                            player_name=clean_p,
+                            normalized_name=norm,
+                            position=pos,
+                            tier=None,
+                            notes=f"{current_section_note or 'Analyst Pick'} ({analyst})",
+                        )
+                        _record_player_entry(entry, pos, context)
+                else:
+                    break
+            continue
+
+        if normalize_player_name(line) in KNOWN_ANALYSTS:
+            i += 1
+            continue
+
         if re.search(r"\badp\s+adp\b", line, re.IGNORECASE) or re.search(r"\btier\s+adp\b", line, re.IGNORECASE):
+            i += 1
+            continue
+
+        tier_match = re.match(r"^\s*Tier\s+(\d+)[\s\:\-]*$", line, re.IGNORECASE)
+        if tier_match:
+            current_tier = int(tier_match.group(1))
+            previous_was_blank = True
+            i += 1
             continue
 
         pos_info = _clean_position_header(line)
@@ -335,10 +497,12 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
             pos_header, is_continuation = pos_info
             current_pos = pos_header
             if not is_continuation:
-                current_tier = 1
+                current_tier = 1 if current_section_note is None else None
             else:
-                current_tier += 1
+                if current_tier is not None:
+                    current_tier += 1
             previous_was_blank = True
+            i += 1
             continue
 
         # Legend / footnote definitions (e.g. '* = injured a while', '^ = rookie target')
@@ -346,6 +510,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
         if legend_match:
             symbol, meaning = legend_match.group(1), legend_match.group(2).strip()
             legend_notes[symbol] = meaning
+            i += 1
             continue
 
         # Strategy rule headers
@@ -370,6 +535,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
             if line.startswith(("Strategy:", "Rules:", "Rule:")):
                 line = re.sub(r"^(Strategy:|Rules:|Rule:)\s*", "", line).strip()
             if not line:
+                i += 1
                 continue
             context.strategy_rules.append(line)
             rnd_rule, pos_rule = _parse_strategy_rule(line)
@@ -377,29 +543,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
                 context.round_targets.append(rnd_rule)
             if pos_rule:
                 context.positional_strategy.append(pos_rule)
-            continue
-
-        # Strict continuation lines (only 'or ...' / 'and ...' that are not player lines)
-        is_rule_continuation = (
-            bool(context.strategy_rules)
-            and _clean_position_header(line) is None
-            and (line.lower().startswith("or ") or line.lower().startswith("and "))
-            and not any(f" {team} " in f" {line} " for team in NFL_TEAMS)
-        )
-        if is_rule_continuation:
-            combined = f"{context.strategy_rules[-1]} {line}"
-            context.strategy_rules[-1] = combined
-            rnd_rule, pos_rule = _parse_strategy_rule(combined)
-            if rnd_rule:
-                if context.round_targets:
-                    context.round_targets[-1] = rnd_rule
-                else:
-                    context.round_targets.append(rnd_rule)
-            if pos_rule:
-                if context.positional_strategy:
-                    context.positional_strategy[-1] = pos_rule
-                else:
-                    context.positional_strategy.append(pos_rule)
+            i += 1
             continue
 
         # Multi-column horizontal line detection (e.g. 'Allen 34.8 Gibbs 1.1 Price')
@@ -411,19 +555,27 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
             for m in col_matches:
                 chunk_str = m.group(0).strip()
                 last_end = m.end()
-                entry = _parse_player_line(chunk_str, current_pos, current_tier, legend_notes)
+                entry = _parse_player_line(
+                    chunk_str, current_pos, current_tier, legend_notes, default_notes=current_section_note
+                )
                 if entry and entry.normalized_name:
                     _record_player_entry(entry, entry.position or current_pos, context)
 
             trailing = line[last_end:].strip()
             if trailing and len(trailing) >= 3 and not re.match(r"^\d", trailing):
-                entry = _parse_player_line(trailing, current_pos, current_tier, legend_notes)
+                entry = _parse_player_line(
+                    trailing, current_pos, current_tier, legend_notes, default_notes=current_section_note
+                )
                 if entry and entry.normalized_name:
                     _record_player_entry(entry, entry.position or current_pos, context)
         else:
-            entry = _parse_player_line(line, current_pos, current_tier, legend_notes)
+            entry = _parse_player_line(
+                line, current_pos, current_tier, legend_notes, default_notes=current_section_note
+            )
             if entry and entry.normalized_name:
                 _record_player_entry(entry, entry.position or current_pos, context)
+
+        i += 1
 
     return context
 

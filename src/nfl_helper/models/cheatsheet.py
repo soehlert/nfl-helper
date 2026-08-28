@@ -10,7 +10,7 @@ class CheatsheetEntry(BaseModel):
     normalized_name: str
     position: str = ""
     team: str | None = ""
-    tier: int = 1
+    tier: int | None = None
     adp: float | None = None
     is_injured: bool = False
     notes: str | None = None

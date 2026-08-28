@@ -18,14 +18,13 @@ _STARTER_DEPTH: dict[str, float] = {
     "D/ST": 1.0,
 }
 
-# Positional starting demand weights (baseline VORP calibrated by starter depth)
 _POS_DEMAND_WEIGHT: dict[str, float] = {
     "RB": 1.0,
     "WR": 1.0,
     "QB": 1.0,
     "TE": 1.0,
-    "K": 0.5,
-    "D/ST": 0.5,
+    "K": 0.05,
+    "D/ST": 0.05,
 }
 
 
