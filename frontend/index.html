@@ -2178,6 +2178,26 @@
         if (isInjured) {
           tagsHtml += `<span style="font-size: 0.65rem; color: #f87171; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); padding: 0.08rem 0.35rem; border-radius: 3px; font-weight: 600; text-transform: uppercase;">${p.injury_status}</span>`;
         }
+        if (p.cheatsheet_notes) {
+          const notesLower = p.cheatsheet_notes.toLowerCase();
+          let noteBg = 'rgba(148, 163, 184, 0.15)';
+          let noteBorder = '#94a3b8';
+          let noteColor = '#cbd5e1';
+          if (notesLower.includes('bust') || notesLower.includes('fade')) {
+            noteBg = 'rgba(239, 68, 68, 0.15)';
+            noteBorder = '#ef4444';
+            noteColor = '#f87171';
+          } else if (notesLower.includes('breakout')) {
+            noteBg = 'rgba(6, 182, 212, 0.15)';
+            noteBorder = '#06b6d4';
+            noteColor = '#22d3ee';
+          } else if (notesLower.includes('sleeper')) {
+            noteBg = 'rgba(34, 197, 94, 0.15)';
+            noteBorder = '#22c55e';
+            noteColor = '#4ade80';
+          }
+          tagsHtml += `<span class="badge" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; background: ${noteBg}; border: 1px solid ${noteBorder}; color: ${noteColor}; font-weight: 700; text-transform: uppercase;">${p.cheatsheet_notes}</span>`;
+        }
         const playerCellPill = tagsHtml ? `<div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.2rem;">${tagsHtml}</div>` : '';
 
         // Parse structured multi-line reason rows
