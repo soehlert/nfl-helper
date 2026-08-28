@@ -362,6 +362,23 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
     clean_text = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
     clean_text = re.sub(r"https?://\S+", "", clean_text)
 
+    platform_prefix = ""
+    lower_full = text.lower()
+    if "fantasypros" in lower_full:
+        platform_prefix = "FantasyPros "
+    elif "yahoo" in lower_full:
+        platform_prefix = "Yahoo "
+    elif "espn" in lower_full:
+        platform_prefix = "ESPN "
+    elif "ringer" in lower_full:
+        platform_prefix = "Ringer "
+    elif "cbs" in lower_full:
+        platform_prefix = "CBS "
+    elif "rotowire" in lower_full:
+        platform_prefix = "Rotowire "
+    elif "sleeper" in lower_full:
+        platform_prefix = "Sleeper "
+
     lines = [ln.strip() for ln in clean_text.splitlines()]
 
     i = 0
@@ -378,24 +395,25 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
         previous_was_blank = False
 
         line_lower = line.lower()
-        if line_lower in ("sleepers", "sleeper", "top sleepers", "sleepers:", "sleeper:"):
-            current_section_note = "ESPN Sleeper"
-            current_tier = None
-            current_pos = ""
-            i += 1
-            continue
-        if line_lower in ("busts", "bust", "top busts", "busts:", "bust:"):
-            current_section_note = "ESPN Bust"
-            current_tier = None
-            current_pos = ""
-            i += 1
-            continue
-        if line_lower in ("breakouts", "breakout", "top breakouts", "breakouts:", "breakout:"):
-            current_section_note = "ESPN Breakout"
-            current_tier = None
-            current_pos = ""
-            i += 1
-            continue
+        if not line_lower.startswith("round") and not line_lower.startswith("rule"):
+            if "sleeper" in line_lower and len(line_lower.split()) <= 4:
+                current_section_note = f"{platform_prefix}Sleeper".strip()
+                current_tier = None
+                current_pos = ""
+                i += 1
+                continue
+            if ("bust" in line_lower or "fade" in line_lower) and len(line_lower.split()) <= 4:
+                current_section_note = f"{platform_prefix}Bust".strip()
+                current_tier = None
+                current_pos = ""
+                i += 1
+                continue
+            if "breakout" in line_lower and len(line_lower.split()) <= 4:
+                current_section_note = f"{platform_prefix}Breakout".strip()
+                current_tier = None
+                current_pos = ""
+                i += 1
+                continue
 
         # Check for 4-column table header: Quarterback, Running back, Wide Receiver, Tight end
         if i + 3 < len(lines) and [
@@ -437,7 +455,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
                                 normalized_name=norm,
                                 position=pos,
                                 tier=None,
-                                notes=current_section_note or "ESPN Sleeper",
+                                notes=current_section_note or f"{platform_prefix}Sleeper".strip(),
                             )
                             _record_player_entry(entry, pos, context)
                 else:
@@ -475,7 +493,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
                             normalized_name=norm,
                             position=pos,
                             tier=None,
-                            notes=current_section_note or "ESPN Breakout",
+                            notes=current_section_note or f"{platform_prefix}Breakout".strip(),
                         )
                         _record_player_entry(entry, pos, context)
 
