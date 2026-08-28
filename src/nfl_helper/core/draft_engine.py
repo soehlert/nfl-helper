@@ -186,6 +186,7 @@ def _build_suggestion_reason(
     top_tier_info: dict[str, tuple[int, int, float]],
     rule_delta: float = 0.0,
     rule_note: str | None = None,
+    total_teams: int = 12,
 ) -> str:
     """Generate concise, factual 4-row structured justification showing exact points made/lost."""
     lines: list[str] = []
@@ -213,21 +214,22 @@ def _build_suggestion_reason(
     else:
         lines.append(f"+{t_pts:.1f} pts (Tier {p_tier})")
 
-    # Row 3: ADP Market Context (Steal / Good Pick / Reach)
+    # Row 3: ADP Market Context (Target Round & Pick / Value Steal)
     if player.adp:
         discount = overall_pick - player.adp
+        target_round = int((player.adp - 1) // max(1, total_teams)) + 1
+        target_pick = int((player.adp - 1) % max(1, total_teams)) + 1
+
         if discount >= 8.0:
             adp_pts = min(2.0, discount * 0.1)
-            lines.append(f"+{adp_pts:.1f} pts (ADP {player.adp:.1f} • Steal: +{discount:.1f} picks past ADP)")
+            lines.append(f"+{adp_pts:.1f} pts (ADP {player.adp:.1f} • Steal: fell +{discount:.0f} picks past ADP)")
         elif discount >= 3.0:
             adp_pts = min(2.0, discount * 0.1)
-            lines.append(f"+{adp_pts:.1f} pts (ADP {player.adp:.1f} • Good Value: +{discount:.1f} pick discount)")
+            lines.append(f"+{adp_pts:.1f} pts (ADP {player.adp:.1f} • Good Value: fell +{discount:.0f} picks past ADP)")
         elif discount >= -2.0:
-            lines.append(f"ADP {player.adp:.1f} (Good Pick • Fair Value)")
-        elif discount >= -6.0:
-            lines.append(f"ADP {player.adp:.1f} (Minor Reach • {abs(discount):.1f} picks early)")
+            lines.append(f"ADP {player.adp:.1f} (Target Now • Round {target_round}, Pick {target_pick})")
         else:
-            lines.append(f"ADP {player.adp:.1f} (Reach • {abs(discount):.1f} picks early)")
+            lines.append(f"ADP {player.adp:.1f} (Target in Round {target_round}, Pick {target_pick})")
 
     # Row 4: Strategy Delta & Stadium Environment
     is_dome = player.game_context and player.game_context.is_dome
@@ -327,7 +329,17 @@ def generate_draft_suggestions(
         scored_players[:top_n], start=1
     ):
         reason = _build_suggestion_reason(
-            player, vorp, t_bonus, s_bonus, cliff, adp_delta, overall_pick, top_tier_info, r_delta, r_note
+            player,
+            vorp,
+            t_bonus,
+            s_bonus,
+            cliff,
+            adp_delta,
+            overall_pick,
+            top_tier_info,
+            r_delta,
+            r_note,
+            total_teams=total_teams,
         )
 
         suggestions.append(
