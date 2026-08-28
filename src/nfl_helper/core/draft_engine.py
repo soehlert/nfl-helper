@@ -333,7 +333,11 @@ def build_draft_state(
     for pos in positions:
         pos_avail = [p for p in available_players if p.position == pos]
         avail_by_pos[pos] = pos_avail
-        tiers_by_pos[pos] = cluster_position_tiers(pos_avail, pos, cheatsheet_context)
+        clustered = cluster_position_tiers(pos_avail, pos, cheatsheet_context)
+        tiers_by_pos[pos] = clustered
+        for t in clustered:
+            for p in t.players:
+                p.tier = t.tier_num
 
     cliffs = detect_tier_cliffs(tiers_by_pos, picks_until_turn, turn_gap, on_the_clock, current_pick=overall_pick)
 
