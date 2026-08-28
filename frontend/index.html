@@ -58,7 +58,7 @@
       text-transform: uppercase;
     }
     .badge-espn { background: #dc2626; color: #fff; }
-    .badge-sleeper { background: #0284c7; color: #fff; }
+    .badge-sleeper { background: #6366f1; color: #fff; font-weight: 700; }
     .badge-claimed { background: rgba(16, 185, 129, 0.12); color: var(--accent-green); border: 1px solid var(--accent-green); }
 
 
@@ -497,30 +497,34 @@
 
       <div class="draft-clock-banner">
         <div class="clock-stat">
-          <div class="value" id="overall-pick-num">#14</div>
+          <div class="value" id="overall-pick-num">#1</div>
           <div class="label">Overall Pick</div>
         </div>
         <div class="clock-stat">
-          <div class="value" id="current-round-num">Round 2</div>
-          <div class="label">Current Round</div>
+          <div class="value" id="current-round-num">Round 1</div>
+          <div class="label" id="draft-format-label">10 Teams • 15 Rds</div>
         </div>
         <div class="clock-stat">
-          <div class="value" id="picks-until-turn-val" style="color: var(--accent-amber);">4 picks</div>
-          <div class="label">Until Your Turn</div>
+          <div class="value" id="picks-until-turn-val" style="color: var(--accent-green);">ON THE CLOCK!</div>
+          <div class="label" id="user-slot-label">Your Slot: #1</div>
         </div>
         <div class="clock-stat">
-          <div class="value" id="snake-turn-gap-val">9 picks</div>
+          <div class="value" id="snake-turn-gap-val">18 picks</div>
           <div class="label">Subsequent Turn Gap</div>
         </div>
         <div class="clock-stat">
-          <div class="value" id="clock-status-tag" style="color: var(--accent-green);">LIVE FEED</div>
-          <div class="label">Auto-Refresh</div>
+          <div class="value" id="clock-status-tag" style="color: var(--accent-green); display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green);"></span>
+            <span>LIVE FEED</span>
+          </div>
+          <div class="label" id="live-feed-timestamp" style="color: var(--accent-green); font-weight: 600;">Active</div>
         </div>
         <div class="clock-stat" style="display: flex; flex-direction: row; gap: 0.5rem; justify-content: center; align-items: center;">
           <button id="simulate-cliff-btn" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.65rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main);" onclick="toggleSimulateCliff()">Simulate Cliff</button>
           <button id="simulate-tier-roll-btn" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.65rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main);" onclick="toggleSimulateTierRoll()">Simulate Tier Roll</button>
         </div>
       </div>
+
 
       <!-- Side-by-Side Cheatsheet Rules & Positional Tier Depletion (Collapsible Row) -->
       <div class="grid-2" style="margin-bottom: 1.25rem;">
@@ -1543,6 +1547,15 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       if (data.current_pick) {
         document.getElementById('overall-pick-num').textContent = '#' + data.current_pick;
         document.getElementById('current-round-num').textContent = 'Round ' + data.current_round;
+        const formatLabel = document.getElementById('draft-format-label');
+        if (formatLabel && data.total_teams) {
+          formatLabel.textContent = `${data.total_teams} Teams • ${data.total_rounds || 15} Rds`;
+        }
+        const userSlotLabel = document.getElementById('user-slot-label');
+        if (userSlotLabel) {
+          const slot = data.user_draft_slot || 1;
+          userSlotLabel.textContent = `Your Slot: #${slot}`;
+        }
         const picksUntilElem = document.getElementById('picks-until-turn-val');
         if (data.is_user_on_the_clock || data.picks_until_user_turn === 0) {
           picksUntilElem.textContent = 'ON THE CLOCK!';
@@ -1552,7 +1565,14 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           picksUntilElem.style.color = 'var(--accent-amber)';
         }
         document.getElementById('snake-turn-gap-val').textContent = data.snake_turn_gap + ' picks';
+
+        const timestampElem = document.getElementById('live-feed-timestamp');
+        if (timestampElem) {
+          const now = new Date();
+          timestampElem.textContent = `Synced ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}`;
+        }
       }
+
 
       // Render Top Cliff Alerts Banner (Capped to top 2 by default with toggle)
       const topCliffWrapper = document.getElementById('top-cliff-alerts-wrapper');
