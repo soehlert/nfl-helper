@@ -24,6 +24,41 @@ _GLOBAL_PROJ_DB: dict[str, dict[str, object]] = {}
 _GLOBAL_ESPN_ADP_DB: dict[str, float] = {}
 _GLOBAL_ACTIVE_DRAFT: dict[str, dict[str, object]] = {}
 
+_DEFENSE_CONSENSUS_ADPS: dict[str, float] = {
+    "LAR": 88.7,
+    "HOU": 97.4,
+    "SEA": 105.6,
+    "DEN": 119.0,
+    "PHI": 125.8,
+    "BAL": 131.2,
+    "PIT": 133.5,
+    "NE": 135.0,
+    "KC": 137.4,
+    "CLE": 139.8,
+    "BUF": 142.0,
+    "MIN": 144.5,
+    "DET": 146.2,
+    "GB": 148.0,
+    "DAL": 150.5,
+    "SF": 152.0,
+    "NYJ": 154.0,
+    "CHI": 156.0,
+    "TB": 158.0,
+    "LAC": 160.0,
+    "MIA": 162.0,
+    "IND": 164.0,
+    "ARI": 166.0,
+    "LV": 168.0,
+    "CIN": 170.0,
+    "NO": 172.0,
+    "ATL": 174.0,
+    "WAS": 176.0,
+    "JAX": 178.0,
+    "TEN": 180.0,
+    "NYG": 182.0,
+    "CAR": 184.0,
+}
+
 
 class SleeperAdapter(BaseLeagueAdapter):
     """Sleeper Fantasy Football REST provider adapter."""
@@ -169,20 +204,23 @@ class SleeperAdapter(BaseLeagueAdapter):
         team_str = str(raw_meta.get("team") or "FA").upper()
         bye_week = get_team_bye_week(team_str)
         is_dome = is_dome_stadium(team_str)
-
         espn_adps = self._ensure_espn_adp_db()
         norm_name = normalize_player_name(full_name)
         adp_val = espn_adps.get(norm_name)
+
         if adp_val is None:
-            raw_adp = raw_meta.get("search_rank") or raw_meta.get("years_exp")
-            if raw_adp and str(raw_adp).isdigit():
-                adp_val = float(raw_adp)
-            elif pos_enum == Position.DST:
-                r = float(pos_rank) if pos_rank is not None else 10.0
-                adp_val = round(85.0 + 8.0 * (r - 1), 1)
+            if pos_enum == Position.DST:
+                adp_val = _DEFENSE_CONSENSUS_ADPS.get(team_str)
+                if adp_val is None:
+                    r = float(pos_rank) if pos_rank is not None else 10.0
+                    adp_val = round(88.0 + 8.0 * (r - 1), 1)
             elif pos_enum == Position.K:
                 r = float(pos_rank) if pos_rank is not None else 10.0
                 adp_val = round(130.0 + 3.0 * (r - 1), 1)
+            else:
+                raw_adp = raw_meta.get("search_rank") or raw_meta.get("years_exp")
+                if raw_adp and str(raw_adp).isdigit():
+                    adp_val = float(raw_adp)
 
         return Player(
             id=str(player_id),

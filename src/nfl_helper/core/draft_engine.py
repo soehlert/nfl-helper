@@ -179,17 +179,17 @@ def _evaluate_strategy_rule_adjustments(
             # Check if this rule defines specific target tiers (e.g. tiers 3-4 for late-round approach)
             elif pos_rule.target_tiers:
                 if current_round <= 3 and min(pos_rule.target_tiers) >= 3:
-                    delta -= 1.5
+                    delta -= 1.0
                     specific_notes.append(
                         f"Strategy Hint: Late-Round {pos_rule.position} (targeting Tiers {','.join(map(str, pos_rule.target_tiers))})"
                     )
                 elif p_tier in pos_rule.target_tiers:
-                    delta += 1.5
+                    delta += 1.0
                     specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
                 else:
-                    delta -= 2.0
+                    delta -= 0.6
                     specific_notes.append(
-                        f"Strategy Fade: Rule targets Tier {','.join(map(str, pos_rule.target_tiers))} {pos_rule.position}"
+                        f"Strategy Hint: Rule prefers Tier {','.join(map(str, pos_rule.target_tiers))} {pos_rule.position}"
                     )
 
     # Clamp total strategy delta to prevent extreme distortions

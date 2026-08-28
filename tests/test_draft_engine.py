@@ -333,11 +333,11 @@ def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
     d_t3, note_t3 = _evaluate_strategy_rule_adjustments(p_t3_qb, ctx, current_round=6)
     d_t4, note_t4 = _evaluate_strategy_rule_adjustments(p_t4_qb, ctx, current_round=6)
 
-    assert d_t2 == -2.0
-    assert "Strategy Fade: Rule targets Tier 3,4 QB" in (note_t2 or "")
-    assert d_t3 == 1.5
+    assert d_t2 == -0.6
+    assert "Strategy Hint: Rule prefers Tier 3,4 QB" in (note_t2 or "")
+    assert d_t3 == 1.0
     assert "Strategy Target: Tier 3 QB" in (note_t3 or "")
-    assert d_t4 == 1.5
+    assert d_t4 == 1.0
     assert "Strategy Target: Tier 4 QB" in (note_t4 or "")
 
     # 2. Deadline minimums calculation
