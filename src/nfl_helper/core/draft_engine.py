@@ -318,7 +318,7 @@ def generate_draft_suggestions(
     scored_players.sort(key=lambda item: item[0], reverse=True)
 
     suggestions: list[DraftSuggestion] = []
-    for rank, (_, player, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note) in enumerate(
+    for rank, (score_val, player, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note) in enumerate(
         scored_players[:top_n], start=1
     ):
         reason = _build_suggestion_reason(
@@ -331,6 +331,7 @@ def generate_draft_suggestions(
                 player=player,
                 reason=reason,
                 vorp=vorp,
+                score=round(score_val, 2),
                 is_cliff_defense=cliff is not None,
             )
         )

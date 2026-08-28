@@ -671,10 +671,15 @@
                     <span>Bye</span><span id="sort-icon-bye" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
                   </div>
                 </th>
+                <th style="width: 85px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('score')">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+                    <span>Score</span><span id="sort-icon-score" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
+                  </div>
+                </th>
                 <th style="min-width: 320px; white-space: nowrap; vertical-align: middle;">Reason</th>
-
               </tr>
             </thead>
+
 
             <tbody id="draft-suggestions-tbody">
               <tr>
@@ -1453,7 +1458,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
     }
 
     function updateSortIcons() {
-      ['rank', 'pos', 'team', 'name', 'tier', 'pts', 'adp', 'bye'].forEach(k => {
+      ['rank', 'pos', 'team', 'name', 'tier', 'pts', 'adp', 'bye', 'score'].forEach(k => {
         const icon = document.getElementById('sort-icon-' + k);
         if (!icon) return;
         if (k === currentSortKey) {
@@ -1521,6 +1526,10 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
             valA = pA.bye_week || 99;
             valB = pB.bye_week || 99;
             break;
+          case 'score':
+            valA = a.score !== undefined ? a.score : a.vorp;
+            valB = b.score !== undefined ? b.score : b.vorp;
+            break;
           case 'rank':
           default:
             valA = a.rank;
@@ -1537,7 +1546,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       }
 
       if (filtered.length === 0) {
-        sugTbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">No matching available players found.</td></tr>';
+        sugTbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">No matching available players found.</td></tr>';
         return;
       }
 
@@ -1551,6 +1560,9 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         const ptsStr = p.projected_points ? p.projected_points.toFixed(1) : '—';
         const adpStr = p.adp ? p.adp.toFixed(1) : (p.cheatsheet_rank ? p.cheatsheet_rank.toFixed(0) : '—');
         const byeStr = p.bye_week ? `Wk ${p.bye_week}` : '—';
+        const scoreVal = s.score !== undefined ? s.score : s.vorp;
+        const scoreStr = (scoreVal >= 0 ? '+' : '') + scoreVal.toFixed(1);
+        const scoreColor = scoreVal >= 5.0 ? '#10b981' : (scoreVal >= 0.0 ? '#38bdf8' : '#f87171');
 
         let tagsHtml = '';
         const isInjured = p.injury_status && p.injury_status !== 'ACTIVE';
@@ -1558,7 +1570,6 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           tagsHtml += `<span style="font-size: 0.65rem; color: #f87171; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); padding: 0.08rem 0.35rem; border-radius: 3px; font-weight: 600; text-transform: uppercase;">${p.injury_status}</span>`;
         }
         const playerCellPill = tagsHtml ? `<div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.2rem;">${tagsHtml}</div>` : '';
-
 
         // Parse structured multi-line reason rows
         const reasonParts = (s.reason || '').split(/\n/).map(r => r.trim()).filter(Boolean);
@@ -1590,14 +1601,15 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
             <td><div style="display: flex; flex-direction: column; align-items: flex-start; max-width: 150px; word-break: break-word;"><strong>${p.name}</strong>${playerCellPill}</div></td>
             <td>${tierStr}</td>
             <td>${ptsStr}</td>
-
             <td>${adpStr}</td>
             <td>${byeStr}</td>
+            <td><strong style="color: ${scoreColor}; font-size: 0.88rem;">${scoreStr}</strong></td>
             <td>${reasonRowsHtml}</td>
           </tr>`;
       });
       sugTbody.innerHTML = sugHtml;
     }
+
 
 
 

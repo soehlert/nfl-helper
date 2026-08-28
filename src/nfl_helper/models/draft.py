@@ -53,12 +53,13 @@ class TierCliffWarning(BaseModel):
 
 
 class DraftSuggestion(BaseModel):
-    """Tactical pick suggestion derived from VORP and tier cliff alerts."""
+    """Tactical pick suggestion derived from VORP, tiers, cliffs, rules, and ADP value."""
 
     rank: int
     player: Player
     reason: str
     vorp: float = 0.0
+    score: float = 0.0
     is_cliff_defense: bool = False
 
 
