@@ -26,10 +26,12 @@ class SleeperAdapter(BaseLeagueAdapter):
         profile: LeagueProfile,
         client: httpx.Client | None = None,
         player_db: dict[str, dict[str, object]] | None = None,
+        proj_db: dict[str, dict[str, object]] | None = None,
     ) -> None:
         super().__init__(profile)
         self._client = client or httpx.Client(base_url=SLEEPER_API_BASE, timeout=10.0)
         self._player_db = player_db or {}
+        self._proj_db = proj_db or {}
 
     def _ensure_player_db(self) -> dict[str, dict[str, object]]:
         """Fetch and cache Sleeper NFL player database if not yet populated."""
@@ -41,6 +43,18 @@ class SleeperAdapter(BaseLeagueAdapter):
             except Exception:
                 pass
         return self._player_db
+
+    def _ensure_proj_db(self) -> dict[str, dict[str, object]]:
+        """Fetch and cache Sleeper NFL redraft projections and real ADP if not populated."""
+        if not self._proj_db:
+            season = self.profile.season_year or get_current_nfl_season_year()
+            try:
+                res = self._client.get(f"/projections/nfl/regular/{season}/1")
+                if res.status_code == 200:
+                    self._proj_db = res.json()
+            except Exception:
+                pass
+        return self._proj_db
 
     def _map_player(
         self,
@@ -82,14 +96,24 @@ class SleeperAdapter(BaseLeagueAdapter):
         team = str(raw_meta.get("team", "FA") or "FA")
         raw_slots = raw_meta.get("fantasy_positions")
         slots = list(raw_slots) if isinstance(raw_slots, list) else [pos_str]
-        raw_proj = float(str(raw_meta.get("projected_points", 0.0) or 0.0))
-        search_rank = raw_meta.get("search_rank")
-        adp_val = float(search_rank) if search_rank is not None else None
+
+        # Extract real redraft ADP and fantasy point projections from Sleeper projections feed
+        projs = self._ensure_proj_db()
+        p_proj_data = projs.get(str(player_id), {}) if isinstance(projs, dict) else {}
+        real_adp = p_proj_data.get("adp_dd_ppr") or p_proj_data.get("adp_dd_half_ppr") or p_proj_data.get("adp_dd_std")
+        adp_val = float(real_adp) if real_adp is not None and float(real_adp) < 900.0 else None
+
+        pos_adp = p_proj_data.get("pos_adp_dd_ppr")
+        raw_stats = p_proj_data.get("stats", {}) if isinstance(p_proj_data, dict) else {}
+        stat_pts = p_proj_data.get("pts_ppr") or raw_stats.get("pts_ppr") or raw_meta.get("projected_points")
+        raw_proj = float(str(stat_pts or 0.0))
 
         # Derive realistic baseline fantasy projection differentiated by positional rank
         if raw_proj <= 0.0:
             rank = (
-                float(pos_rank) if pos_rank is not None else (adp_val if adp_val is not None and adp_val > 0 else 50.0)
+                float(pos_adp)
+                if pos_adp is not None and float(pos_adp) > 0 and float(pos_adp) < 500
+                else (float(pos_rank) if pos_rank is not None else 50.0)
             )
             r = max(1.0, rank)
             if pos_str == "QB":
@@ -274,20 +298,22 @@ class SleeperAdapter(BaseLeagueAdapter):
         )
 
     def get_free_agents(self, limit: int = 150) -> list[Player]:
-        """Fetch available free agents from Sleeper sorted by active search rank."""
+        """Fetch available free agents from Sleeper sorted by real consensus ADP."""
         db = self._ensure_player_db()
-        valid_candidates: list[tuple[int, str, dict[str, object]]] = []
+        projs = self._ensure_proj_db()
+        valid_candidates: list[tuple[float, str, dict[str, object]]] = []
         for pid, meta in db.items():
             if not isinstance(meta, dict):
                 continue
             pos = str(meta.get("position", "")).upper()
             if pos in ("QB", "RB", "FB", "WR", "TE", "K", "DEF", "DST", "D/ST"):
-                search_rank = meta.get("search_rank")
-                rank_val = int(search_rank) if search_rank is not None else 99999
-                valid_candidates.append((rank_val, pid, meta))
+                p_proj = projs.get(str(pid), {}) if isinstance(projs, dict) else {}
+                real_adp = p_proj.get("adp_dd_ppr") or p_proj.get("adp_dd_half_ppr") or p_proj.get("adp_dd_std")
+                adp_rank = float(real_adp) if real_adp is not None and float(real_adp) < 900.0 else 999.0
+                valid_candidates.append((adp_rank, pid, meta))
 
         # Group by canonical position to determine true positional rank
-        by_pos_candidates: dict[str, list[tuple[int, str, dict[str, object]]]] = {}
+        by_pos_candidates: dict[str, list[tuple[float, str, dict[str, object]]]] = {}
         for rank_val, pid, meta in valid_candidates:
             raw_pos = str(meta.get("position", "")).upper()
             pos_key = "D/ST" if raw_pos in ("DEF", "DST") else ("RB" if raw_pos == "FB" else raw_pos)
