@@ -370,7 +370,8 @@ def build_draft_state(
 ) -> DraftState:
     """Construct full DraftState snapshot with snake lookahead, tiers, cliffs, and suggestions."""
     drafted_ids = {pick.player_id for pick in recent_picks}
-    available_players = [p for p in all_players if p.id not in drafted_ids]
+    drafted_names = {pick.player_name.lower() for pick in recent_picks if pick.player_name}
+    available_players = [p for p in all_players if p.id not in drafted_ids and p.name.lower() not in drafted_names]
 
     picks_until_turn, turn_gap, on_the_clock = calculate_lookahead(
         overall_pick, user_draft_slot, total_teams, total_rounds

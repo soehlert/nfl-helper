@@ -535,7 +535,11 @@ def apply_cheatsheet_context(players: list[Player], context: CheatsheetContext) 
         if entry:
             player.cheatsheet_tier = entry.tier
             if entry.adp is not None:
-                player.adp = entry.adp
+                if player.adp is not None:
+                    # 80% platform consensus ADP + 20% cheatsheet ADP
+                    player.adp = round(0.80 * player.adp + 0.20 * entry.adp, 1)
+                else:
+                    player.adp = entry.adp
             if entry.notes:
                 player.cheatsheet_notes = entry.notes
             if entry.is_injured:

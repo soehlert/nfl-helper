@@ -1,6 +1,6 @@
-"""Demo roster test fixture and scenario generator for testing and offline sandbox."""
-
+import json
 import random
+from pathlib import Path
 
 from nfl_helper.models.player import (
     GameEnvironment,
@@ -218,7 +218,15 @@ def generate_randomized_roster(seed: int | None = None) -> TeamRoster:
 
 
 def get_mock_player_pool() -> list[Player]:
-    """Return an extensive 133-player pool across all positions with realistic ADP, byes, and tiers."""
+    """Return an extensive player pool across all positions with realistic ADP, byes, and tiers."""
+    json_path = Path(__file__).parent / "mock_player_pool.json"
+    if json_path.exists():
+        try:
+            raw = json.loads(json_path.read_text(encoding="utf-8"))
+            return [Player.model_validate(p) for p in raw]
+        except Exception:
+            pass
+
     return [
         # --- QUARTERBACKS (16) ---
         Player(
