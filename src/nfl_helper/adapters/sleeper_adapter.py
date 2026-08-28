@@ -5,6 +5,7 @@ import math
 import httpx
 
 from nfl_helper.adapters.base import BaseLeagueAdapter
+from nfl_helper.core.name_normalizer import normalize_player_name
 from nfl_helper.core.season_utils import (
     get_current_nfl_season_year,
     get_team_bye_week,
@@ -27,11 +28,13 @@ class SleeperAdapter(BaseLeagueAdapter):
         client: httpx.Client | None = None,
         player_db: dict[str, dict[str, object]] | None = None,
         proj_db: dict[str, dict[str, object]] | None = None,
+        espn_adp_db: dict[str, float] | None = None,
     ) -> None:
         super().__init__(profile)
         self._client = client or httpx.Client(base_url=SLEEPER_API_BASE, timeout=10.0)
         self._player_db = player_db or {}
         self._proj_db = proj_db or {}
+        self._espn_adp_db = espn_adp_db or {}
 
     def _ensure_player_db(self) -> dict[str, dict[str, object]]:
         """Fetch and cache Sleeper NFL player database if not yet populated."""
@@ -55,6 +58,27 @@ class SleeperAdapter(BaseLeagueAdapter):
             except Exception:
                 pass
         return self._proj_db
+
+    def _ensure_espn_adp_db(self) -> dict[str, float]:
+        """Fetch and cache ESPN public redraft consensus ADP mapping by normalized player name."""
+        if not self._espn_adp_db:
+            season = self.profile.season_year or get_current_nfl_season_year()
+            try:
+                url = f"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{season}/segments/0/leaguedefaults/1?view=kona_player_info"
+                headers = {
+                    "x-fantasy-filter": '{"players":{"filterSlotIds":{"value":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,23,24]},"limit":250,"sortPercOwned":{"sortAsc":false,"sortPriority":1}}}'
+                }
+                res = self._client.get(url, headers=headers)
+                if res.status_code == 200:
+                    for item in res.json().get("players", []):
+                        p_info = item.get("player", {})
+                        full_name = p_info.get("fullName")
+                        adp_num = p_info.get("ownership", {}).get("averageDraftPosition")
+                        if full_name and adp_num:
+                            self._espn_adp_db[normalize_player_name(full_name)] = float(adp_num)
+            except Exception:
+                pass
+        return self._espn_adp_db
 
     def _map_player(
         self,
@@ -97,11 +121,27 @@ class SleeperAdapter(BaseLeagueAdapter):
         raw_slots = raw_meta.get("fantasy_positions")
         slots = list(raw_slots) if isinstance(raw_slots, list) else [pos_str]
 
-        # Extract real redraft ADP and fantasy point projections from Sleeper projections feed
+        # Extract Sleeper Full PPR redraft ADP and fantasy point projections
         projs = self._ensure_proj_db()
         p_proj_data = projs.get(str(player_id), {}) if isinstance(projs, dict) else {}
-        real_adp = p_proj_data.get("adp_dd_ppr") or p_proj_data.get("adp_dd_half_ppr") or p_proj_data.get("adp_dd_std")
-        adp_val = float(real_adp) if real_adp is not None and float(real_adp) < 900.0 else None
+        sleeper_adp = (
+            p_proj_data.get("adp_dd_ppr") or p_proj_data.get("adp_dd_half_ppr") or p_proj_data.get("adp_dd_std")
+        )
+        s_adp_val = float(sleeper_adp) if sleeper_adp is not None and float(sleeper_adp) < 900.0 else None
+
+        # Ingest ESPN public consensus ADP and blend into multi-platform composite ADP
+        espn_adps = self._ensure_espn_adp_db()
+        norm_name = normalize_player_name(full_name)
+        espn_adp_val = espn_adps.get(norm_name)
+
+        if s_adp_val is not None and espn_adp_val is not None:
+            adp_val = round(0.5 * s_adp_val + 0.5 * espn_adp_val, 1)
+        elif s_adp_val is not None:
+            adp_val = round(s_adp_val, 1)
+        elif espn_adp_val is not None:
+            adp_val = round(espn_adp_val, 1)
+        else:
+            adp_val = None
 
         pos_adp = p_proj_data.get("pos_adp_dd_ppr")
         raw_stats = p_proj_data.get("stats", {}) if isinstance(p_proj_data, dict) else {}
@@ -298,9 +338,10 @@ class SleeperAdapter(BaseLeagueAdapter):
         )
 
     def get_free_agents(self, limit: int = 150) -> list[Player]:
-        """Fetch available free agents from Sleeper sorted by real consensus ADP."""
+        """Fetch available free agents from Sleeper sorted by multi-platform consensus ADP."""
         db = self._ensure_player_db()
         projs = self._ensure_proj_db()
+        espn_adps = self._ensure_espn_adp_db()
         valid_candidates: list[tuple[float, str, dict[str, object]]] = []
         for pid, meta in db.items():
             if not isinstance(meta, dict):
@@ -308,9 +349,25 @@ class SleeperAdapter(BaseLeagueAdapter):
             pos = str(meta.get("position", "")).upper()
             if pos in ("QB", "RB", "FB", "WR", "TE", "K", "DEF", "DST", "D/ST"):
                 p_proj = projs.get(str(pid), {}) if isinstance(projs, dict) else {}
-                real_adp = p_proj.get("adp_dd_ppr") or p_proj.get("adp_dd_half_ppr") or p_proj.get("adp_dd_std")
-                adp_rank = float(real_adp) if real_adp is not None and float(real_adp) < 900.0 else 999.0
-                valid_candidates.append((adp_rank, pid, meta))
+                sleeper_adp = p_proj.get("adp_dd_ppr") or p_proj.get("adp_dd_half_ppr") or p_proj.get("adp_dd_std")
+                s_val = float(sleeper_adp) if sleeper_adp is not None and float(sleeper_adp) < 900.0 else None
+
+                first_name = str(meta.get("first_name", ""))
+                last_name = str(meta.get("last_name", ""))
+                full_name = f"{first_name} {last_name}".strip() or str(meta.get("full_name", ""))
+                norm_name = normalize_player_name(full_name)
+                e_val = espn_adps.get(norm_name)
+
+                if s_val is not None and e_val is not None:
+                    comp_adp = round(0.5 * s_val + 0.5 * e_val, 1)
+                elif s_val is not None:
+                    comp_adp = round(s_val, 1)
+                elif e_val is not None:
+                    comp_adp = round(e_val, 1)
+                else:
+                    comp_adp = 999.0
+
+                valid_candidates.append((comp_adp, pid, meta))
 
         # Group by canonical position to determine true positional rank
         by_pos_candidates: dict[str, list[tuple[float, str, dict[str, object]]]] = {}
