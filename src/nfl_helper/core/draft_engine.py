@@ -178,54 +178,60 @@ def _evaluate_strategy_rule_adjustments(
 def _build_suggestion_reason(
     player: Player,
     vorp: float,
+    tier_bonus: float,
+    scarcity_bonus: float,
     cliff: TierCliffWarning | None,
     adp_delta: float,
     overall_pick: int,
     top_tier_info: dict[str, tuple[int, int, float]],
+    rule_delta: float = 0.0,
     rule_note: str | None = None,
 ) -> str:
-    """Generate concise, factual 4-row structured justification for draft recommendation."""
+    """Generate concise, factual 4-row structured justification showing exact points made/lost."""
     lines: list[str] = []
     p_tier = player.cheatsheet_tier or player.tier or 1
 
-    # Row 1: VORP & Strategy
-    if rule_note:
-        lines.append(f"{rule_note} (+{vorp:.1f} VORP)")
-    elif vorp > 0:
-        lines.append(f"+{vorp:.1f} VORP (Tier {p_tier} {player.position})")
-    else:
-        lines.append(f"Tier {p_tier} {player.position} ({player.projected_points:.1f} pts)")
+    # Row 1: VORP Baseline
+    lines.append(f"+{vorp:.1f} pts VORP (Tier {p_tier} {player.position})")
 
-    # Row 2: Tier Availability & Scarcity
+    # Row 2: Tier & Scarcity Points
+    t_pts = tier_bonus + scarcity_bonus
     pos_info = top_tier_info.get(str(player.position))
     if pos_info:
         top_num, remaining_in_top, tier_drop = pos_info
         if p_tier == top_num:
             if remaining_in_top <= 2 and tier_drop >= 1.2:
-                lines.append(f"Tier {top_num} Scarcity: {remaining_in_top} left (-{tier_drop:.1f} pt drop)")
+                lines.append(
+                    f"+{t_pts:.1f} pts (Tier {top_num} Scarcity: {remaining_in_top} left before -{tier_drop:.1f} drop)"
+                )
             else:
-                lines.append(f"{remaining_in_top} Tier {top_num} available")
+                lines.append(f"+{t_pts:.1f} pts (Tier {top_num} Value • {remaining_in_top} remaining)")
         else:
-            lines.append(f"Tier {p_tier} ({player.projected_points:.1f} pts)")
+            lines.append(f"+{t_pts:.1f} pts (Tier {p_tier} • {player.projected_points:.1f} proj)")
     elif cliff:
-        lines.append(f"Cliff Defense ({cliff.players_remaining} left)")
+        lines.append(f"+2.0 pts (Cliff Defense • {cliff.players_remaining} left)")
+    else:
+        lines.append(f"+{t_pts:.1f} pts (Tier {p_tier})")
 
-    # Row 3: ADP Value / Reach
+    # Row 3: ADP Value / Reach Points
     if player.adp:
         discount = overall_pick - player.adp
         if discount >= 2.0:
-            lines.append(f"+{discount:.1f} pick discount vs {player.adp:.1f} ADP")
+            adp_pts = min(2.0, discount * 0.1)
+            lines.append(f"+{adp_pts:.1f} pts (+{discount:.1f} pick discount vs {player.adp:.1f} ADP)")
         elif discount <= -3.0:
             lines.append(f"ADP {player.adp:.1f} (-{abs(discount):.1f} reach)")
         else:
-            lines.append(f"ADP {player.adp:.1f}")
+            lines.append(f"ADP {player.adp:.1f} (Fair Value)")
 
-    # Row 4: Stadium Environment (Dome / Outdoor)
+    # Row 4: Strategy Delta & Stadium Environment
     is_dome = player.game_context and player.game_context.is_dome
-    if is_dome:
-        lines.append("Dome Stadium (Indoor Climate)")
-    elif player.team and player.team != "FA":
-        lines.append(f"Outdoor Stadium ({player.team})")
+    env_label = "Dome Stadium" if is_dome else f"Outdoor ({player.team})"
+    if rule_note and rule_delta != 0.0:
+        sign = "+" if rule_delta > 0 else ""
+        lines.append(f"{sign}{rule_delta:.1f} pts ({rule_note}) • {env_label}")
+    else:
+        lines.append(env_label)
 
     return "\n".join(lines)
 
@@ -253,7 +259,9 @@ def generate_draft_suggestions(
             t_drop = calculate_tier_drop(top_t, next_t)
             top_tier_info[pos] = (top_t.tier_num, len(top_t.players), t_drop)
 
-    scored_players: list[tuple[float, Player, float, bool, TierCliffWarning | None, float, str | None]] = []
+    scored_players: list[
+        tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]
+    ] = []
 
     for p in available_players:
         vorp = vorp_scores.get(p.id, 0.0)
@@ -266,18 +274,22 @@ def generate_draft_suggestions(
 
         demand_weight = _POS_DEMAND_WEIGHT.get(str(p.position), 1.0)
         p_tier = p.cheatsheet_tier or p.tier or 1
+        tier_bonus = 0.0
         if p_tier == 1:
-            score += 1.5 * demand_weight
+            tier_bonus = 1.5 * demand_weight
         elif p_tier == 2:
-            score += 0.8 * demand_weight
+            tier_bonus = 0.8 * demand_weight
+        score += tier_bonus
 
         # Positional Scarcity Weighting: if player is in top active tier and only 1-2 players remain
+        scarcity_bonus = 0.0
         pos_info = top_tier_info.get(str(p.position))
         if pos_info:
             top_num, remaining_in_top, tier_drop = pos_info
             if p_tier == top_num and remaining_in_top <= 2 and tier_drop >= 1.2:
                 scarcity_val = 2.0 if remaining_in_top == 1 else 1.2
-                score += scarcity_val * demand_weight
+                scarcity_bonus = scarcity_val * demand_weight
+                score += scarcity_bonus
 
         # Strategy Rules Adjustment
         rule_delta, rule_note = _evaluate_strategy_rule_adjustments(p, cheatsheet_context, current_round)
@@ -289,22 +301,37 @@ def generate_draft_suggestions(
             if adp_delta > 0:
                 score += min(2.0, adp_delta * 0.1)
 
-        scored_players.append((score, p, vorp, is_cliff_defense, cliff, adp_delta, rule_note))
+        scored_players.append(
+            (
+                score,
+                p,
+                vorp,
+                tier_bonus,
+                scarcity_bonus,
+                cliff if is_cliff_defense else None,
+                adp_delta,
+                rule_delta,
+                rule_note,
+            )
+        )
 
     scored_players.sort(key=lambda item: item[0], reverse=True)
 
     suggestions: list[DraftSuggestion] = []
-    for rank, (_, player, vorp, is_cliff, cliff, adp_delta, r_note) in enumerate(scored_players[:top_n], start=1):
+    for rank, (_, player, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note) in enumerate(
+        scored_players[:top_n], start=1
+    ):
         reason = _build_suggestion_reason(
-            player, vorp, cliff if is_cliff else None, adp_delta, overall_pick, top_tier_info, r_note
+            player, vorp, t_bonus, s_bonus, cliff, adp_delta, overall_pick, top_tier_info, r_delta, r_note
         )
+
         suggestions.append(
             DraftSuggestion(
                 rank=rank,
                 player=player,
                 reason=reason,
                 vorp=vorp,
-                is_cliff_defense=is_cliff,
+                is_cliff_defense=cliff is not None,
             )
         )
     return suggestions

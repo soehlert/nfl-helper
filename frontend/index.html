@@ -646,7 +646,7 @@
                     <span>Team</span><span id="sort-icon-team" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
                   </div>
                 </th>
-                <th style="min-width: 170px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('name')">
+                <th style="width: 140px; min-width: 130px; max-width: 160px; cursor: pointer; white-space: nowrap; vertical-align: middle;" onclick="sortDraftTable('name')">
                   <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
                     <span>Player</span><span id="sort-icon-name" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
                   </div>
@@ -671,7 +671,8 @@
                     <span>Bye</span><span id="sort-icon-bye" style="font-size: 0.72rem; color: var(--text-muted);">⬍</span>
                   </div>
                 </th>
-                <th style="white-space: nowrap; vertical-align: middle;">Reason</th>
+                <th style="min-width: 320px; white-space: nowrap; vertical-align: middle;">Reason</th>
+
               </tr>
             </thead>
 
@@ -1551,16 +1552,15 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         const adpStr = p.adp ? p.adp.toFixed(1) : (p.cheatsheet_rank ? p.cheatsheet_rank.toFixed(0) : '—');
         const byeStr = p.bye_week ? `Wk ${p.bye_week}` : '—';
 
-        let injuryPill = '';
+        let tagsHtml = '';
         const isInjured = p.injury_status && p.injury_status !== 'ACTIVE';
-        if (isInjured || p.cheatsheet_notes) {
-          const statusText = isInjured ? p.injury_status : 'NOTE';
-          const descText = p.cheatsheet_notes ? `: ${p.cheatsheet_notes}` : '';
-          const badgeBg = isInjured ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)';
-          const badgeColor = isInjured ? '#f87171' : '#fbbf24';
-          const badgeBorder = isInjured ? 'rgba(239, 68, 68, 0.35)' : 'rgba(245, 158, 11, 0.35)';
-          injuryPill = `<div style="font-size: 0.65rem; color: ${badgeColor}; background: ${badgeBg}; border: 1px solid ${badgeBorder}; padding: 0.1rem 0.35rem; border-radius: 3px; display: inline-block; margin-top: 0.2rem; font-weight: 600; text-transform: uppercase;">${statusText}${descText}</div>`;
+        if (isInjured) {
+          tagsHtml += `<span style="font-size: 0.65rem; color: #f87171; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); padding: 0.08rem 0.35rem; border-radius: 3px; font-weight: 600; text-transform: uppercase;">${p.injury_status}</span>`;
         }
+        if (p.cheatsheet_notes) {
+          tagsHtml += `<span style="font-size: 0.65rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); padding: 0.08rem 0.35rem; border-radius: 3px; font-weight: 600; text-transform: uppercase;">${p.cheatsheet_notes}</span>`;
+        }
+        const playerCellPill = tagsHtml ? `<div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.2rem;">${tagsHtml}</div>` : '';
 
         // Parse structured multi-line reason rows
         const reasonParts = (s.reason || '').split(/\n/).map(r => r.trim()).filter(Boolean);
@@ -1573,9 +1573,9 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
             fontWeight = '600';
           } else if (part.includes('Scarcity') || part.includes('Cliff')) {
             rowColor = 'var(--accent-amber)';
-          } else if (part.includes('discount')) {
+          } else if (part.includes('discount') || part.includes('+')) {
             rowColor = 'var(--accent-green)';
-          } else if (part.includes('reach')) {
+          } else if (part.includes('reach') || part.includes('-')) {
             rowColor = 'var(--text-muted)';
           } else if (part.includes('Dome')) {
             rowColor = 'var(--accent-blue)';
@@ -1589,9 +1589,10 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
             <td><strong>${s.rank}</strong></td>
             <td><span class="pos-tag ${posClass}">${p.position}</span></td>
             <td>${team}</td>
-            <td><div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem;"><strong>${p.name}</strong>${injuryPill}</div></td>
+            <td><div style="display: flex; flex-direction: column; align-items: flex-start; max-width: 150px; word-break: break-word;"><strong>${p.name}</strong>${playerCellPill}</div></td>
             <td>${tierStr}</td>
             <td>${ptsStr}</td>
+
             <td>${adpStr}</td>
             <td>${byeStr}</td>
             <td>${reasonRowsHtml}</td>
