@@ -23,7 +23,7 @@ class LeagueProfile(BaseModel):
     season_year: int | None = None
     team_id: str = "1"
     team_name: str = "My Squad"
-    user_draft_slot: int = 1
+    user_draft_slot: int | None = None
     espn_s2: str | None = None
     swid: str | None = None
     invite_code: str = ""

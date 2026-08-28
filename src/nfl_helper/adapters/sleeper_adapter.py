@@ -325,6 +325,23 @@ class SleeperAdapter(BaseLeagueAdapter):
         current_round = ((current_pick - 1) // total_teams) + 1
         by_pos = self.get_available_players_by_position(limit=150)
 
+        user_slot = self.profile.user_draft_slot
+        if user_slot is None:
+            draft_order = active_draft.get("draft_order")
+            if isinstance(draft_order, dict):
+                if self.profile.team_id and str(self.profile.team_id) in draft_order:
+                    user_slot = int(str(draft_order[str(self.profile.team_id)]))
+                else:
+                    rosters, _ = self._fetch_rosters_and_users()
+                    for r in rosters:
+                        if str(r.get("roster_id")) == str(self.profile.team_id):
+                            owner_id = str(r.get("owner_id", ""))
+                            if owner_id in draft_order:
+                                user_slot = int(str(draft_order[owner_id]))
+                                break
+                    if user_slot is None and len(draft_order) == 1:
+                        user_slot = int(next(iter(draft_order.values())))
+
         return DraftState(
             league_id=self.profile.league_id,
             draft_id=draft_id,
@@ -332,7 +349,7 @@ class SleeperAdapter(BaseLeagueAdapter):
             total_rounds=total_rounds,
             current_pick=current_pick,
             current_round=current_round,
-            user_draft_slot=self.profile.user_draft_slot,
+            user_draft_slot=user_slot or 1,
             recent_picks=picks_list,
             available_players_by_pos=by_pos,
         )

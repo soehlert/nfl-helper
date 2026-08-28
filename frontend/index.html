@@ -1375,6 +1375,7 @@
         localStorage.setItem('fwr_team_id', teamId);
         localStorage.setItem('fwr_team_name', teamName);
       } catch (e) {}
+      fetchDraftState();
     }
 
     async function loadLeagueTeams() {
@@ -2380,17 +2381,33 @@
     }
 
 
+    let draftAutoPoller = null;
+
+    function ensureDraftPolling() {
+      if (!draftAutoPoller) {
+        draftAutoPoller = setInterval(() => {
+          const leagueId = document.getElementById('session-league-id')?.value;
+          if (leagueId && leagueId !== '12345678') {
+            fetchDraftState();
+          }
+        }, 2000);
+      }
+    }
+
     async function fetchDraftState() {
       try {
         let url = '/api/draft/state?';
         const platform = document.getElementById('session-platform')?.value;
         const leagueId = document.getElementById('session-league-id')?.value;
+        const teamId = document.getElementById('session-team-select')?.value || document.getElementById('session-team-id')?.value;
         const swid = document.getElementById('session-swid')?.value;
         const espnS2 = document.getElementById('session-espn-s2')?.value;
         if (platform && leagueId && leagueId !== '12345678') {
           url += `platform=${encodeURIComponent(platform)}&league_id=${encodeURIComponent(leagueId)}&`;
+          if (teamId) url += `team_id=${encodeURIComponent(teamId)}&`;
           if (swid) url += `swid=${encodeURIComponent(swid)}&`;
           if (espnS2) url += `espn_s2=${encodeURIComponent(espnS2)}&`;
+          ensureDraftPolling();
         }
         if (isCliffSimulated) url += 'simulate_cliff=true&';
         if (isTierRollSimulated) url += 'simulate_tier_roll=true&';

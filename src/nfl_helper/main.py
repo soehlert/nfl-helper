@@ -292,6 +292,7 @@ async def get_draft_state(
     session_id: str | None = None,
     platform: str | None = None,
     league_id: str | None = None,
+    team_id: str | None = None,
     swid: str | None = None,
     espn_s2: str | None = None,
     simulate_cliff: bool = False,
@@ -316,6 +317,7 @@ async def get_draft_state(
                 invite_code=f"INV-{league_id[:5]}",
                 platform=plat_type,
                 league_id=league_id,
+                team_id=team_id or "1",
                 swid=swid,
                 espn_s2=espn_s2,
             )
