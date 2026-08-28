@@ -13,6 +13,8 @@ from nfl_helper.api.ws_manager import ws_manager
 from nfl_helper.core.cheatsheet import apply_cheatsheet_context, parse_cheatsheet_content, parse_pdf_cheatsheet
 from nfl_helper.core.cheatsheet_diff import compute_cheatsheet_diff
 from nfl_helper.core.db import (
+    clear_active_cheatsheet,
+    delete_cheatsheet,
     get_active_cheatsheet,
     get_cheatsheet_history,
     init_db,
@@ -521,6 +523,24 @@ async def get_current_cheatsheet() -> CheatsheetContext | None:
 async def get_cheatsheet_upload_history() -> list[dict[str, Any]]:
     """Fetch upload history of all persisted cheatsheets in SQLite."""
     return get_cheatsheet_history()
+
+
+@app.delete("/api/cheatsheet")
+async def clear_cheatsheet() -> dict[str, Any]:
+    """Clear the active cheatsheet and reset tactical suggestions to baseline."""
+    global _ACTIVE_CHEATSHEET
+    _ACTIVE_CHEATSHEET = None
+    clear_active_cheatsheet()
+    return {"status": "cleared", "message": "Active cheatsheet removed"}
+
+
+@app.delete("/api/cheatsheet/{cheatsheet_id}")
+async def remove_cheatsheet(cheatsheet_id: int) -> dict[str, Any]:
+    """Permanently delete a cheatsheet entry by ID."""
+    global _ACTIVE_CHEATSHEET
+    delete_cheatsheet(cheatsheet_id)
+    _ACTIVE_CHEATSHEET = get_active_cheatsheet()
+    return {"status": "deleted", "id": cheatsheet_id}
 
 
 @app.post("/api/sessions/claim")

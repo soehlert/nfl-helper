@@ -1099,9 +1099,13 @@
       <!-- Parsed Cheatsheet Player Directory -->
       <div id="cheatsheet-directory-card" class="card" style="display: none;">
         <div class="card-header">
-          <div class="card-title">📖 Loaded Cheatsheet Tiers</div>
-          <span id="directory-count-badge" class="badge badge-claimed">0 Players</span>
+          <div class="card-title">Loaded Cheatsheet Tiers</div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span id="directory-count-badge" class="badge badge-claimed">0 Players</span>
+            <button class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.2rem 0.6rem;" onclick="clearActiveCheatsheet()">Clear Cheatsheet</button>
+          </div>
         </div>
+
         <table class="data-table">
           <thead>
             <tr>
@@ -1391,6 +1395,27 @@
         }
       } catch (e) {}
     }
+
+    async function clearActiveCheatsheet() {
+      if (!confirm('Are you sure you want to remove the active cheatsheet and reset to baseline rankings?')) {
+        return;
+      }
+      try {
+        const res = await fetch('/api/cheatsheet', { method: 'DELETE' });
+        if (res.ok) {
+          const dirCard = document.getElementById('cheatsheet-directory-card');
+          const rulesContainer = document.getElementById('cheatsheet-rules-container');
+          const statusMsg = document.getElementById('cheatsheet-status-msg');
+          if (dirCard) dirCard.style.display = 'none';
+          if (rulesContainer) rulesContainer.style.display = 'none';
+          if (statusMsg) statusMsg.textContent = 'Active cheatsheet removed.';
+          fetchDraftState();
+        }
+      } catch (e) {
+        alert('Failed to clear cheatsheet: ' + e.message);
+      }
+    }
+
 
 
     async function submitCheatsheet() {

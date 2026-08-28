@@ -129,3 +129,27 @@ def get_cheatsheet_history(db_path: Path | str | None = None) -> list[dict[str, 
         return []
     finally:
         conn.close()
+
+
+def clear_active_cheatsheet(db_path: Path | str | None = None) -> bool:
+    """Deactivate or clear currently active cheatsheets from SQLite."""
+    init_db(db_path)
+    conn = get_db_connection(db_path)
+    try:
+        conn.execute("UPDATE cheatsheets SET is_active = 0 WHERE is_active = 1;")
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
+def delete_cheatsheet(cheatsheet_id: int, db_path: Path | str | None = None) -> bool:
+    """Permanently remove a cheatsheet by ID from SQLite."""
+    init_db(db_path)
+    conn = get_db_connection(db_path)
+    try:
+        conn.execute("DELETE FROM cheatsheets WHERE id = ?;", (cheatsheet_id,))
+        conn.commit()
+        return True
+    finally:
+        conn.close()

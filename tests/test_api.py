@@ -117,6 +117,15 @@ Rounds 1-2 - Only RB/WR at least 1 RB
     assert get_data is not None
     assert len(get_data["entries"]) >= 2
 
+    # Verify DELETE /api/cheatsheet clears active cheatsheet
+    del_res = client.delete("/api/cheatsheet")
+    assert del_res.status_code == 200
+    assert del_res.json()["status"] == "cleared"
+
+    get_cleared = client.get("/api/cheatsheet")
+    assert get_cleared.status_code == 200
+    assert get_cleared.json() is None
+
 
 def test_cheatsheet_file_upload_endpoint() -> None:
     """Verify file upload endpoint parsing text/csv content."""
