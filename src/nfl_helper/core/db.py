@@ -1,7 +1,6 @@
-"""SQLite persistence layer for cheatsheets, strategy rules, and league sessions."""
-
 import json
 import logging
+import os
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -13,9 +12,19 @@ logger = logging.getLogger(__name__)
 DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent.parent.parent / "data" / "nfl_helper.db"
 
 
-def get_db_connection(db_path: Path | str = DEFAULT_DB_PATH) -> sqlite3.Connection:
+def _resolve_db_path(db_path: Path | str | None = None) -> Path:
+    """Dynamically resolve database path supporting environment variables and test patching."""
+    if db_path is not None:
+        return Path(db_path)
+    env_path = os.environ.get("NFL_HELPER_DB_PATH")
+    if env_path:
+        return Path(env_path)
+    return DEFAULT_DB_PATH
+
+
+def get_db_connection(db_path: Path | str | None = None) -> sqlite3.Connection:
     """Create or connect to SQLite database with foreign keys and Row factory enabled."""
-    path = Path(db_path)
+    path = _resolve_db_path(db_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row
@@ -23,7 +32,7 @@ def get_db_connection(db_path: Path | str = DEFAULT_DB_PATH) -> sqlite3.Connecti
     return conn
 
 
-def init_db(db_path: Path | str = DEFAULT_DB_PATH) -> None:
+def init_db(db_path: Path | str | None = None) -> None:
     """Initialize database schema tables for cheatsheets and strategy history."""
     conn = get_db_connection(db_path)
     try:
@@ -55,7 +64,7 @@ def save_cheatsheet(
     context: CheatsheetContext,
     raw_text: str = "",
     name: str = "Active Cheatsheet",
-    db_path: Path | str = DEFAULT_DB_PATH,
+    db_path: Path | str | None = None,
 ) -> int:
     """Persist parsed cheatsheet into SQLite, deactivating older active sheets."""
     init_db(db_path)
@@ -79,7 +88,7 @@ def save_cheatsheet(
         conn.close()
 
 
-def get_active_cheatsheet(db_path: Path | str = DEFAULT_DB_PATH) -> CheatsheetContext | None:
+def get_active_cheatsheet(db_path: Path | str | None = None) -> CheatsheetContext | None:
     """Fetch the latest active cheatsheet context from SQLite."""
     init_db(db_path)
     conn = get_db_connection(db_path)
@@ -102,7 +111,7 @@ def get_active_cheatsheet(db_path: Path | str = DEFAULT_DB_PATH) -> CheatsheetCo
     return None
 
 
-def get_cheatsheet_history(db_path: Path | str = DEFAULT_DB_PATH) -> list[dict[str, Any]]:
+def get_cheatsheet_history(db_path: Path | str | None = None) -> list[dict[str, Any]]:
     """Fetch history of all uploaded cheatsheets."""
     init_db(db_path)
     conn = get_db_connection(db_path)
@@ -120,3 +129,4 @@ def get_cheatsheet_history(db_path: Path | str = DEFAULT_DB_PATH) -> list[dict[s
         return []
     finally:
         conn.close()
+
