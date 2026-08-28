@@ -6,14 +6,14 @@ from nfl_helper.models.player import Player
 
 # Refined realistic drop-off thresholds (single step drop, maximum tier span)
 _DROP_THRESHOLDS: dict[str, tuple[float, float]] = {
-    "QB": (2.5, 5.0),
-    "RB": (2.3, 4.5),
-    "WR": (2.3, 4.5),
-    "TE": (2.3, 4.5),
-    "K": (1.0, 2.0),
-    "D/ST": (1.0, 2.0),
+    "QB": (1.5, 2.8),
+    "RB": (1.3, 2.2),
+    "WR": (1.3, 2.2),
+    "TE": (1.3, 2.2),
+    "K": (0.8, 1.5),
+    "D/ST": (0.8, 1.5),
 }
-_DEFAULT_THRESHOLD: tuple[float, float] = (2.3, 4.5)
+_DEFAULT_THRESHOLD: tuple[float, float] = (1.3, 2.2)
 
 
 def _cluster_hybrid(players: list[Player], position: str) -> list[PlayerTier]:
