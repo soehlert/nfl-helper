@@ -56,3 +56,22 @@ def test_cli_create_invite_execution(capsys) -> None:
     captured = capsys.readouterr()
     assert "MAGIC INVITE CREATED" in captured.out
     assert "Platform   : SLEEPER" in captured.out
+
+
+def test_cli_qa_command_execution(capsys) -> None:
+    """Verify CLI qa subcommand handles disconnected server gracefully."""
+    main(["qa", "--status", "--base-url", "http://127.0.0.1:9999"])
+    captured = capsys.readouterr()
+    assert "Could not connect to running server" in captured.out or "QA Testing Mode" in captured.out
+
+
+def test_cli_diff_cheatsheet_execution(tmp_path, capsys) -> None:
+    """Verify CLI diff-cheatsheet computes offline fallback diff cleanly."""
+    sheet_file = tmp_path / "sample_sheet.txt"
+    sheet_file.write_text("1.1 Josh Allen\n1.2 Lamar Jackson\nRound 1: Target QB", encoding="utf-8")
+
+    main(["diff-cheatsheet", "--file", str(sheet_file), "--base-url", "http://127.0.0.1:9999"])
+    captured = capsys.readouterr()
+    assert "CHEATSHEET DRY-RUN IMPACT REPORT" in captured.out
+    assert "TOP" in captured.out
+    assert "Dry-run preview complete" in captured.out

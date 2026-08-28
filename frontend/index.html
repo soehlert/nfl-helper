@@ -519,11 +519,12 @@
           </div>
           <div class="label" id="live-feed-timestamp" style="color: var(--accent-green); font-weight: 600;">Active</div>
         </div>
-        <div class="clock-stat" style="display: flex; flex-direction: row; gap: 0.5rem; justify-content: center; align-items: center;">
+        <div id="simulation-controls-wrapper" class="clock-stat" style="display: none; flex-direction: row; gap: 0.5rem; justify-content: center; align-items: center;">
           <button id="simulate-cliff-btn" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.65rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main);" onclick="toggleSimulateCliff()">Simulate Cliff</button>
           <button id="simulate-tier-roll-btn" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.65rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main);" onclick="toggleSimulateTierRoll()">Simulate Tier Roll</button>
         </div>
       </div>
+
 
 
       <!-- Side-by-Side Cheatsheet Rules & Positional Tier Depletion (Collapsible Row) -->
@@ -1063,10 +1064,14 @@
           <textarea id="cheatsheet-textarea" class="form-control" rows="6" placeholder="Paste your plain-text cheatsheet, OCR table, CSV, or JSON here..."></textarea>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-          <button class="btn btn-primary" onclick="submitCheatsheet()">💾 Ingest Text</button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" style="font-size: 0.85rem;" onclick="previewCheatsheetDiff()">📊 Preview Diff (Dry Run)</button>
+            <button class="btn btn-primary" style="font-size: 0.85rem;" onclick="submitCheatsheet()">💾 Save & Apply</button>
+          </div>
           <span id="cheatsheet-status-msg" style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;"></span>
         </div>
       </div>
+
 
       <!-- Parsed Cheatsheet Player Directory -->
       <div id="cheatsheet-directory-card" class="card" style="display: none;">
@@ -1375,6 +1380,121 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
 
 
 
+    async function checkQAConfig() {
+      try {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+          const cfg = await res.json();
+          const simWrapper = document.getElementById('simulation-controls-wrapper');
+          if (simWrapper) {
+            simWrapper.style.display = cfg.qa_mode ? 'flex' : 'none';
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function previewCheatsheetDiff() {
+      const text = document.getElementById('cheatsheet-textarea').value;
+      if (!text.trim()) {
+        alert('Please paste or upload candidate cheatsheet text to preview changes.');
+        return;
+      }
+
+      const statusEl = document.getElementById('cheatsheet-status-msg');
+      if (statusEl) statusEl.textContent = 'Calculating impact diff...';
+
+      try {
+        const res = await fetch('/api/cheatsheet/diff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          alert('Diff preview failed: ' + (err.detail || 'Unknown error'));
+          if (statusEl) statusEl.textContent = '';
+          return;
+        }
+        const diff = await res.json();
+        renderDiffModal(diff);
+        if (statusEl) statusEl.textContent = '';
+      } catch (err) {
+        alert('Error generating diff: ' + err.message);
+        if (statusEl) statusEl.textContent = '';
+      }
+    }
+
+    function renderDiffModal(diff) {
+      const contentEl = document.getElementById('diff-modal-content');
+      const modalEl = document.getElementById('cheatsheet-diff-modal');
+      if (!contentEl || !modalEl) return;
+
+      const risers = diff.top_risers || [];
+      const fallers = diff.top_fallers || [];
+      const addedRules = diff.added_rules || [];
+      const removedRules = diff.removed_rules || [];
+
+      let html = '';
+
+      // Top Risers
+      html += '<div style="margin-bottom: 1.25rem;">';
+      html += '<div style="font-weight: 600; font-size: 0.9rem; color: var(--accent-green); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">🚀 TOP 5 BIGGEST RISERS (Rank Improved)</div>';
+      if (risers.length === 0) {
+        html += '<div style="color: var(--text-muted); font-size: 0.82rem;">No significant rank increases.</div>';
+      } else {
+        html += '<table class="data-table" style="font-size: 0.8rem;"><thead><tr><th>Player</th><th>Pos</th><th>Team</th><th>Old Rank</th><th>New Rank</th><th>Shift</th></tr></thead><tbody>';
+        risers.forEach(r => {
+          const tierChange = (r.old_tier && r.new_tier && r.old_tier !== r.new_tier) ? `<span style="font-size: 0.72rem; color: var(--accent-green); margin-left: 0.25rem;">(Tier ${r.old_tier} → ${r.new_tier})</span>` : '';
+          html += `<tr><td><strong>${r.player_name}</strong>${tierChange}</td><td><span class="pos-tag pos-${r.position}">${r.position}</span></td><td>${r.team || '—'}</td><td>#${r.old_rank}</td><td>#${r.new_rank}</td><td><span style="color: var(--accent-green); font-weight: 600;">+${r.rank_delta} spots</span></td></tr>`;
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+
+      // Top Fallers
+      html += '<div style="margin-bottom: 1.25rem;">';
+      html += '<div style="font-weight: 600; font-size: 0.9rem; color: var(--accent-amber); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">📉 TOP 5 BIGGEST FALLERS (Rank Dropped)</div>';
+      if (fallers.length === 0) {
+        html += '<div style="color: var(--text-muted); font-size: 0.82rem;">No significant rank drops.</div>';
+      } else {
+        html += '<table class="data-table" style="font-size: 0.8rem;"><thead><tr><th>Player</th><th>Pos</th><th>Team</th><th>Old Rank</th><th>New Rank</th><th>Shift</th></tr></thead><tbody>';
+        fallers.forEach(f => {
+          const tierChange = (f.old_tier && f.new_tier && f.old_tier !== f.new_tier) ? `<span style="font-size: 0.72rem; color: var(--accent-amber); margin-left: 0.25rem;">(Tier ${f.old_tier} → ${f.new_tier})</span>` : '';
+          html += `<tr><td><strong>${f.player_name}</strong>${tierChange}</td><td><span class="pos-tag pos-${f.position}">${f.position}</span></td><td>${f.team || '—'}</td><td>#${f.old_rank}</td><td>#${f.new_rank}</td><td><span style="color: var(--accent-amber); font-weight: 600;">${f.rank_delta} spots</span></td></tr>`;
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+
+      // Rules Delta
+      if (addedRules.length > 0 || removedRules.length > 0) {
+        html += '<div style="margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">';
+        html += '<div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem;">📋 Strategy Rule Changes:</div>';
+        addedRules.forEach(r => {
+          html += `<div style="font-size: 0.8rem; color: var(--accent-green); margin-bottom: 0.2rem;">[+] ADDED: ${r}</div>`;
+        });
+        removedRules.forEach(r => {
+          html += `<div style="font-size: 0.8rem; color: var(--accent-red); margin-bottom: 0.2rem;">[-] REMOVED: ${r}</div>`;
+        });
+        html += '</div>';
+      }
+
+      html += `<div style="font-size: 0.78rem; color: var(--text-muted); text-align: right;">Total affected players: ${diff.total_players_affected || 0} | Strategy rule deltas: ${diff.total_rules_affected || 0}</div>`;
+
+      contentEl.innerHTML = html;
+      modalEl.style.display = 'flex';
+    }
+
+    function closeDiffModal() {
+      const modalEl = document.getElementById('cheatsheet-diff-modal');
+      if (modalEl) modalEl.style.display = 'none';
+    }
+
+    async function applyDiffChanges() {
+      closeDiffModal();
+      await submitCheatsheet();
+    }
+
     let isCliffSimulated = false;
     let isTierRollSimulated = false;
     let isCliffExpanded = false;
@@ -1404,6 +1524,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       }
       fetchDraftState();
     }
+
 
     function toggleCliffExpanded() {
       isCliffExpanded = !isCliffExpanded;
@@ -2252,12 +2373,16 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       }
 
       fetchDraftState();
+      checkQAConfig();
 
       fetchLineupOptimization();
       fetchWaiverRecommendations();
       fetchCheatsheet();
       initWebSocket();
-      autoRefreshInterval = setInterval(fetchDraftState, 4000);
+      autoRefreshInterval = setInterval(() => {
+        fetchDraftState();
+        checkQAConfig();
+      }, 4000);
 
       // Restore active tab from localStorage if available
       try {
@@ -2268,7 +2393,31 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       } catch (e) {}
     });
 
-
   </script>
+
+  <!-- Cheatsheet Dry-Run Diff Preview Modal -->
+  <div id="cheatsheet-diff-modal" style="display: none; position: fixed; inset: 0; background: rgba(10, 15, 29, 0.85); backdrop-filter: blur(6px); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; max-width: 720px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+        <div>
+          <h3 style="font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <span>📊</span> Cheatsheet Impact Preview (Dry Run)
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.25rem 0 0 0;">Comparing candidate rankings against active baseline without modifying production data.</p>
+        </div>
+        <button class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.85rem;" onclick="closeDiffModal()">✕</button>
+      </div>
+
+      <div id="diff-modal-content">
+        <!-- Injected dynamic content -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <button class="btn btn-secondary" onclick="closeDiffModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="applyDiffChanges()">💾 Apply Changes to Active Draft</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
+

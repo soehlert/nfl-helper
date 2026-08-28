@@ -11,6 +11,7 @@ from nfl_helper.adapters import get_adapter_for_profile
 from nfl_helper.api.draft_poller import poller_registry
 from nfl_helper.api.ws_manager import ws_manager
 from nfl_helper.core.cheatsheet import apply_cheatsheet_context, parse_cheatsheet_content, parse_pdf_cheatsheet
+from nfl_helper.core.cheatsheet_diff import compute_cheatsheet_diff
 from nfl_helper.core.db import (
     get_active_cheatsheet,
     get_cheatsheet_history,
@@ -21,6 +22,7 @@ from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.core.lineup_optimizer import solve_optimal_lineup
 from nfl_helper.core.waiver_engine import generate_waiver_recommendations
 from nfl_helper.models.cheatsheet import CheatsheetContext
+from nfl_helper.models.diff import CheatsheetDiffReport
 from nfl_helper.models.draft import CliffType, DraftPick, DraftState, TierCliffWarning
 from nfl_helper.models.player import Player, Position
 from nfl_helper.models.roster import (
@@ -50,12 +52,15 @@ app.add_middleware(
 
 FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "frontend" / "index.html"
 
+
 # Initialize SQLite database schema
 init_db()
 
-
 # Persistent active cheatsheet store loaded directly from SQLite
 _ACTIVE_CHEATSHEET: CheatsheetContext | None = get_active_cheatsheet()
+
+# Runtime QA simulation mode flag (controllable via CLI admin)
+_QA_MODE: bool = False
 
 
 class CheatsheetUploadRequest(BaseModel):
@@ -63,6 +68,12 @@ class CheatsheetUploadRequest(BaseModel):
 
     text: str
     name: str = "Pasted Cheatsheet"
+
+
+class QAModeRequest(BaseModel):
+    """Request model for toggling QA simulation mode via CLI."""
+
+    enabled: bool
 
 
 class ClaimInviteRequest(BaseModel):
@@ -84,6 +95,38 @@ async def serve_index() -> HTMLResponse:
 async def health_check() -> dict[str, str]:
     """Health check endpoint confirming application status."""
     return {"status": "ok", "version": "0.1.0"}
+
+
+@app.get("/api/config")
+async def get_app_config() -> dict[str, Any]:
+    """Fetch runtime configuration and feature gating flags."""
+    return {
+        "qa_mode": _QA_MODE,
+        "version": "0.1.0",
+    }
+
+
+@app.post("/api/admin/qa-mode")
+async def set_qa_mode(payload: QAModeRequest) -> dict[str, Any]:
+    """Admin endpoint called by CLI to toggle QA simulation mode at runtime."""
+    global _QA_MODE
+    _QA_MODE = payload.enabled
+    logger.info("QA Mode set to %s via CLI admin control", _QA_MODE)
+    return {"qa_mode": _QA_MODE, "status": "updated"}
+
+
+@app.post("/api/cheatsheet/diff", response_model=CheatsheetDiffReport)
+async def preview_cheatsheet_diff(payload: CheatsheetUploadRequest) -> CheatsheetDiffReport:
+    """Generate dry-run diff report of candidate cheatsheet against active baseline without DB writes."""
+    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
+    candidate = parse_cheatsheet_content(payload.text)
+    active = _ACTIVE_CHEATSHEET or get_active_cheatsheet()
+    return compute_cheatsheet_diff(
+        active_context=active,
+        candidate_context=candidate,
+        player_pool=_SAMPLE_PLAYERS,
+        top_n=5,
+    )
 
 
 @app.get("/api/league/teams")
@@ -129,6 +172,10 @@ async def get_draft_state(
     simulate_tier_roll: bool = False,
 ) -> DraftState:
     """Fetch the current snapshot of the draft board with cliff warnings and VORP suggestions."""
+    if not _QA_MODE:
+        simulate_cliff = False
+        simulate_tier_roll = False
+
     if session_id:
         poller = poller_registry.get(session_id)
         if poller and poller.latest_state:

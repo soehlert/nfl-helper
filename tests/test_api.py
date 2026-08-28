@@ -35,19 +35,29 @@ def test_draft_state_endpoint() -> None:
     assert "cliff_warnings" in data
     assert "tiers_by_position" in data
 
-    # Test simulate_cliff query parameter
+    # In standard mode (QA mode off), simulation params are ignored for safety
+    client.post("/api/admin/qa-mode", json={"enabled": False})
+    res_std = client.get("/api/draft/state?simulate_cliff=true")
+    assert res_std.status_code == 200
+    assert len(res_std.json()["cliff_warnings"]) == 0
+
+    # In QA mode, simulation params execute
+    client.post("/api/admin/qa-mode", json={"enabled": True})
     res_cliff = client.get("/api/draft/state?simulate_cliff=true")
     assert res_cliff.status_code == 200
     cliff_data = res_cliff.json()
     assert len(cliff_data["cliff_warnings"]) > 0
     assert cliff_data["cliff_warnings"][0]["position"] == "RB"
 
-    # Test simulate_tier_roll query parameter
+    # Test simulate_tier_roll query parameter in QA mode
     res_roll = client.get("/api/draft/state?simulate_tier_roll=true")
     assert res_roll.status_code == 200
     roll_data = res_roll.json()
     assert roll_data["tiers_by_position"]["QB"][0]["tier_num"] == 2
     assert roll_data["tiers_by_position"]["RB"][0]["tier_num"] == 2
+
+    # Reset QA mode to off
+    client.post("/api/admin/qa-mode", json={"enabled": False})
 
 
 def test_lineup_optimize_endpoint() -> None:
