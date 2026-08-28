@@ -2265,8 +2265,9 @@
     function renderDraftState(data) {
       if (!data) return;
       if (data.current_pick) {
-        document.getElementById('overall-pick-num').textContent = '#' + data.current_pick;
-        document.getElementById('current-round-num').textContent = 'Round ' + data.current_round;
+        const isComplete = data.is_complete || (data.total_teams && data.total_rounds && data.current_pick >= data.total_teams * data.total_rounds && data.picks_until_user_turn === 0);
+        document.getElementById('overall-pick-num').textContent = isComplete ? 'COMPLETE' : '#' + data.current_pick;
+        document.getElementById('current-round-num').textContent = isComplete ? `Round ${data.total_rounds || 15} / ${data.total_rounds || 15}` : 'Round ' + data.current_round;
         const formatLabel = document.getElementById('draft-format-label');
         if (formatLabel && data.total_teams) {
           formatLabel.textContent = `${data.total_teams} Teams • ${data.total_rounds || 15} Rds`;
@@ -2274,7 +2275,11 @@
         const userSlotLabel = document.getElementById('user-slot-label');
         const slot = data.user_draft_slot || 1;
         const picksUntilElem = document.getElementById('picks-until-turn-val');
-        if (data.is_user_on_the_clock || data.picks_until_user_turn === 0) {
+        if (isComplete) {
+          picksUntilElem.textContent = 'DRAFT COMPLETE';
+          picksUntilElem.style.color = 'var(--accent-green)';
+          if (userSlotLabel) userSlotLabel.textContent = `All ${data.total_teams * (data.total_rounds || 15)} Picks Made`;
+        } else if (data.is_user_on_the_clock || data.picks_until_user_turn === 0) {
           picksUntilElem.textContent = 'ON THE CLOCK!';
           picksUntilElem.style.color = 'var(--accent-green)';
           if (userSlotLabel) userSlotLabel.textContent = `Draft Slot #${slot} (Pick Now)`;
@@ -2283,7 +2288,7 @@
           picksUntilElem.style.color = 'var(--accent-amber)';
           if (userSlotLabel) userSlotLabel.textContent = `Draft Slot #${slot}`;
         }
-        document.getElementById('snake-turn-gap-val').textContent = data.snake_turn_gap + ' picks';
+        document.getElementById('snake-turn-gap-val').textContent = isComplete ? '0 picks' : (data.snake_turn_gap + ' picks');
 
         const timestampElem = document.getElementById('live-feed-timestamp');
         if (timestampElem) {

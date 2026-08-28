@@ -584,8 +584,13 @@ def build_draft_state(
         total_rounds=total_rounds,
     )
 
-    current_round = (overall_pick - 1) // total_teams + 1
     is_complete = overall_pick > (total_teams * total_rounds)
+    current_round = min(total_rounds, (overall_pick - 1) // total_teams + 1)
+    if is_complete:
+        picks_until_turn = 0
+        turn_gap = 0
+        on_the_clock = False
+        cliffs = []
 
     return DraftState(
         league_id=league_id,
@@ -593,7 +598,7 @@ def build_draft_state(
         is_complete=is_complete,
         total_rounds=total_rounds,
         total_teams=total_teams,
-        current_pick=overall_pick,
+        current_pick=min(total_teams * total_rounds, overall_pick) if is_complete else overall_pick,
         current_round=current_round,
         user_draft_slot=user_draft_slot,
         picks_until_user_turn=picks_until_turn,

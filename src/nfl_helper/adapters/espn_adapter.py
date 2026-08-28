@@ -146,14 +146,16 @@ class ESPNAdapter(BaseLeagueAdapter):
         total_teams = getattr(getattr(league, "settings", None), "team_count", len(league.teams) or 12)
         total_rounds = getattr(getattr(league, "settings", None), "draft_rounds", 16)
         current_pick = len(picks_list) + 1
-        current_round = ((current_pick - 1) // total_teams) + 1
+        is_complete = len(picks_list) >= (total_teams * total_rounds)
+        current_round = min(total_rounds, ((current_pick - 1) // total_teams) + 1)
         by_pos = self.get_available_players_by_position(limit=150)
 
         return DraftState(
             league_id=self.profile.league_id,
+            is_complete=is_complete,
             total_teams=total_teams,
             total_rounds=total_rounds,
-            current_pick=current_pick,
+            current_pick=min(total_teams * total_rounds, current_pick) if is_complete else current_pick,
             current_round=current_round,
             user_draft_slot=self.profile.user_draft_slot,
             recent_picks=picks_list,
