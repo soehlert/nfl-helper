@@ -5,9 +5,13 @@ import math
 import httpx
 
 from nfl_helper.adapters.base import BaseLeagueAdapter
-from nfl_helper.core.season_utils import get_current_nfl_season_year
+from nfl_helper.core.season_utils import (
+    get_current_nfl_season_year,
+    get_team_bye_week,
+    is_dome_stadium,
+)
 from nfl_helper.models.draft import DraftPick, DraftState
-from nfl_helper.models.player import InjuryStatus, Player, Position
+from nfl_helper.models.player import GameEnvironment, InjuryStatus, Player, Position
 from nfl_helper.models.roster import TeamRoster
 from nfl_helper.models.session import LeagueProfile
 
@@ -103,6 +107,10 @@ class SleeperAdapter(BaseLeagueAdapter):
         else:
             proj_pts = raw_proj
 
+        bye_wk = get_team_bye_week(team)
+        is_dome = is_dome_stadium(team)
+        env = GameEnvironment(stadium_type="DOME" if is_dome else "OUTDOOR", is_dome=is_dome)
+
         return Player(
             id=str(player_id),
             name=full_name,
@@ -110,9 +118,11 @@ class SleeperAdapter(BaseLeagueAdapter):
             team=team,
             projected_points=round(proj_pts, 2),
             adp=adp_val,
+            bye_week=bye_wk,
             injury_status=injury_enum,
             eligible_slots=slots,
             is_starter=is_starter,
+            game_context=env,
         )
 
     def get_league_info(self) -> LeagueProfile:

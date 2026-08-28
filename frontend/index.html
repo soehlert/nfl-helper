@@ -1551,32 +1551,55 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         const adpStr = p.adp ? p.adp.toFixed(1) : (p.cheatsheet_rank ? p.cheatsheet_rank.toFixed(0) : '—');
         const byeStr = p.bye_week ? `Wk ${p.bye_week}` : '—';
 
-        let injuryBadge = '';
+        let injuryPill = '';
         const isInjured = p.injury_status && p.injury_status !== 'ACTIVE';
         if (isInjured || p.cheatsheet_notes) {
           const statusText = isInjured ? p.injury_status : 'NOTE';
           const descText = p.cheatsheet_notes ? `: ${p.cheatsheet_notes}` : '';
-          const badgeBg = isInjured ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)';
+          const badgeBg = isInjured ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)';
           const badgeColor = isInjured ? '#f87171' : '#fbbf24';
-          const badgeBorder = isInjured ? 'rgba(239, 68, 68, 0.4)' : 'rgba(245, 158, 11, 0.4)';
-          injuryBadge = `<span class="badge" style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; font-size: 0.68rem; margin-left: 0.4rem; padding: 0.12rem 0.4rem; border-radius: 4px; font-weight: 600;">🚑 ${statusText}${descText}</span>`;
+          const badgeBorder = isInjured ? 'rgba(239, 68, 68, 0.35)' : 'rgba(245, 158, 11, 0.35)';
+          injuryPill = `<div style="font-size: 0.65rem; color: ${badgeColor}; background: ${badgeBg}; border: 1px solid ${badgeBorder}; padding: 0.1rem 0.35rem; border-radius: 3px; display: inline-block; margin-top: 0.2rem; font-weight: 600; text-transform: uppercase;">${statusText}${descText}</div>`;
         }
+
+        // Parse structured multi-line reason rows
+        const reasonParts = (s.reason || '').split(/\n/).map(r => r.trim()).filter(Boolean);
+        let reasonRowsHtml = '<div style="display: flex; flex-direction: column; gap: 0.18rem; font-size: 0.78rem; line-height: 1.25;">';
+        reasonParts.forEach((part, idx) => {
+          let rowColor = 'var(--text-muted)';
+          let fontWeight = '400';
+          if (idx === 0) {
+            rowColor = 'var(--text-main)';
+            fontWeight = '600';
+          } else if (part.includes('Scarcity') || part.includes('Cliff')) {
+            rowColor = 'var(--accent-amber)';
+          } else if (part.includes('discount')) {
+            rowColor = 'var(--accent-green)';
+          } else if (part.includes('reach')) {
+            rowColor = 'var(--text-muted)';
+          } else if (part.includes('Dome')) {
+            rowColor = 'var(--accent-blue)';
+          }
+          reasonRowsHtml += `<div style="color: ${rowColor}; font-weight: ${fontWeight};">${part}</div>`;
+        });
+        reasonRowsHtml += '</div>';
 
         sugHtml += `
           <tr>
             <td><strong>${s.rank}</strong></td>
             <td><span class="pos-tag ${posClass}">${p.position}</span></td>
             <td>${team}</td>
-            <td><div style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem;"><strong>${p.name}</strong>${injuryBadge}</div></td>
+            <td><div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem;"><strong>${p.name}</strong>${injuryPill}</div></td>
             <td>${tierStr}</td>
             <td>${ptsStr}</td>
             <td>${adpStr}</td>
             <td>${byeStr}</td>
-            <td class="reason-text">${s.reason}</td>
+            <td>${reasonRowsHtml}</td>
           </tr>`;
       });
       sugTbody.innerHTML = sugHtml;
     }
+
 
 
     function renderDraftState(data) {

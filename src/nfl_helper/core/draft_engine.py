@@ -184,51 +184,50 @@ def _build_suggestion_reason(
     top_tier_info: dict[str, tuple[int, int, float]],
     rule_note: str | None = None,
 ) -> str:
-    """Generate concise, factual, and informative multi-part justification for draft recommendation."""
-    reasons: list[str] = []
+    """Generate concise, factual 4-row structured justification for draft recommendation."""
+    lines: list[str] = []
     p_tier = player.cheatsheet_tier or player.tier or 1
 
-    # 1. VORP & Tier tag
-    if vorp > 0:
-        reasons.append(f"+{vorp:.1f} VORP (Tier {p_tier} {player.position})")
-    else:
-        reasons.append(f"Tier {p_tier} {player.position} ({player.projected_points:.1f} pts)")
-
-    # 2. Strategy Rule context if active
+    # Row 1: VORP & Strategy
     if rule_note:
-        reasons.append(rule_note)
+        lines.append(f"{rule_note} (+{vorp:.1f} VORP)")
+    elif vorp > 0:
+        lines.append(f"+{vorp:.1f} VORP (Tier {p_tier} {player.position})")
+    else:
+        lines.append(f"Tier {p_tier} {player.position} ({player.projected_points:.1f} pts)")
 
-    # 3. Positional Scarcity / Tier State
+    # Row 2: Tier Availability & Scarcity
     pos_info = top_tier_info.get(str(player.position))
     if pos_info:
         top_num, remaining_in_top, tier_drop = pos_info
         if p_tier == top_num:
             if remaining_in_top <= 2 and tier_drop >= 1.2:
-                reasons.append(f"Tier {top_num} Scarcity ({remaining_in_top} left before -{tier_drop:.1f} pt drop)")
-            elif remaining_in_top > 2:
-                reasons.append(f"{remaining_in_top} Tier {top_num} available")
+                lines.append(f"Tier {top_num} Scarcity: {remaining_in_top} left (-{tier_drop:.1f} pt drop)")
+            else:
+                lines.append(f"{remaining_in_top} Tier {top_num} available")
+        else:
+            lines.append(f"Tier {p_tier} ({player.projected_points:.1f} pts)")
+    elif cliff:
+        lines.append(f"Cliff Defense ({cliff.players_remaining} left)")
 
-    # 4. Cliff Defense if active
-    if cliff:
-        reasons.append(f"Cliff Defense ({cliff.players_remaining} left)")
-
-    # 5. Injury Alert if player is injured or has notes
-    raw_inj = player.injury_status.value if hasattr(player.injury_status, "value") else str(player.injury_status)
-    if raw_inj != "ACTIVE" or player.cheatsheet_notes:
-        inj_desc = player.cheatsheet_notes or raw_inj
-        reasons.append(f"🚑 Injury: {inj_desc}")
-
-    # 6. ADP Value
+    # Row 3: ADP Value / Reach
     if player.adp:
         discount = overall_pick - player.adp
         if discount >= 2.0:
-            reasons.append(f"+{discount:.1f} pick discount vs {player.adp:.1f} ADP")
+            lines.append(f"+{discount:.1f} pick discount vs {player.adp:.1f} ADP")
         elif discount <= -3.0:
-            reasons.append(f"ADP {player.adp:.1f} (-{abs(discount):.1f} reach)")
+            lines.append(f"ADP {player.adp:.1f} (-{abs(discount):.1f} reach)")
         else:
-            reasons.append(f"ADP {player.adp:.1f}")
+            lines.append(f"ADP {player.adp:.1f}")
 
-    return " • ".join(reasons)
+    # Row 4: Stadium Environment (Dome / Outdoor)
+    is_dome = player.game_context and player.game_context.is_dome
+    if is_dome:
+        lines.append("Dome Stadium (Indoor Climate)")
+    elif player.team and player.team != "FA":
+        lines.append(f"Outdoor Stadium ({player.team})")
+
+    return "\n".join(lines)
 
 
 def generate_draft_suggestions(
