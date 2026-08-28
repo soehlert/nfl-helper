@@ -141,11 +141,11 @@ def _evaluate_strategy_rule_adjustments(
                 t_name, t_rnd = name_target_match.group(1).lower(), int(name_target_match.group(2))
                 if t_name in player.name.lower():
                     if current_round >= t_rnd:
-                        delta += 1.8
+                        delta += 1.5
                         specific_notes.append(f"Strategy Target: {player.name} in Rd {t_rnd}")
                     else:
                         rounds_early = t_rnd - current_round
-                        delta -= 0.3 + (rounds_early * 0.15)
+                        delta -= rounds_early * 0.6
                         specific_notes.append(f"Strategy Hint: Target {player.name} in Rd {t_rnd}")
                     continue
 
@@ -163,7 +163,7 @@ def _evaluate_strategy_rule_adjustments(
                         specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
                 elif current_round < min_rnd:
                     rounds_early = min_rnd - current_round
-                    delta -= 0.8 + (rounds_early * 0.40)
+                    delta -= rounds_early * 0.6
                     specific_notes.append(f"Strategy Hint: {pos_rule.position} targeted in Rd {min_rnd}+")
 
             # Check if this rule defines specific target tiers (e.g. tiers 3-4 for late-round approach)
@@ -178,7 +178,7 @@ def _evaluate_strategy_rule_adjustments(
                     specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
 
     # Clamp total strategy delta to prevent extreme distortions
-    clamped_delta = max(-2.5, min(2.5, delta))
+    clamped_delta = round(max(-2.5, min(2.5, delta)), 2)
     final_note = specific_notes[0] if specific_notes else (general_notes[0] if general_notes else None)
     return clamped_delta, final_note
 

@@ -3,6 +3,7 @@
 import time
 
 from nfl_helper.core.draft_engine import (
+    _evaluate_strategy_rule_adjustments,
     build_draft_state,
     calculate_lookahead,
     calculate_snake_pick_owner,
@@ -261,3 +262,48 @@ def test_cheatsheet_note_calibrated_board_movements() -> None:
     sleeper_ranks = {s.player.id: s.rank for s in cand_sleeper.top_suggestions}
     sleeper_shift = base_ranks["p_50"] - sleeper_ranks["p_50"]
     assert 5 <= sleeper_shift <= 9
+
+
+def test_strategy_rule_round_deferral_and_activation() -> None:
+    """Verify strategy rules apply clean deferral in early rounds and activate boosts in target rounds."""
+    from nfl_helper.models.cheatsheet import CheatsheetContext, PositionalStrategyRule
+
+    ctx = CheatsheetContext(
+        positional_strategy=[
+            PositionalStrategyRule(
+                position="TE",
+                target_rounds=[3, 4, 5],
+                top_n_target=4,
+                rule_description="Target top 4 TE in rounds 3-5",
+            ),
+            PositionalStrategyRule(
+                position="QB",
+                target_rounds=[4],
+                rule_description="Get Allen in round 4",
+            ),
+        ]
+    )
+
+    p_te = Player(id="te1", name="Brock Bowers", position=Position.TE, team="LV", projected_points=16.0, adp=18.1)
+    p_qb = Player(id="qb1", name="Josh Allen", position=Position.QB, team="BUF", projected_points=23.3, adp=27.4)
+
+    # In Round 1 (2 rounds early for TE, 3 rounds early for Allen)
+    d_te_r1, note_te_r1 = _evaluate_strategy_rule_adjustments(p_te, ctx, current_round=1)
+    d_qb_r1, note_qb_r1 = _evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=1)
+    assert d_te_r1 == -1.2  # 2 * -0.6
+    assert d_qb_r1 == -1.8  # 3 * -0.6
+    assert "Strategy Hint: TE targeted in Rd 3+" in (note_te_r1 or "")
+    assert "Strategy Hint: Target Josh Allen in Rd 4" in (note_qb_r1 or "")
+
+    # In Round 3 (Target round for TE, 1 round early for Allen)
+    d_te_r3, note_te_r3 = _evaluate_strategy_rule_adjustments(p_te, ctx, current_round=3)
+    d_qb_r3, note_qb_r3 = _evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=3)
+    assert d_te_r3 == 1.5  # Target round activation bonus
+    assert d_qb_r3 == -0.6  # 1 * -0.6
+    assert "Strategy Target: Top TE in Rd 3" in (note_te_r3 or "")
+    assert "Strategy Hint: Target Josh Allen in Rd 4" in (note_qb_r3 or "")
+
+    # In Round 4 (Target round for Allen)
+    d_qb_r4, note_qb_r4 = _evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=4)
+    assert d_qb_r4 == 1.5  # Target round activation bonus
+    assert "Strategy Target: Josh Allen in Rd 4" in (note_qb_r4 or "")
