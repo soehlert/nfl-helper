@@ -590,66 +590,65 @@
 
   <header>
     <div class="brand" style="display: flex; align-items: center; gap: 0.75rem;">
-      <svg class="brand-logo" width="340" height="54" viewBox="0 0 380 62" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow: visible;" aria-label="Craftroom Draftroom">
+      <svg class="brand-logo" width="370" height="62" viewBox="0 0 390 66" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow: visible;" aria-label="Craftroom Draftroom">
         <title>Craftroom Draftroom</title>
         <defs>
-          <!-- Dual-Stage Neon Glowing Filters -->
-          <filter id="neonAmberGlow" x="-25%" y="-35%" width="150%" height="170%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="5.5" result="wideBlur" />
-            <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="tightBlur" />
-            <feMerge>
-              <feMergeNode in="wideBlur" />
-              <feMergeNode in="tightBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-
-          <linearGradient id="neonGoldTube" x1="0%" y1="0%" x2="100%" y2="0%">
+          <!-- Crisp Neon / Vintage Sign Color Gradients -->
+          <linearGradient id="neonCyan" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#e0f2fe" />
+            <stop offset="40%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#0284c7" />
+          </linearGradient>
+          <linearGradient id="neonAmber" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stop-color="#fffbeb" />
-            <stop offset="30%" stop-color="#fde047" />
-            <stop offset="70%" stop-color="#f59e0b" />
-            <stop offset="100%" stop-color="#ea580c" />
+            <stop offset="35%" stop-color="#fde047" />
+            <stop offset="75%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#d97706" />
           </linearGradient>
-
-          <linearGradient id="neonCreamTube" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#ffffff" />
-            <stop offset="50%" stop-color="#fef08a" />
-            <stop offset="100%" stop-color="#facc15" />
+          <linearGradient id="swooshGrad" x1="100%" y1="0%" x2="0%" y2="0%">
+            <stop offset="0%" stop-color="#f59e0b" />
+            <stop offset="50%" stop-color="#fbbf24" />
+            <stop offset="100%" stop-color="#38bdf8" />
           </linearGradient>
+          <!-- Sharp Crisp 3D Bevel Shadow -->
+          <filter id="crispBevel" x="-10%" y="-10%" width="125%" height="125%">
+            <feDropShadow dx="2.5" dy="3.5" stdDeviation="0" flood-color="#050914" flood-opacity="0.95" />
+          </filter>
         </defs>
 
-        <!-- Upward Angled Neon Sign (-5.0deg tilt) -->
-        <g transform="rotate(-5.0, 190, 31)">
+        <!-- Steep Vintage Slant (-8.5deg tilt upward) -->
+        <g transform="rotate(-8.5, 195, 33)">
           
-          <!-- 1. Ambient Background Neon Glow (Deep Vibrant Amber/Orange) -->
-          <g filter="url(#neonAmberGlow)" stroke="#f97316" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
-            <text x="14" y="32" font-family="'SignPainter', 'Brush Script MT', 'Snell Roundhand', 'Caveat', cursive, sans-serif" font-size="33" font-weight="bold" font-style="italic" fill="none">Craftroom</text>
-            <text x="170" y="32" font-family="'SignPainter', 'Brush Script MT', 'Snell Roundhand', 'Caveat', cursive, sans-serif" font-size="33" font-weight="bold" font-style="italic" fill="none">Draftroo</text>
-            <!-- Continuous m right leg flowing seamlessly into looping underline -->
-            <path d="M 296,32 L 296,22 C 296,18 300,16 304,16 C 308,16 311,19 311,23 L 311,32 M 311,23 C 311,19 315,16 319,16 C 324,16 327,19 327,24 L 327,32 C 327,36 333,40 340,41 C 348,42 352,47 349,52 C 344,58 325,60 292,60 C 208,60 96,56 16,46 C 8,45 8,41 16,41 C 96,51 208,55 292,55 C 320,55 337,53 339,49 C 341,45 335,43 329,42 C 321,40 316,36 316,30" fill="none" />
+          <!-- 1. Deep 3D Charcoal Extrusion Layer (Back Shadow) -->
+          <g fill="#070c18" stroke="#070c18" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+            <text x="12" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="31" font-weight="900" font-style="italic" letter-spacing="-0.02em">
+              <tspan fill="#070c18">Craftroom</tspan>
+              <tspan dx="10" fill="#070c18">Draftroom</tspan>
+            </text>
+            <!-- Connected M right leg flowing down and swooping back under the entire mark -->
+            <path d="M 353,28 C 358,31, 362,38, 355,44 C 342,50, 270,53, 14,44 C 6,43, 6,39, 14,39 C 270,47, 340,44, 347,39 C 350,37, 349,32, 346,28 Z" fill="#070c18" />
           </g>
 
-          <!-- 2. Mid Neon Glass Tube (Golden Amber) -->
-          <g stroke="url(#neonGoldTube)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-            <text x="14" y="32" font-family="'SignPainter', 'Brush Script MT', 'Snell Roundhand', 'Caveat', cursive, sans-serif" font-size="33" font-weight="bold" font-style="italic" fill="none">Craftroom</text>
-            <text x="170" y="32" font-family="'SignPainter', 'Brush Script MT', 'Snell Roundhand', 'Caveat', cursive, sans-serif" font-size="33" font-weight="bold" font-style="italic" fill="none">Draftroo</text>
-            <path d="M 296,32 L 296,22 C 296,18 300,16 304,16 C 308,16 311,19 311,23 L 311,32 M 311,23 C 311,19 315,16 319,16 C 324,16 327,19 327,24 L 327,32 C 327,36 333,40 340,41 C 348,42 352,47 349,52 C 344,58 325,60 292,60 C 208,60 96,56 16,46 C 8,45 8,41 16,41 C 96,51 208,55 292,55 C 320,55 337,53 339,49 C 341,45 335,43 329,42 C 321,40 316,36 316,30" fill="none" />
+          <!-- 2. Mid Shadow Accent Layer (Warm Dark Gold Bevel) -->
+          <g fill="#78350f" stroke="#78350f" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+            <text x="10.5" y="32.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="31" font-weight="900" font-style="italic" letter-spacing="-0.02em">
+              <tspan fill="#0369a1">Craftroom</tspan>
+              <tspan dx="10" fill="#92400e">Draftroom</tspan>
+            </text>
+            <path d="M 351,27 C 356,30, 360,37, 353,43 C 340,49, 268,52, 12,43 C 4,42, 4,38, 12,38 C 268,46, 338,43, 345,38 C 348,36, 347,31, 344,27 Z" fill="#92400e" />
           </g>
 
-          <!-- 3. Core Hot White Neon Tube Filament -->
-          <g stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.96">
-            <text x="14" y="32" font-family="'SignPainter', 'Brush Script MT', 'Snell Roundhand', 'Caveat', cursive, sans-serif" font-size="33" font-weight="bold" font-style="italic" fill="none">Craftroom</text>
-            <text x="170" y="32" font-family="'SignPainter', 'Brush Script MT', 'Snell Roundhand', 'Caveat', cursive, sans-serif" font-size="33" font-weight="bold" font-style="italic" fill="none">Draftroo</text>
-            <path d="M 296,32 L 296,22 C 296,18 300,16 304,16 C 308,16 311,19 311,23 L 311,32 M 311,23 C 311,19 315,16 319,16 C 324,16 327,19 327,24 L 327,32 C 327,36 333,40 340,41 C 348,42 352,47 349,52 C 344,58 325,60 292,60 C 208,60 96,56 16,46 C 8,45 8,41 16,41 C 96,51 208,55 292,55 C 320,55 337,53 339,49 C 341,45 335,43 329,42 C 321,40 316,36 316,30" fill="none" />
+          <!-- 3. Crisp Foreground Typography with Electric Cyan & Golden Amber + Connected M Swoosh -->
+          <g filter="url(#crispBevel)">
+            <text x="9" y="31" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="31" font-weight="900" font-style="italic" letter-spacing="-0.02em">
+              <tspan fill="url(#neonCyan)">Craftroom</tspan>
+              <tspan dx="10" fill="url(#neonAmber)">Draftroom</tspan>
+            </text>
+            
+            <!-- The right leg of M in Draftroom seamlessly sweeping down and looping back across into the bold underline -->
+            <path d="M 350,26 C 355,29, 359,36, 352,42 C 339,48, 267,51, 10,42 C 2,41, 2,37, 10,37 C 267,45, 337,42, 344,37 C 347,35, 346,30, 343,26 Z" fill="url(#swooshGrad)" stroke="#fef08a" stroke-width="0.75" />
           </g>
 
-          <!-- 4. Subtle Football Laces on Neon Underline Tube -->
-          <line x1="152" y1="50" x2="152" y2="56" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" opacity="0.95" />
-          <line x1="158" y1="50" x2="158" y2="56" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" opacity="0.95" />
-          <line x1="164" y1="50" x2="164" y2="56" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" opacity="0.95" />
-
-          <!-- 5. Neon Brewery Text Tagline -->
-          <text x="52" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="6.8" font-weight="900" fill="#fde047" letter-spacing="1.8" opacity="0.95">★ ON TAP • EST. 2026 ★</text>
         </g>
       </svg>
       <span id="platform-badge" class="badge badge-espn">ESPN</span>
