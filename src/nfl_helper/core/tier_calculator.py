@@ -72,10 +72,48 @@ def _cluster_hybrid(players: list[Player], position: str) -> list[PlayerTier]:
 def cluster_position_tiers(
     players: list[Player], position: str, cheatsheet_context: CheatsheetContext | None = None
 ) -> list[PlayerTier]:
-    """Group available position players into ordered tiers using hybrid clustering."""
+    """Group available position players into ordered tiers using cheatsheet tiers or statistical clustering."""
     pos_players = [p for p in players if p.position == position]
     if not pos_players:
         return []
+
+    # If players have explicit cheatsheet tier assignments, group directly by cheatsheet tier
+    cs_grouped: dict[int, list[Player]] = {}
+    unranked: list[Player] = []
+    for p in pos_players:
+        if p.cheatsheet_tier is not None:
+            cs_grouped.setdefault(p.cheatsheet_tier, []).append(p)
+        else:
+            unranked.append(p)
+
+    if cs_grouped:
+        tiers: list[PlayerTier] = []
+        for t_num in sorted(cs_grouped.keys()):
+            plist = sorted(cs_grouped[t_num], key=lambda x: x.projected_points, reverse=True)
+            avg = sum(p.projected_points for p in plist) / len(plist)
+            tiers.append(
+                PlayerTier(
+                    tier_num=t_num,
+                    position=position,
+                    players=plist,
+                    avg_projected=round(avg, 2),
+                    count=len(plist),
+                )
+            )
+        if unranked:
+            next_t = max(cs_grouped.keys()) + 1
+            unranked_sorted = sorted(unranked, key=lambda x: x.projected_points, reverse=True)
+            avg = sum(p.projected_points for p in unranked_sorted) / len(unranked_sorted)
+            tiers.append(
+                PlayerTier(
+                    tier_num=next_t,
+                    position=position,
+                    players=unranked_sorted,
+                    avg_projected=round(avg, 2),
+                    count=len(unranked_sorted),
+                )
+            )
+        return tiers
 
     return _cluster_hybrid(pos_players, position)
 
