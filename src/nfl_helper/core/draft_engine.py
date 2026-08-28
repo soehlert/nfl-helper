@@ -21,8 +21,8 @@ _STARTER_DEPTH: dict[str, float] = {
 _POS_DEMAND_WEIGHT: dict[str, float] = {
     "RB": 1.0,
     "WR": 1.0,
-    "QB": 1.0,
-    "TE": 1.0,
+    "TE": 0.70,
+    "QB": 0.65,
     "K": 0.05,
     "D/ST": 0.05,
 }
@@ -202,18 +202,18 @@ def _build_suggestion_reason(
     if pos_info:
         top_num, remaining_in_top, tier_drop = pos_info
         if p_tier == top_num:
-            if remaining_in_top <= 2 and tier_drop >= 1.2:
+            if scarcity_bonus > 0:
                 lines.append(
                     f"+{t_pts:.1f} pts (Tier {top_num} Scarcity: {remaining_in_top} left before -{tier_drop:.1f} drop)"
                 )
             else:
-                lines.append(f"+{t_pts:.1f} pts (Tier {top_num} Value • {remaining_in_top} remaining)")
+                lines.append(f"+{tier_bonus:.1f} pts (Tier {top_num} Value • {remaining_in_top} remaining)")
         else:
-            lines.append(f"+{t_pts:.1f} pts (Tier {p_tier} • {player.projected_points:.1f} proj)")
+            lines.append(f"+{tier_bonus:.1f} pts (Tier {p_tier} • {player.projected_points:.1f} proj)")
     elif cliff:
         lines.append(f"+2.0 pts (Cliff Defense • {cliff.players_remaining} left)")
     else:
-        lines.append(f"+{t_pts:.1f} pts (Tier {p_tier})")
+        lines.append(f"+{tier_bonus:.1f} pts (Tier {p_tier})")
 
     # Row 3: ADP Market Context (Market Consensus Round & Pick / Value Steal)
     if player.adp:
@@ -282,12 +282,13 @@ def generate_draft_suggestions(
         cliff = cliff_by_pos.get(str(p.position))
         is_cliff_defense = cliff is not None and (cliff.current_tier == (p.cheatsheet_tier or p.tier or 1))
 
-        base_score = vorp + (p.projected_points * 0.005)
-        if is_cliff_defense:
-            base_score += 3.5 if cliff.cliff_risk == "CRITICAL" else 2.0
-
         demand_weight = _POS_DEMAND_WEIGHT.get(str(p.position), 1.0)
         p_tier = p.cheatsheet_tier or p.tier or 1
+
+        base_score = vorp + (p.projected_points * 0.005)
+        if is_cliff_defense:
+            base_score += 2.0 if cliff.cliff_risk == "CRITICAL" else 1.2
+
         tier_bonus = 0.0
         if p_tier == 1:
             tier_bonus = 1.5 * demand_weight
@@ -295,15 +296,24 @@ def generate_draft_suggestions(
             tier_bonus = 0.8 * demand_weight
         base_score += tier_bonus
 
-        # Positional Scarcity Weighting: if player is in top active tier and only 1-2 players remain
+        # Positional Scarcity Weighting: only when ADP is in reachable range for current pick
         scarcity_bonus = 0.0
         pos_info = top_tier_info.get(str(p.position))
-        if pos_info:
+        is_adp_in_range = (p.adp is None) or (p.adp <= overall_pick + 6)
+        if pos_info and is_adp_in_range:
             top_num, remaining_in_top, tier_drop = pos_info
             if p_tier == top_num and remaining_in_top <= 2 and tier_drop >= 1.2:
-                scarcity_val = 2.0 if remaining_in_top == 1 else 1.2
+                scarcity_val = 1.5 if remaining_in_top == 1 else 0.8
                 scarcity_bonus = scarcity_val * demand_weight
                 base_score += scarcity_bonus
+
+        # Market reach penalty / value steal bonus
+        if p.adp and p.adp > (overall_pick + 6):
+            reach_penalty = min(2.5, (p.adp - (overall_pick + 6)) * 0.08)
+            base_score -= reach_penalty
+        elif p.adp and overall_pick > p.adp:
+            steal_bonus = min(1.5, (overall_pick - p.adp) * 0.08)
+            base_score += steal_bonus
 
         # Strategy Rules Adjustment
         rule_delta, rule_note = _evaluate_strategy_rule_adjustments(p, cheatsheet_context, current_round)
@@ -313,7 +323,7 @@ def generate_draft_suggestions(
         if p.cheatsheet_rank:
             adp_delta = overall_pick - p.cheatsheet_rank
             if adp_delta > 0:
-                base_score += min(2.0, adp_delta * 0.1)
+                base_score += min(1.5, adp_delta * 0.08)
 
         raw_scored.append(
             (
@@ -334,9 +344,9 @@ def generate_draft_suggestions(
     base_scores = [item[0] for item in raw_scored]
 
     # Pass 2: Apply calibrated note adjustments
-    # Breakout: ~14-20 pick boost (target: 17 picks)
-    # Sleeper: ~9-14 pick boost (target: 12 picks)
-    # Bust: ~1-2 round drop (target: 18 picks)
+    # Breakout: ~10-12 picks in early rounds, ~16 picks in later rounds
+    # Sleeper: ~7-10 picks in early rounds, ~12 picks in later rounds
+    # Bust: ~12-14 picks in early rounds, ~18 picks in later rounds
     scored_players: list[
         tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]
     ] = []
@@ -346,15 +356,18 @@ def generate_draft_suggestions(
         if p.cheatsheet_notes:
             nl = p.cheatsheet_notes.lower()
             if "breakout" in nl:
-                target_idx = max(0, idx - 17)
+                shift = 10 if idx < 35 else 16
+                target_idx = max(0, idx - shift)
                 target_score = base_scores[target_idx]
                 note_delta = (target_score - b_score) + 0.0001
             elif "sleeper" in nl or "pick" in nl or "target" in nl:
-                target_idx = max(0, idx - 12)
+                shift = 7 if idx < 35 else 12
+                target_idx = max(0, idx - shift)
                 target_score = base_scores[target_idx]
                 note_delta = (target_score - b_score) + 0.0001
             elif "bust" in nl or "fade" in nl:
-                target_idx = min(len(base_scores) - 1, idx + 18)
+                shift = 12 if idx < 35 else 18
+                target_idx = min(len(base_scores) - 1, idx + shift)
                 target_score = base_scores[target_idx]
                 note_delta = (target_score - b_score) - 0.0001
 
