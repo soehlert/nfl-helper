@@ -159,3 +159,42 @@ Tyson* NO 123.5
 
     p_lamar = next(p for p in enriched if p.id == "103")
     assert p_lamar.cheatsheet_tier is None
+
+
+def test_parse_multi_column_and_broken_ocr_kerning() -> None:
+    """Verify multi-column horizontal merges and fragmented OCR kerning are disentangled."""
+    sample_text = """
+    ADP ADP co n't ADP
+    Allen 34.8 Gibbs 1.1 Price
+    Robi n son 2.1 Corum
+    Burrow 65.5 Taylor 8.9 Hubbard
+    Cook 9.3 P ollard
+    P re scott 94.9 Jeanty 22.1 Mitchell
+    He n ry 22.4 Marks
+    P urdy 118.7 White
+    """
+    context = parse_plain_text_cheatsheet(sample_text)
+
+    # Assert players were disentangled into individual records
+    assert "allen" in context.entries
+    assert context.entries["allen"].adp == 34.8
+
+    assert "gibbs" in context.entries
+    assert context.entries["gibbs"].adp == 1.1
+
+    assert "price" in context.entries
+
+    assert "robinson" in context.entries
+    assert context.entries["robinson"].adp == 2.1
+
+    assert "prescott" in context.entries
+    assert context.entries["prescott"].adp == 94.9
+
+    assert "henry" in context.entries
+    assert context.entries["henry"].adp == 22.4
+
+    assert "purdy" in context.entries
+    assert context.entries["purdy"].adp == 118.7
+
+    # Assert header noise was filtered
+    assert "adp adp" not in context.entries

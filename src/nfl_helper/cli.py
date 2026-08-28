@@ -112,31 +112,46 @@ def qa_command(args: argparse.Namespace) -> None:
 
 def diff_cheatsheet_command(args: argparse.Namespace) -> None:
     """Handle dry-run cheatsheet diff comparing candidate rankings against active baseline."""
-    file_path = Path(args.file)
-    if not file_path.exists():
-        print(f"[ERROR] Cheatsheet file not found: {file_path}")
-        sys.exit(1)
-
-    text_content = file_path.read_text(encoding="utf-8", errors="replace")
     base_url = args.base_url.rstrip("/")
 
-    try:
-        res = httpx.post(f"{base_url}/api/cheatsheet/diff", json={"text": text_content}, timeout=5.0)
-        if res.status_code != 200:
-            print(f"[ERROR] Diff failed ({res.status_code}): {res.text}")
+    if args.url:
+        try:
+            res = httpx.post(f"{base_url}/api/cheatsheet/url-diff", json={"url": args.url}, timeout=10.0)
+            if res.status_code != 200:
+                print(f"[ERROR] Web diff failed ({res.status_code}): {res.text}")
+                return
+            diff_data = res.json()
+        except httpx.ConnectError:
+            print("[ERROR] Could not connect to running server. Web URL diff requires the server to be running.")
             return
-        diff_data = res.json()
-    except httpx.ConnectError:
-        # Fallback to local deterministic computation if server is offline
-        from nfl_helper.core.cheatsheet import parse_cheatsheet_content
-        from nfl_helper.core.cheatsheet_diff import compute_cheatsheet_diff
-        from nfl_helper.core.db import get_active_cheatsheet
-        from tests.fixtures.demo_rosters import get_mock_player_pool
+    elif args.file:
+        file_path = Path(args.file)
+        if not file_path.exists():
+            print(f"[ERROR] Cheatsheet file not found: {file_path}")
+            sys.exit(1)
 
-        candidate = parse_cheatsheet_content(text_content)
-        active = get_active_cheatsheet()
-        report = compute_cheatsheet_diff(active, candidate, get_mock_player_pool(), top_n=args.top_n)
-        diff_data = report.model_dump()
+        text_content = file_path.read_text(encoding="utf-8", errors="replace")
+
+        try:
+            res = httpx.post(f"{base_url}/api/cheatsheet/diff", json={"text": text_content}, timeout=5.0)
+            if res.status_code != 200:
+                print(f"[ERROR] Diff failed ({res.status_code}): {res.text}")
+                return
+            diff_data = res.json()
+        except httpx.ConnectError:
+            # Fallback to local deterministic computation if server is offline
+            from nfl_helper.core.cheatsheet import parse_cheatsheet_content
+            from nfl_helper.core.cheatsheet_diff import compute_cheatsheet_diff
+            from nfl_helper.core.db import get_active_cheatsheet
+            from tests.fixtures.demo_rosters import get_mock_player_pool
+
+            candidate = parse_cheatsheet_content(text_content)
+            active = get_active_cheatsheet()
+            report = compute_cheatsheet_diff(active, candidate, get_mock_player_pool(), top_n=args.top_n)
+            diff_data = report.model_dump()
+    else:
+        print("[ERROR] Please provide either --file <path> or --url <web_url>.")
+        sys.exit(1)
 
     print("=" * 70)
     print("📊 CHEATSHEET DRY-RUN IMPACT REPORT (TOP MOVERS)")
@@ -229,7 +244,8 @@ def main(argv: list[str] | None = None) -> None:
     qa_parser.set_defaults(func=qa_command)
 
     diff_parser = subparsers.add_parser("diff-cheatsheet", help="Dry-run impact diff for candidate cheatsheet")
-    diff_parser.add_argument("--file", required=True, help="Path to plain text or CSV cheatsheet file")
+    diff_parser.add_argument("--file", default=None, help="Path to plain text or CSV cheatsheet file")
+    diff_parser.add_argument("--url", default=None, help="URL to online cheatsheet or ESPN rankings")
     diff_parser.add_argument("--top-n", type=int, default=5, help="Number of top risers/fallers to display")
     diff_parser.add_argument("--base-url", default="http://127.0.0.1:8000", help="Base application URL")
     diff_parser.set_defaults(func=diff_cheatsheet_command)

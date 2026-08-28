@@ -1048,8 +1048,20 @@
           <button class="btn" style="font-size: 0.8rem;" onclick="loadSampleCheatsheet()">Load Sample</button>
         </div>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
-          Upload your <strong>PDF</strong> cheatsheet file directly, or paste plain-text/CSV below:
+          Import directly from a <strong>Web URL</strong>, upload a <strong>PDF / CSV</strong> file, or paste text below:
         </p>
+
+        <!-- Web URL Ingestion Box -->
+        <div style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem;">
+          <label class="form-label" style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; color: var(--accent-cyan);">
+            <span>🌐</span> Ingest from Web Article / Online Rankings URL (ESPN, Yahoo, FantasyPros)
+          </label>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem; flex-wrap: wrap;">
+            <input type="url" id="cheatsheet-url-input" class="form-control" style="flex: 1; min-width: 260px;" placeholder="https://www.espn.com/fantasy/football/story/_/id/..." />
+            <button class="btn btn-secondary" style="font-size: 0.85rem;" onclick="previewUrlCheatsheetDiff()">📊 Preview Web Diff</button>
+            <button class="btn btn-primary" style="font-size: 0.85rem;" onclick="importFromWebUrl()">🌐 Import from URL</button>
+          </div>
+        </div>
         
         <!-- Direct File Upload Dropzone -->
         <div class="dropzone" onclick="document.getElementById('cheatsheet-file-input').click()">
@@ -1058,6 +1070,7 @@
           <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Drop your PDF here to automatically parse all pages, tiers, ADPs, and rules</div>
           <input type="file" id="cheatsheet-file-input" accept=".pdf,.csv,.txt,.json" style="display: none;" onchange="handleFileUpload(event)">
         </div>
+
 
         <div class="form-group">
           <label class="form-label">Or Paste Plain-Text / CSV / JSON Directly</label>
@@ -1377,6 +1390,72 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         document.getElementById('cheatsheet-status-msg').textContent = `Upload error: ${err.message}`;
       }
     }
+
+    async function importFromWebUrl() {
+      const urlInput = document.getElementById('cheatsheet-url-input');
+      const url = urlInput ? urlInput.value.trim() : '';
+      if (!url) {
+        alert('Please enter a valid web article or rankings URL (e.g. ESPN, Yahoo, FantasyPros).');
+        return;
+      }
+
+      const statusEl = document.getElementById('cheatsheet-status-msg');
+      if (statusEl) statusEl.textContent = 'Fetching and parsing web cheatsheet...';
+
+      try {
+        const res = await fetch('/api/cheatsheet/url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const pCount = Object.keys(data.entries || {}).length;
+          if (statusEl) statusEl.textContent = `Successfully imported from URL (${pCount} players, ${data.strategy_rules?.length || 0} rules)!`;
+          renderCheatsheetContext(data);
+          fetchDraftState();
+        } else {
+          const errJson = await res.json().catch(() => ({}));
+          const detail = errJson.detail || 'Failed to parse URL.';
+          if (statusEl) statusEl.textContent = `Failed: ${detail}`;
+        }
+      } catch (err) {
+        if (statusEl) statusEl.textContent = `Error: ${err.message}`;
+      }
+    }
+
+    async function previewUrlCheatsheetDiff() {
+      const urlInput = document.getElementById('cheatsheet-url-input');
+      const url = urlInput ? urlInput.value.trim() : '';
+      if (!url) {
+        alert('Please enter a valid web article or rankings URL.');
+        return;
+      }
+
+      const statusEl = document.getElementById('cheatsheet-status-msg');
+      if (statusEl) statusEl.textContent = 'Fetching and calculating web diff...';
+
+      try {
+        const res = await fetch('/api/cheatsheet/url-diff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          alert('Web diff failed: ' + (err.detail || 'Unknown error'));
+          if (statusEl) statusEl.textContent = '';
+          return;
+        }
+        const diff = await res.json();
+        renderDiffModal(diff);
+        if (statusEl) statusEl.textContent = '';
+      } catch (err) {
+        alert('Error generating web diff: ' + err.message);
+        if (statusEl) statusEl.textContent = '';
+      }
+    }
+
 
 
 

@@ -112,6 +112,10 @@ def _parse_player_line(
     if not cleaned or len(cleaned) < 2:
         return None
 
+    # Replace pipe table separators and tabs with spaces
+    cleaned = cleaned.replace("|", " ").replace("\t", " ")
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+
     # Check for notes separated by hyphen or colon
     notes = None
     if " - " in cleaned:
@@ -244,8 +248,53 @@ def _record_player_entry(entry: CheatsheetEntry, pos_key: str, context: Cheatshe
         context.positional_tiers[pos_key][entry.tier - 1].append(entry.player_name)
 
 
+def _clean_kerning(text: str) -> str:
+    """Repair fragmented OCR spaces and broken word tokens."""
+    if any(
+        text.startswith(p)
+        for p in (
+            "Rounds",
+            "Round",
+            "Rule",
+            "Rules",
+            "Strategy",
+            "Target",
+            "TE -",
+            "QB -",
+            "RB -",
+            "WR -",
+            "K -",
+            "DST -",
+            "D/ST -",
+            "Wait",
+        )
+    ):
+        return text
+
+    t = text
+    # Fix broken team codes e.g. 'P HI' -> 'PHI', 'S EA' -> 'SEA', 'S F' -> 'SF'
+    t = re.sub(r"\b([A-Z])\s+([A-Z])\s+([A-Z])\b", r"\1\2\3", t)
+    t = re.sub(r"\b([A-Z])\s+([A-Z])\b", r"\1\2", t)
+
+    # Specific broken OCR names from PDF scans
+    ocr_fixes = {
+        "robi n son": "Robinson",
+        "he n ry": "Henry",
+        "he rbe rt": "Herbert",
+        "p re scott": "Prescott",
+        "mon an gai": "Monangai",
+        "croske y-me rri tt": "Croskey-Merritt",
+        "p urdy": "Purdy",
+        "p ollard": "Pollard",
+    }
+    for broken, fixed in ocr_fixes.items():
+        t = re.sub(re.escape(broken), fixed, t, flags=re.IGNORECASE)
+
+    return t
+
+
 def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
-    """Parse plain-text cheatsheet tracking blank-line tiers, ADPs, and strategy rules."""
+    """Parse plain-text cheatsheet tracking blank-line tiers, ADPs, multi-column splits, and strategy rules."""
     context = CheatsheetContext()
     current_pos = ""
     current_tier = 1
@@ -253,7 +302,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
     legend_notes: dict[str, str] = {}
 
     for raw_line in text.splitlines():
-        line = raw_line.strip()
+        line = _clean_kerning(raw_line.strip())
         if not line:
             if current_pos and not previous_was_blank:
                 current_tier += 1
@@ -261,6 +310,10 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
             continue
 
         previous_was_blank = False
+
+        # Filter repeated header noise
+        if re.search(r"\badp\s+adp\b", line, re.IGNORECASE) or re.search(r"\btier\s+adp\b", line, re.IGNORECASE):
+            continue
 
         pos_header = _clean_position_header(line)
         if pos_header and len(line.split()) <= 3 and not re.search(r"\d", line):
@@ -329,9 +382,28 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
                     context.positional_strategy.append(pos_rule)
             continue
 
-        entry = _parse_player_line(line, current_pos, current_tier, legend_notes)
-        if entry and entry.normalized_name:
-            _record_player_entry(entry, entry.position or current_pos, context)
+        # Multi-column horizontal line detection (e.g. 'Allen 34.8 Gibbs 1.1 Price')
+        multi_col_pattern = r"([A-Za-z\s.'-]+?)(?:\s+([A-Z]{2,3}))?\s+(\d+(?:\.\d+)?)(?=\s+[A-Za-z]|$)"
+        col_matches = list(re.finditer(multi_col_pattern, line))
+
+        if len(col_matches) > 1 or (col_matches and len(line[col_matches[-1].end() :].strip()) >= 3):
+            last_end = 0
+            for m in col_matches:
+                chunk_str = m.group(0).strip()
+                last_end = m.end()
+                entry = _parse_player_line(chunk_str, current_pos, current_tier, legend_notes)
+                if entry and entry.normalized_name:
+                    _record_player_entry(entry, entry.position or current_pos, context)
+
+            trailing = line[last_end:].strip()
+            if trailing and len(trailing) >= 3 and not re.match(r"^\d", trailing):
+                entry = _parse_player_line(trailing, current_pos, current_tier, legend_notes)
+                if entry and entry.normalized_name:
+                    _record_player_entry(entry, entry.position or current_pos, context)
+        else:
+            entry = _parse_player_line(line, current_pos, current_tier, legend_notes)
+            if entry and entry.normalized_name:
+                _record_player_entry(entry, entry.position or current_pos, context)
 
     return context
 

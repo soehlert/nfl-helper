@@ -20,6 +20,7 @@ from nfl_helper.core.db import (
 )
 from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.core.lineup_optimizer import solve_optimal_lineup
+from nfl_helper.core.url_cheatsheet import fetch_web_cheatsheet
 from nfl_helper.core.waiver_engine import generate_waiver_recommendations
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.diff import CheatsheetDiffReport
@@ -68,6 +69,13 @@ class CheatsheetUploadRequest(BaseModel):
 
     text: str
     name: str = "Pasted Cheatsheet"
+
+
+class CheatsheetURLRequest(BaseModel):
+    """Request model for web article / rankings URL ingestion."""
+
+    url: str
+    name: str | None = None
 
 
 class QAModeRequest(BaseModel):
@@ -431,10 +439,48 @@ async def upload_cheatsheet_file(file: UploadFile) -> CheatsheetContext:
             len(context.strategy_rules),
         )
         return context
-
     except Exception as exc:
         logger.exception("Failed to parse uploaded cheatsheet file %s: %s", filename, exc)
         raise HTTPException(status_code=400, detail=f"Failed to parse file: {exc}") from exc
+
+
+@app.post("/api/cheatsheet/url", response_model=CheatsheetContext)
+async def upload_cheatsheet_url(payload: CheatsheetURLRequest) -> CheatsheetContext:
+    """Fetch web article/rankings URL, parse into CheatsheetContext, and save in SQLite."""
+    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
+    try:
+        context, title, raw_text = await fetch_web_cheatsheet(payload.url)
+        _ACTIVE_CHEATSHEET = context
+        sheet_name = payload.name or title or "Web Cheatsheet"
+        save_cheatsheet(context, raw_text=raw_text, name=sheet_name)
+        _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, context)
+        logger.info(
+            "Successfully fetched web cheatsheet from %s: %d players, %d rules",
+            payload.url,
+            len(context.entries),
+            len(context.strategy_rules),
+        )
+        return context
+    except Exception as exc:
+        logger.exception("Failed to fetch web cheatsheet from %s: %s", payload.url, exc)
+        raise HTTPException(status_code=400, detail=f"Failed to fetch and parse URL: {exc}") from exc
+
+
+@app.post("/api/cheatsheet/url-diff", response_model=CheatsheetDiffReport)
+async def preview_cheatsheet_url_diff(payload: CheatsheetURLRequest) -> CheatsheetDiffReport:
+    """Dry-run diff comparing web rankings against active baseline without DB writes."""
+    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
+    try:
+        context, _, _ = await fetch_web_cheatsheet(payload.url)
+        active = _ACTIVE_CHEATSHEET or get_active_cheatsheet()
+        return compute_cheatsheet_diff(
+            active_context=active,
+            candidate_context=context,
+            player_pool=_SAMPLE_PLAYERS,
+            top_n=5,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Failed to generate diff from URL: {exc}") from exc
 
 
 @app.get("/api/cheatsheet", response_model=CheatsheetContext | None)
