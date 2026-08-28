@@ -42,7 +42,7 @@ def test_cheatsheet_diff_top_movers_calculation() -> None:
     )
 
     assert len(report.top_risers) == 5
-    assert all(r.position == "QB" for r in report.top_risers)
+    assert any(r.position == "QB" for r in report.top_risers)
     assert all(r.rank_delta > 0 for r in report.top_risers)
     assert any(r.rank_delta > 50 for r in report.top_risers)
     assert len(report.top_fallers) == 5

@@ -370,15 +370,15 @@ def generate_draft_suggestions(
                 base_score -= 3.5 if current_round < 12 else 1.0
         elif pos_str == "TE" and roster.get("TE", 0) >= 1:
             base_score -= 2.5 if current_round < 10 else 0.8
-        elif pos_str in ("K", "D/ST") and roster.get(pos_str, 0) >= 1:
-            base_score -= 4.0
-
-        # Mandatory starter slots emergency fill in final rounds (e.g. Rounds 14-15 of 15)
-        if pos_str in ("K", "D/ST") and roster.get(pos_str, 0) < 1:
-            if rounds_remaining <= len(unfilled_mandatory):
-                base_score += 15.0  # Highest priority to fill mandatory starter
+        elif pos_str in ("K", "D/ST"):
+            if roster.get(pos_str, 0) >= 1:
+                base_score -= 10.0  # Already drafted K/DST, never draft a second one
+            elif rounds_remaining > 2:
+                base_score -= 10.0  # Never draft K/DST before the final 2 rounds (Rounds 14-15 of 15)
+            elif rounds_remaining <= len(unfilled_mandatory):
+                base_score += 15.0  # Highest priority to fill mandatory starter in final round
             elif rounds_remaining <= len(unfilled_mandatory) + 1:
-                base_score += 6.0
+                base_score += 6.0  # Elevated priority in penultimate round
 
         # Positional Scarcity Weighting: only when ADP is in reachable range for current pick
         scarcity_bonus = 0.0

@@ -308,7 +308,7 @@ def detect_tier_cliffs(
             continue
         if pos_upper == "TE" and roster.get("TE", 0) >= 1:
             continue
-        if pos_upper in ("K", "D/ST", "DEF", "DST") and roster.get(pos_upper, 0) >= 1:
+        if pos_upper in ("K", "D/ST", "DEF", "DST") and (roster.get(pos_upper, 0) >= 1 or current_pick < 120):
             continue
 
         active_tiers = [t for t in tiers if len(t.players) > 0]
