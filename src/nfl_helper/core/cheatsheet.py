@@ -100,7 +100,12 @@ def _clean_position_header(raw_header: str) -> str | None:
     return None
 
 
-def _parse_player_line(line: str, current_pos: str, current_tier: int) -> CheatsheetEntry | None:
+def _parse_player_line(
+    line: str,
+    current_pos: str,
+    current_tier: int,
+    legend_notes: dict[str, str] | None = None,
+) -> CheatsheetEntry | None:
     """Parse flexible line formats into CheatsheetEntry."""
     cleaned = line.strip()
     if not cleaned or len(cleaned) < 2:
@@ -121,7 +126,9 @@ def _parse_player_line(line: str, current_pos: str, current_tier: int) -> Cheats
     cleaned = re.sub(r"^\s*#?\d+[\.\)\:\-]?\s*", "", cleaned).strip()
 
     # Check for injury marker
-    is_inj = "*" in cleaned or "(Q)" in cleaned or "(IR)" in cleaned or "(O)" in cleaned
+    is_inj = "*" in cleaned or "(Q)" in cleaned or "(IR)" in cleaned or "(O)" in cleaned or "(PUP)" in cleaned
+    if is_inj and not notes:
+        notes = (legend_notes or {}).get("*", "Injured (multi-week recovery)")
     cleaned = re.sub(r"[\*\(\)]", " ", cleaned).strip()
 
     tokens = cleaned.split()
@@ -241,6 +248,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
     current_pos = ""
     current_tier = 1
     previous_was_blank = False
+    legend_notes: dict[str, str] = {}
 
     for raw_line in text.splitlines():
         line = raw_line.strip()
@@ -258,10 +266,17 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
             current_tier = 1
             continue
 
+        # Legend / footnote definitions (e.g. '* = injured a while', '^ = rookie target')
+        legend_match = re.match(r"^\s*([*^#])\s*=\s*(.+)$", line)
+        if legend_match:
+            symbol, meaning = legend_match.group(1), legend_match.group(2).strip()
+            legend_notes[symbol] = meaning
+            continue
+
         # Strategy rule headers
         if any(
             line.startswith(prefix)
-            for prefix in ("Rounds", "TE -", "QB -", "RB -", "WR -", "K -", "DST -", "D/ST -", "* =", "Strategy:")
+            for prefix in ("Rounds", "TE -", "QB -", "RB -", "WR -", "K -", "DST -", "D/ST -", "Strategy:")
         ):
             context.strategy_rules.append(line)
             rnd_rule, pos_rule = _parse_strategy_rule(line)
@@ -294,7 +309,7 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
                     context.positional_strategy.append(pos_rule)
             continue
 
-        entry = _parse_player_line(line, current_pos, current_tier)
+        entry = _parse_player_line(line, current_pos, current_tier, legend_notes)
         if entry and entry.normalized_name:
             _record_player_entry(entry, entry.position or current_pos, context)
 
@@ -401,7 +416,9 @@ def apply_cheatsheet_context(players: list[Player], context: CheatsheetContext) 
             player.cheatsheet_tier = entry.tier
             if entry.notes:
                 player.cheatsheet_notes = entry.notes
-            if entry.is_injured and player.injury_status == "ACTIVE":
-                player.injury_status = "QUESTIONABLE"
+            if entry.is_injured:
+                player.injury_status = "IR"
+                if not player.cheatsheet_notes:
+                    player.cheatsheet_notes = "Injured (multi-week recovery / out a while)"
 
     return players

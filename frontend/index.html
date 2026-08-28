@@ -1550,12 +1550,24 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
         const ptsStr = p.projected_points ? p.projected_points.toFixed(1) : '—';
         const adpStr = p.adp ? p.adp.toFixed(1) : (p.cheatsheet_rank ? p.cheatsheet_rank.toFixed(0) : '—');
         const byeStr = p.bye_week ? `Wk ${p.bye_week}` : '—';
+
+        let injuryBadge = '';
+        const isInjured = p.injury_status && p.injury_status !== 'ACTIVE';
+        if (isInjured || p.cheatsheet_notes) {
+          const statusText = isInjured ? p.injury_status : 'NOTE';
+          const descText = p.cheatsheet_notes ? `: ${p.cheatsheet_notes}` : '';
+          const badgeBg = isInjured ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)';
+          const badgeColor = isInjured ? '#f87171' : '#fbbf24';
+          const badgeBorder = isInjured ? 'rgba(239, 68, 68, 0.4)' : 'rgba(245, 158, 11, 0.4)';
+          injuryBadge = `<span class="badge" style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; font-size: 0.68rem; margin-left: 0.4rem; padding: 0.12rem 0.4rem; border-radius: 4px; font-weight: 600;">🚑 ${statusText}${descText}</span>`;
+        }
+
         sugHtml += `
           <tr>
             <td><strong>${s.rank}</strong></td>
             <td><span class="pos-tag ${posClass}">${p.position}</span></td>
             <td>${team}</td>
-            <td><strong>${p.name}</strong></td>
+            <td><div style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem;"><strong>${p.name}</strong>${injuryBadge}</div></td>
             <td>${tierStr}</td>
             <td>${ptsStr}</td>
             <td>${adpStr}</td>
@@ -1565,6 +1577,7 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       });
       sugTbody.innerHTML = sugHtml;
     }
+
 
     function renderDraftState(data) {
       if (!data) return;

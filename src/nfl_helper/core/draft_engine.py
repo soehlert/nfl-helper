@@ -212,7 +212,13 @@ def _build_suggestion_reason(
     if cliff:
         reasons.append(f"Cliff Defense ({cliff.players_remaining} left)")
 
-    # 5. ADP Value
+    # 5. Injury Alert if player is injured or has notes
+    raw_inj = player.injury_status.value if hasattr(player.injury_status, "value") else str(player.injury_status)
+    if raw_inj != "ACTIVE" or player.cheatsheet_notes:
+        inj_desc = player.cheatsheet_notes or raw_inj
+        reasons.append(f"🚑 Injury: {inj_desc}")
+
+    # 6. ADP Value
     if player.adp:
         discount = overall_pick - player.adp
         if discount >= 2.0:
@@ -221,8 +227,6 @@ def _build_suggestion_reason(
             reasons.append(f"ADP {player.adp:.1f} (-{abs(discount):.1f} reach)")
         else:
             reasons.append(f"ADP {player.adp:.1f}")
-    elif player.cheatsheet_notes:
-        reasons.append(player.cheatsheet_notes)
 
     return " • ".join(reasons)
 
