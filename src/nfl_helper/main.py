@@ -550,7 +550,11 @@ async def upload_cheatsheet(payload: CheatsheetUploadRequest) -> CheatsheetConte
 
 
 @app.post("/api/cheatsheet/upload-file", response_model=CheatsheetContext)
-async def upload_cheatsheet_file(file: UploadFile, layer_mode: bool = True) -> CheatsheetContext:
+async def upload_cheatsheet_file(
+    file: UploadFile,
+    name: str | None = None,
+    layer_mode: bool = True,
+) -> CheatsheetContext:
     """Ingest uploaded PDF, CSV, TXT, or JSON cheatsheet file into SQLite."""
     global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     filename = (file.filename or "").lower()
@@ -565,7 +569,8 @@ async def upload_cheatsheet_file(file: UploadFile, layer_mode: bool = True) -> C
             context = parse_cheatsheet_content(text_str)
             raw_preview = text_str
 
-        save_cheatsheet(context, raw_text=raw_preview, name=file.filename or "Uploaded File", layer_mode=layer_mode)
+        sheet_name = (name or "").strip() or file.filename or "Uploaded File"
+        save_cheatsheet(context, raw_text=raw_preview, name=sheet_name, layer_mode=layer_mode)
         _ACTIVE_CHEATSHEET = get_active_cheatsheet()
         if _ACTIVE_CHEATSHEET:
             _SAMPLE_PLAYERS = apply_cheatsheet_context(_SAMPLE_PLAYERS, _ACTIVE_CHEATSHEET)

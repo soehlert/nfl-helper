@@ -6,15 +6,15 @@
   <title>Craftroom Draftroom</title>
   <style>
     :root {
-      --bg-primary: #0f172a;
-      --bg-secondary: #1e293b;
-      --bg-card: #182234;
-      --border-color: #334155;
+      --bg-primary: #0b1120;
+      --bg-secondary: #131d2e;
+      --bg-card: #172338;
+      --border-color: #2b3952;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --accent-blue: #38bdf8;
-      --accent-green: #22c55e;
-      --accent-amber: #f59e0b;
+      --accent-green: #10b981;
+      --accent-amber: #fbbf24;
       --accent-red: #ef4444;
       --accent-purple: #a855f7;
     }
@@ -590,26 +590,42 @@
 
   <header>
     <div class="brand">
-      <svg class="brand-logo" width="30" height="30" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg class="brand-logo" width="34" height="34" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="craftGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="beerGold" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#fbbf24" />
+            <stop offset="60%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#d97706" />
+          </linearGradient>
+          <linearGradient id="beerFoam" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="100%" stop-color="#fef08a" />
+          </linearGradient>
+          <linearGradient id="mugGlow" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#38bdf8" />
             <stop offset="100%" stop-color="#6366f1" />
           </linearGradient>
-          <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#22c55e" />
-            <stop offset="100%" stop-color="#38bdf8" />
-          </linearGradient>
         </defs>
-        <rect x="2" y="2" width="28" height="28" rx="7" fill="#1e293b" stroke="url(#craftGrad)" stroke-width="1.75"/>
-        <path d="M7 10H25M7 16H25M7 22H25" stroke="#334155" stroke-width="1" stroke-linecap="round" />
-        <path d="M12 7V25M20 7V25" stroke="#334155" stroke-width="1" stroke-linecap="round" />
-        <path d="M16 6C22.5 6 26 12 26 16C26 20 22.5 26 16 26C9.5 26 6 20 6 16C6 12 9.5 6 16 6Z" stroke="url(#craftGrad)" stroke-width="1.5" fill="rgba(56, 189, 248, 0.08)"/>
-        <path d="M16 11V21" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M13 13.5H19M13 16H19M13 18.5H19" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round"/>
-        <circle cx="25" cy="7" r="2.5" fill="url(#accentGrad)"/>
+        <!-- Stein Handle -->
+        <path d="M25 13H28.5C30.4 13 32 14.6 32 16.5V23.5C32 25.4 30.4 27 28.5 27H25" stroke="url(#mugGlow)" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Mug Body Glass Outline -->
+        <rect x="7" y="11" width="18" height="20" rx="3.5" fill="#131d2e" stroke="url(#mugGlow)" stroke-width="2"/>
+        <!-- Liquid Fill (Amber Beer) -->
+        <rect x="9" y="15" width="14" height="14" rx="2" fill="url(#beerGold)"/>
+        <!-- Bubbles in Beer -->
+        <circle cx="12" cy="24" r="1" fill="#fff" opacity="0.6"/>
+        <circle cx="16" cy="21" r="1.2" fill="#fff" opacity="0.7"/>
+        <circle cx="19" cy="25" r="0.8" fill="#fff" opacity="0.6"/>
+        <circle cx="13" cy="18" r="0.9" fill="#fff" opacity="0.8"/>
+        <!-- Foam Head (Frothy Clouds) -->
+        <path d="M6.5 12C6.5 9.5 8.5 8 10.5 8C11.5 6.5 13.5 6 15.5 6C18 6 19.5 7.5 20.5 8.5C22.5 8 24.5 9 25.5 11C26.5 12.5 25.5 14 24.5 14.5H7.5C6.5 14 6.5 13 6.5 12Z" fill="url(#beerFoam)"/>
+        <!-- Foam Drips / Highlights -->
+        <path d="M10 14.5V17C10 17.8 11 18 11.5 17.5C12 17 12 16 12 14.5" fill="url(#beerFoam)"/>
+        <path d="M19.5 14.5V18C19.5 18.8 20.5 19 21 18.5C21.5 18 21.5 16.5 21.5 14.5" fill="url(#beerFoam)"/>
+        <!-- Tactical Draft Cross Accent on Glass -->
+        <path d="M16 16.5V26.5M12 21.5H20" stroke="rgba(255,255,255,0.45)" stroke-width="1.2" stroke-linecap="round"/>
       </svg>
-      <span>Craftroom Draftroom</span>
+      <span style="letter-spacing: -0.02em; font-weight: 800;"><span style="color: #fbbf24;">Craftroom</span> <span style="color: #f8fafc;">Draftroom</span></span>
       <span id="platform-badge" class="badge badge-espn">ESPN</span>
     </div>
     <div class="header-actions">
@@ -1139,75 +1155,78 @@
       <!-- Active League Configuration -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">🏈 League Configuration</div>
+          <div class="card-title">League Configuration</div>
         </div>
-        <div class="grid-2">
-          <div>
-            <div class="form-group">
-              <label class="form-label">Platform</label>
-              <select id="session-platform" class="form-control" onchange="toggleCookieFields()">
-                <option value="espn">ESPN (Requires League ID; SWID and espn_s2 if private)</option>
-                <option value="sleeper">Sleeper (Requires League ID only)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">League ID</label>
-              <input type="text" id="session-league-id" class="form-control" value="12345678">
-            </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; align-items: start;">
+          <!-- Col 1: Platform -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Platform</label>
+            <select id="session-platform" class="form-control" style="height: 44px; font-size: 0.92rem; padding: 0.6rem 0.85rem;" onchange="toggleCookieFields()">
+              <option value="sleeper">Sleeper (Requires League ID only)</option>
+              <option value="espn">ESPN (Requires League ID; SWID and espn_s2 if private)</option>
+            </select>
           </div>
-          <div>
-            <div class="form-group">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <label class="form-label">Select Your Team</label>
-                <button type="button" style="background: none; border: none; color: var(--accent-blue); font-size: 0.75rem; cursor: pointer;" onclick="loadLeagueTeams()">🔄 Refresh Teams</button>
-              </div>
-              <select id="session-team-select" class="form-control" onchange="onTeamSelectChange()">
-                <option value="1">Lamar Squad (You)</option>
-                <option value="2">Gridiron Kings</option>
-                <option value="3">Mahomes Magic</option>
-              </select>
-              <input type="hidden" id="session-team-id" value="1">
+          <!-- Col 2: League ID -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">League ID</label>
+            <input type="text" id="session-league-id" class="form-control" style="height: 44px; font-size: 0.92rem; padding: 0.6rem 0.85rem;" value="12345678" onchange="loadLeagueTeams()">
+          </div>
+          <!-- Col 3: Select Your Team -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <label class="form-label" style="margin-bottom: 0;">Select Your Team</label>
+              <button type="button" style="background: none; border: none; color: var(--accent-blue); font-size: 0.78rem; font-weight: 600; cursor: pointer;" onclick="loadLeagueTeams()">🔄 Refresh</button>
             </div>
-            <div id="espn-cookie-inputs">
-              <div class="form-group">
-                <label class="form-label">ESPN SWID (Private leagues only)</label>
-                <input type="text" id="session-swid" class="form-control" placeholder="{12345678-ABCD-1234-ABCD-1234567890AB}">
-              </div>
-              <div class="form-group">
-                <label class="form-label">ESPN espn_s2 Cookie (Private leagues only)</label>
-                <input type="text" id="session-espn-s2" class="form-control" placeholder="AECb...">
-              </div>
+            <select id="session-team-select" class="form-control" style="height: 44px; font-size: 0.92rem; padding: 0.6rem 0.85rem;" onchange="onTeamSelectChange()">
+              <option value="1">Lamar Squad (You)</option>
+              <option value="2">Gridiron Kings</option>
+              <option value="3">Mahomes Magic</option>
+            </select>
+            <input type="hidden" id="session-team-id" value="1">
+          </div>
+        </div>
+
+        <!-- Optional ESPN Credentials Drawer (Collapsible) -->
+        <div id="espn-cookie-inputs" style="display: none; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed var(--border-color);">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">ESPN SWID (Private leagues only)</label>
+              <input type="text" id="session-swid" class="form-control" style="height: 42px;" placeholder="{12345678-ABCD-1234-ABCD-1234567890AB}">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">ESPN espn_s2 Cookie (Private leagues only)</label>
+              <input type="text" id="session-espn-s2" class="form-control" style="height: 42px;" placeholder="AECb...">
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Cheatsheet & PDF Ingestion -->
+      <!-- Cheatsheet & File Ingestion -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Cheatsheet & Rankings Ingestion</div>
+          <div class="card-title">Cheatsheet Ingestion</div>
         </div>
         
-        <!-- Top: Full-Width Web URL Ingestion -->
-        <div style="margin-bottom: 1.25rem;">
-          <label class="form-label" style="font-weight: 600; color: var(--accent-cyan);">
-            Web Article or Online Rankings URL (ESPN, Yahoo, FantasyPros, Substack)
+        <!-- Top: Cheatsheet Name Input -->
+        <div class="form-group" style="margin-bottom: 1.1rem;">
+          <label class="form-label" style="font-weight: 600; color: var(--text-main);">
+            Cheatsheet Name
           </label>
-          <input type="url" id="cheatsheet-url-input" class="form-control" placeholder="https://www.espn.com/fantasy/football/story/_/id/..." />
+          <input type="text" id="cheatsheet-name-input" class="form-control" style="height: 42px; font-size: 0.92rem;" placeholder="e.g., Sleeper Targets, Breakouts, Busts, Master Board">
         </div>
 
-        <!-- Middle: Responsive Columns for File Upload & Copy/Paste -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+        <!-- Middle: Responsive Side-by-Side Equal Columns for File Upload & Copy/Paste -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.1rem; align-items: stretch;">
           
           <!-- Left Column: File Upload Dropzone -->
           <div style="display: flex; flex-direction: column;">
             <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem;">
-              Upload File (CSV, TXT, JSON)
+              Upload File (CSV, TXT, JSON, PDF)
             </label>
-            <div id="cheatsheet-dropzone-box" class="dropzone" style="height: 130px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; border-radius: 8px; text-align: center;" onclick="document.getElementById('cheatsheet-file-input').click()">
+            <div id="cheatsheet-dropzone-box" class="dropzone" style="height: 150px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; border-radius: 8px; text-align: center; margin-bottom: 0;" onclick="document.getElementById('cheatsheet-file-input').click()">
               <div id="dropzone-main-text" style="font-weight: 600; font-size: 0.92rem; color: var(--text-main); margin-bottom: 0.35rem;">Click or Drop File Here</div>
-              <div id="dropzone-sub-text" style="font-size: 0.8rem; color: var(--text-muted);">Supports CSV, TXT, or JSON formats</div>
-              <input type="file" id="cheatsheet-file-input" accept=".csv,.txt,.json" style="display: none;" onchange="handleFileSelected(event)">
+              <div id="dropzone-sub-text" style="font-size: 0.8rem; color: var(--text-muted);">Supports CSV, TXT, JSON, or PDF formats</div>
+              <input type="file" id="cheatsheet-file-input" accept=".csv,.txt,.json,.pdf" style="display: none;" onchange="handleFileSelected(event)">
             </div>
           </div>
 
@@ -1216,18 +1235,15 @@
             <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem;">
               Paste Text (CSV, JSON, Plain Text)
             </label>
-            <textarea id="cheatsheet-textarea" class="form-control" style="height: 130px; box-sizing: border-box; resize: none; margin: 0; padding: 0.75rem;" placeholder="Paste CSV, JSON, or plain text rankings here..."></textarea>
+            <textarea id="cheatsheet-textarea" class="form-control" style="height: 150px; box-sizing: border-box; resize: none; margin: 0; padding: 0.75rem; font-family: monospace; font-size: 0.85rem;" placeholder="Paste CSV, JSON, or plain text rankings here..."></textarea>
           </div>
 
-
         </div>
-
-
 
         <!-- Bottom: Single Unified Action Bar -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.85rem; flex-wrap: wrap; gap: 0.75rem;">
           <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <label style="display: flex; align-items: center; gap: 0.45rem; cursor: pointer; font-size: 0.82rem; color: var(--text-main); font-weight: 600; background: rgba(56, 189, 248, 0.1); border: 1px solid var(--accent-blue); padding: 0.3rem 0.65rem; border-radius: 9999px;">
+            <label style="display: flex; align-items: center; gap: 0.45rem; cursor: pointer; font-size: 0.82rem; color: var(--text-main); font-weight: 600; background: rgba(56, 189, 248, 0.1); border: 1px solid var(--accent-blue); padding: 0.35rem 0.75rem; border-radius: 9999px;">
               <input type="checkbox" id="cheatsheet-layer-toggle" checked style="accent-color: var(--accent-blue); width: 15px; height: 15px; cursor: pointer;">
               <span>Layer / Merge with active sheets</span>
             </label>
@@ -1256,8 +1272,7 @@
               <th>Name</th>
               <th>Players</th>
               <th>Rules</th>
-              <th>Status</th>
-              <th>Layer Active</th>
+              <th>Layer Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -1464,10 +1479,14 @@
       const mainText = document.getElementById('dropzone-main-text');
       const subText = document.getElementById('dropzone-sub-text');
       const statusMsg = document.getElementById('cheatsheet-status-msg');
+      const nameInput = document.getElementById('cheatsheet-name-input');
 
       if (mainText) mainText.textContent = `Selected: ${file.name}`;
       if (subText) subText.textContent = `${(file.size / 1024).toFixed(1)} KB ready`;
       if (statusMsg) statusMsg.textContent = `File "${file.name}" ready. Click "Preview Diff" or "Save & Apply".`;
+      if (nameInput && !nameInput.value.trim()) {
+        nameInput.value = file.name.replace(/\.[^/.]+$/, "");
+      }
     }
 
     function getLeagueQueryString() {
@@ -1510,42 +1529,49 @@
         showToast('Error generating diff: ' + err.message, 'error');
         if (statusEl) statusEl.textContent = '';
       }
-
     }
 
     async function uploadStagedFile(file) {
       const statusEl = document.getElementById('cheatsheet-status-msg');
-      if (statusEl) statusEl.textContent = `Parsing and applying "${file.name}"...`;
-
       const layerMode = document.getElementById('cheatsheet-layer-toggle')?.checked ?? true;
+      const customName = document.getElementById('cheatsheet-name-input')?.value.trim() || file.name;
+      if (statusEl) statusEl.textContent = `Parsing and applying "${customName}"...`;
+
       const formData = new FormData();
       formData.append('file', file);
 
       try {
-        const res = await fetch(`/api/cheatsheet/upload-file?layer_mode=${layerMode}`, {
+        const res = await fetch(`/api/cheatsheet/upload-file?name=${encodeURIComponent(customName)}&layer_mode=${layerMode}`, {
           method: 'POST',
           body: formData,
         });
         if (res.ok) {
           const data = await res.json();
           const pCount = Object.keys(data.entries || {}).length;
-          if (statusEl) statusEl.textContent = `Successfully parsed "${file.name}" (${pCount} players, ${data.strategy_rules?.length || 0} rules)!`;
+          if (statusEl) statusEl.textContent = `Successfully parsed "${customName}" (${pCount} players, ${data.strategy_rules?.length || 0} rules)!`;
+          showToast(`Loaded ${pCount} players & ${data.strategy_rules?.length || 0} rules!`, 'success');
           renderCheatsheetContext(data);
           fetchDraftState();
           loadCheatsheetHistory();
           selectedCheatsheetFile = null;
           const mainText = document.getElementById('dropzone-main-text');
           const subText = document.getElementById('dropzone-sub-text');
+          const fileInput = document.getElementById('cheatsheet-file-input');
+          const nameInput = document.getElementById('cheatsheet-name-input');
           if (mainText) mainText.textContent = 'Click or Drop File Here';
-          if (subText) subText.textContent = 'Supports PDF, CSV, TXT, or JSON formats';
+          if (subText) subText.textContent = 'Supports CSV, TXT, JSON, or PDF formats';
+          if (fileInput) fileInput.value = '';
+          if (nameInput) nameInput.value = '';
 
         } else {
           const errJson = await res.json().catch(() => ({}));
           const detail = errJson.detail || 'Failed to parse uploaded file.';
           if (statusEl) statusEl.textContent = `Failed: ${detail}`;
+          showToast('Failed: ' + detail, 'error');
         }
       } catch (err) {
         if (statusEl) statusEl.textContent = `Upload error: ${err.message}`;
+        showToast('Upload error: ' + err.message, 'error');
       }
     }
 
@@ -1598,15 +1624,11 @@
     }
 
     async function executeUnifiedDiff() {
-      const urlInput = document.getElementById('cheatsheet-url-input');
-      const urlVal = urlInput ? urlInput.value.trim() : '';
       const textInput = document.getElementById('cheatsheet-textarea');
       const textVal = textInput ? textInput.value.trim() : '';
 
       if (selectedCheatsheetFile) {
         await previewFileCheatsheetDiff(selectedCheatsheetFile);
-      } else if (urlVal) {
-        await previewUrlCheatsheetDiff();
       } else if (textVal) {
         await previewCheatsheetDiff();
       } else {
@@ -1615,23 +1637,17 @@
     }
 
     async function executeUnifiedApply() {
-      const urlInput = document.getElementById('cheatsheet-url-input');
-      const urlVal = urlInput ? urlInput.value.trim() : '';
       const textInput = document.getElementById('cheatsheet-textarea');
       const textVal = textInput ? textInput.value.trim() : '';
 
       if (selectedCheatsheetFile) {
         await uploadStagedFile(selectedCheatsheetFile);
-      } else if (urlVal) {
-        await importFromWebUrl();
       } else if (textVal) {
         await submitCheatsheet();
       } else {
         document.getElementById('cheatsheet-file-input').click();
       }
     }
-
-
 
     async function fetchCheatsheet() {
       try {
@@ -1699,22 +1715,17 @@
       let html = '';
       history.forEach(item => {
         const isActive = item.is_active === 1 || item.is_active === true;
-        const statusBadge = isActive
-          ? '<span class="badge badge-claimed">Active</span>'
-          : '<span class="badge badge-inactive">Inactive</span>';
-        
         const toggleBtn = isActive
-          ? `<button class="btn-toggle-pill-active" onclick="toggleSingleCheatsheet(${item.id})" title="Click to Layer OFF">ACTIVE (ON)</button>`
+          ? `<button class="btn-toggle-pill-active" onclick="toggleSingleCheatsheet(${item.id})" title="Click to Deactivate">ACTIVE (ON)</button>`
           : `<button class="btn-activate-pill" onclick="toggleSingleCheatsheet(${item.id})" title="Click to Layer ON">INACTIVE (OFF)</button>`;
 
         const deleteBtn = `<button class="btn-danger-pill" onclick="deleteSingleCheatsheet(${item.id})">Delete</button>`;
 
         html += `<tr>
           <td>#${item.id}</td>
-          <td><strong>${item.name || 'Cheatsheet'}</strong></td>
+          <td><strong style="color: var(--text-main); font-size: 0.9rem;">${item.name || 'Cheatsheet'}</strong></td>
           <td>${item.player_count}</td>
           <td>${item.rule_count}</td>
-          <td>${statusBadge}</td>
           <td>${toggleBtn}</td>
           <td>
             <div style="display: flex; gap: 0.4rem;">
@@ -1761,7 +1772,7 @@
     async function deleteSingleCheatsheet(id) {
       const confirmed = await showConfirmDialog(
         'Delete Cheatsheet',
-        'Are you sure you want to delete this cheatsheet?',
+        'Are you sure you want to delete this cheatsheet from your library?',
         'Delete',
         true
       );
@@ -1782,7 +1793,7 @@
     async function deleteAllCheatsheets() {
       const confirmed = await showConfirmDialog(
         'Delete All Cheatsheets',
-        'Are you sure you want to permanently delete ALL saved cheatsheets?',
+        'Are you sure you want to permanently delete ALL saved cheatsheets from your library?',
         'Delete All',
         true
       );
@@ -1806,16 +1817,14 @@
       }
     }
 
-
-
-
     async function submitCheatsheet() {
       const text = document.getElementById('cheatsheet-textarea').value;
       if (!text.trim()) {
-        showToast('Please enter cheatsheet text.', 'error');
+        showToast('Please enter cheatsheet text or choose a file.', 'error');
         return;
       }
       const layerMode = document.getElementById('cheatsheet-layer-toggle')?.checked ?? true;
+      const customName = document.getElementById('cheatsheet-name-input')?.value.trim() || 'Pasted Cheatsheet';
       try {
         localStorage.setItem('fwr_cheatsheet_text', text);
       } catch (e) {}
@@ -1824,7 +1833,7 @@
         const res = await fetch('/api/cheatsheet/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, layer_mode: layerMode })
+          body: JSON.stringify({ text, name: customName, layer_mode: layerMode })
         });
         if (res.ok) {
           const data = await res.json();
@@ -1834,6 +1843,8 @@
           renderCheatsheetContext(data);
           fetchDraftState();
           loadCheatsheetHistory();
+          const nameInput = document.getElementById('cheatsheet-name-input');
+          if (nameInput) nameInput.value = '';
         } else {
           const errJson = await res.json().catch(() => ({}));
           const detail = errJson.detail || 'Failed to parse text.';
@@ -1843,77 +1854,6 @@
       } catch (err) {
         document.getElementById('cheatsheet-status-msg').textContent = `Upload error: ${err.message}`;
         showToast('Upload error: ' + err.message, 'error');
-      }
-    }
-
-
-    async function importFromWebUrl() {
-      const urlInput = document.getElementById('cheatsheet-url-input');
-      const url = urlInput ? urlInput.value.trim() : '';
-      if (!url) {
-        showToast('Please enter a valid web article or rankings URL (e.g. ESPN, Yahoo, FantasyPros).', 'error');
-        return;
-      }
-      const layerMode = document.getElementById('cheatsheet-layer-toggle')?.checked ?? true;
-
-      const statusEl = document.getElementById('cheatsheet-status-msg');
-      if (statusEl) statusEl.textContent = 'Fetching and parsing web cheatsheet...';
-
-      try {
-        const res = await fetch('/api/cheatsheet/url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url, layer_mode: layerMode })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const pCount = Object.keys(data.entries || {}).length;
-          if (statusEl) statusEl.textContent = `Successfully imported from URL (${pCount} players, ${data.strategy_rules?.length || 0} rules)!`;
-          showToast(`Imported ${pCount} players & ${data.strategy_rules?.length || 0} rules!`, 'success');
-          renderCheatsheetContext(data);
-          fetchDraftState();
-          loadCheatsheetHistory();
-        } else {
-          const errJson = await res.json().catch(() => ({}));
-          const detail = errJson.detail || 'Failed to parse URL.';
-          if (statusEl) statusEl.textContent = `Failed: ${detail}`;
-          showToast('Failed: ' + detail, 'error');
-        }
-      } catch (err) {
-        if (statusEl) statusEl.textContent = `Error: ${err.message}`;
-        showToast('Error: ' + err.message, 'error');
-      }
-    }
-
-    async function previewUrlCheatsheetDiff() {
-      const urlInput = document.getElementById('cheatsheet-url-input');
-      const url = urlInput ? urlInput.value.trim() : '';
-      if (!url) {
-        showToast('Please enter a valid web article or rankings URL.', 'error');
-        return;
-      }
-
-      const statusEl = document.getElementById('cheatsheet-status-msg');
-      if (statusEl) statusEl.textContent = 'Fetching and calculating web diff...';
-
-      try {
-        const res = await fetch('/api/cheatsheet/url-diff' + getLeagueQueryString(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          showToast('Web diff failed: ' + (err.detail || 'Unknown error'), 'error');
-          if (statusEl) statusEl.textContent = '';
-          return;
-        }
-        const diff = await res.json();
-        renderDiffModal(diff);
-        if (statusEl) statusEl.textContent = '';
-      } catch (err) {
-        showToast('Error generating web diff: ' + err.message, 'error');
-        if (statusEl) statusEl.textContent = '';
       }
     }
 
@@ -3002,6 +2942,8 @@
         <button class="btn btn-primary" onclick="applyDiffChanges()">Apply Changes to Active Draft</button>
       </div>
     </div>
+  </div>
+
   <!-- Custom Styled Confirmation Modal -->
   <div id="custom-confirm-modal" style="display: none; position: fixed; inset: 0; background: rgba(10, 15, 29, 0.85); backdrop-filter: blur(6px); z-index: 100001; align-items: center; justify-content: center; padding: 1.5rem;">
     <div style="background: #111a2e; border: 1px solid var(--border-color); border-radius: 12px; max-width: 440px; width: 100%; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
