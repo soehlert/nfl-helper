@@ -164,34 +164,30 @@ def _evaluate_on_the_clock_cliff(
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is currently on the clock."""
     drop = calculate_tier_drop(tier, next_tier)
-    if drop < 1.0:
+    if drop < 0.7:
         return None
 
     remaining = len(tier.players)
     tier_size = max(remaining, tier.count)
 
-    # 1. Never alert on a full tier that has not started draining
-    if remaining >= tier_size and remaining > 1:
-        return None
-
-    # 2. Dynamic ADP Proximity: do not alert if tier is far out of draft range for current pick
+    # 1. Dynamic ADP Proximity: do not alert if tier is far out of draft range for current pick
     adps = [p.adp for p in tier.players if p.adp is not None]
     if adps:
         avg_adp = sum(adps) / len(adps)
         if avg_adp > current_pick + 8 and remaining > 1:
             return None
 
-    # 3. Require true tier depletion (<= 50% remaining or down to the last player)
-    is_drained = (remaining / tier_size) <= 0.50 or remaining == 1
+    # 2. Require true tier depletion or imminent wipeout across a wide turn gap
+    is_drained = (remaining / tier_size) <= 0.60 or remaining <= 2 or (remaining <= 3 and snake_turn_gap >= 8)
     is_gap_scarce = remaining <= max(2, (snake_turn_gap + 2) // 3)
 
     if not (is_drained and is_gap_scarce):
         return None
 
-    risk = "CRITICAL" if (remaining == 1 or drop >= 3.0) else "HIGH"
+    risk = "CRITICAL" if (remaining == 1 or drop >= 2.5) else ("HIGH" if remaining <= 2 else "MODERATE")
     next_num = next_tier.tier_num if next_tier else tier.tier_num + 1
     action = (
-        f"Only {remaining} of {tier_size} Tier {tier.tier_num} {tier.position} remaining ({round(remaining / tier_size * 100)}% left) "
+        f"Only {remaining} of {tier_size} Tier {tier.tier_num} {tier.position} remaining "
         f"before a {snake_turn_gap}-pick turn gap. Draft now to avoid dropping -{drop:.1f} pts to Tier {next_num}."
     )
 
@@ -217,7 +213,7 @@ def _evaluate_waiting_cliff(
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is waiting for upcoming pick with dynamic ADP proximity."""
     drop = calculate_tier_drop(tier, next_tier)
-    if drop < 0.8:
+    if drop < 0.7:
         return None
 
     remaining = len(tier.players)
@@ -234,7 +230,7 @@ def _evaluate_waiting_cliff(
     # Only alert for actionable upcoming turn cliffs (tier survives to your pick but depletes during turn gap)
     survives_to_turn = remaining > picks_until_turn
     wipes_in_gap = remaining <= (picks_until_turn + max(2, (snake_turn_gap + 2) // 3))
-    is_tier_draining = (remaining / tier_size) <= 0.50 or remaining <= 3
+    is_tier_draining = (remaining / tier_size) <= 0.60 or remaining <= 2 or (remaining <= 3 and snake_turn_gap >= 8)
 
     if survives_to_turn and wipes_in_gap and is_tier_draining and snake_turn_gap >= 4:
         risk = "HIGH" if remaining <= picks_until_turn + 1 else "MODERATE"
