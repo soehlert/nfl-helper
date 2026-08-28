@@ -281,7 +281,22 @@ def test_merge_cheatsheet_contexts_layering() -> None:
     assert bucky.tier == 3
     assert bucky.notes == "Breakout candidate"
 
-    # Check strategy rules merged
     assert len(merged.strategy_rules) == 2
     assert "Draft WR early in rounds 1-3" in merged.strategy_rules
     assert "Target upside handcuffs in rounds 8-10" in merged.strategy_rules
+
+
+def test_sheet_name_platform_prefix_notes() -> None:
+    """Verify sheet_name correctly brands notes and prevents 'Sleeper Sleeper' duplication."""
+    text = """
+    Sleepers
+    Kyle Monangai
+    Jonathon Brooks
+    """
+    # When sheet_name is "ESPN Sleepers", notes should be "ESPN Sleeper"
+    ctx_espn = parse_plain_text_cheatsheet(text, sheet_name="ESPN Sleepers")
+    assert ctx_espn.entries["kyle monangai"].notes == "ESPN Sleeper"
+
+    # When sheet_name is just "My Sleepers", notes should be "Sleeper" (no duplication)
+    ctx_plain = parse_plain_text_cheatsheet(text, sheet_name="My Sleepers")
+    assert ctx_plain.entries["kyle monangai"].notes == "Sleeper"

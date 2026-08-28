@@ -348,15 +348,15 @@ def generate_draft_suggestions(
             if "breakout" in nl:
                 target_idx = max(0, idx - 17)
                 target_score = base_scores[target_idx]
-                note_delta = max(0.20, (target_score - b_score) + 0.001)
+                note_delta = (target_score - b_score) + 0.0001
             elif "sleeper" in nl or "pick" in nl or "target" in nl:
                 target_idx = max(0, idx - 12)
                 target_score = base_scores[target_idx]
-                note_delta = max(0.12, (target_score - b_score) + 0.001)
+                note_delta = (target_score - b_score) + 0.0001
             elif "bust" in nl or "fade" in nl:
                 target_idx = min(len(base_scores) - 1, idx + 18)
                 target_score = base_scores[target_idx]
-                note_delta = min(-0.15, (target_score - b_score) - 0.001)
+                note_delta = (target_score - b_score) - 0.0001
 
         final_score = b_score + note_delta
         scored_players.append(

@@ -237,7 +237,7 @@ async def preview_cheatsheet_diff(
 ) -> CheatsheetDiffReport:
     """Generate dry-run diff report of candidate cheatsheet against active baseline without DB writes."""
     global _ACTIVE_CHEATSHEET
-    candidate = parse_cheatsheet_content(payload.text)
+    candidate = parse_cheatsheet_content(payload.text, sheet_name=payload.name)
     active = _ACTIVE_CHEATSHEET or get_active_cheatsheet()
     pool = get_current_player_pool(
         session_id=session_id,
@@ -546,7 +546,7 @@ async def get_waiver_recommendations(session_id: str | None = None) -> WaiverAna
 async def upload_cheatsheet(payload: CheatsheetUploadRequest) -> CheatsheetContext:
     """Ingest and parse plain-text, CSV, or JSON cheatsheet, storing active context in SQLite."""
     global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
-    context = parse_cheatsheet_content(payload.text)
+    context = parse_cheatsheet_content(payload.text, sheet_name=payload.name)
     save_cheatsheet(context, raw_text=payload.text, name=payload.name, layer_mode=payload.layer_mode)
     _ACTIVE_CHEATSHEET = get_active_cheatsheet()
     if _ACTIVE_CHEATSHEET:
@@ -564,6 +564,7 @@ async def upload_cheatsheet_file(
     global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
     filename = (file.filename or "").lower()
     content_bytes = await file.read()
+    sheet_name = (name or "").strip() or file.filename or "Uploaded File"
 
     try:
         if filename.endswith(".pdf"):
@@ -571,10 +572,9 @@ async def upload_cheatsheet_file(
             raw_preview = "[Binary PDF File]"
         else:
             text_str = content_bytes.decode("utf-8", errors="replace")
-            context = parse_cheatsheet_content(text_str)
+            context = parse_cheatsheet_content(text_str, sheet_name=sheet_name)
             raw_preview = text_str
 
-        sheet_name = (name or "").strip() or file.filename or "Uploaded File"
         save_cheatsheet(context, raw_text=raw_preview, name=sheet_name, layer_mode=layer_mode)
         _ACTIVE_CHEATSHEET = get_active_cheatsheet()
         if _ACTIVE_CHEATSHEET:
@@ -648,6 +648,7 @@ async def preview_cheatsheet_url_diff(
 @app.post("/api/cheatsheet/file-diff", response_model=CheatsheetDiffReport)
 async def preview_cheatsheet_file_diff(
     file: UploadFile,
+    name: str | None = None,
     session_id: str | None = None,
     platform: str | None = None,
     league_id: str | None = None,
@@ -658,13 +659,14 @@ async def preview_cheatsheet_file_diff(
     global _ACTIVE_CHEATSHEET
     filename = (file.filename or "").lower()
     content_bytes = await file.read()
+    sheet_name = (name or "").strip() or file.filename or "Uploaded File"
 
     try:
         if filename.endswith(".pdf"):
             candidate_context = parse_pdf_cheatsheet(content_bytes)
         else:
             text_str = content_bytes.decode("utf-8", errors="replace")
-            candidate_context = parse_cheatsheet_content(text_str)
+            candidate_context = parse_cheatsheet_content(text_str, sheet_name=sheet_name)
 
         active = _ACTIVE_CHEATSHEET or get_active_cheatsheet()
         pool = get_current_player_pool(

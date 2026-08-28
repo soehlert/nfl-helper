@@ -349,7 +349,7 @@ def _clean_kerning(text: str) -> str:
     return text.strip() if text else ""
 
 
-def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
+def parse_plain_text_cheatsheet(text: str, sheet_name: str | None = None) -> CheatsheetContext:
     """Parse plain-text cheatsheet tracking blank-line tiers, ADPs, multi-column tables, and strategy rules."""
     context = CheatsheetContext()
     current_pos = ""
@@ -363,20 +363,20 @@ def parse_plain_text_cheatsheet(text: str) -> CheatsheetContext:
     clean_text = re.sub(r"https?://\S+", "", clean_text)
 
     platform_prefix = ""
-    lower_full = text.lower()
+    lower_full = f"{sheet_name or ''} {text}".lower()
     if "fantasypros" in lower_full:
         platform_prefix = "FantasyPros "
-    elif "yahoo" in lower_full:
-        platform_prefix = "Yahoo "
     elif "espn" in lower_full:
         platform_prefix = "ESPN "
+    elif "yahoo" in lower_full:
+        platform_prefix = "Yahoo "
     elif "ringer" in lower_full:
         platform_prefix = "Ringer "
     elif "cbs" in lower_full:
         platform_prefix = "CBS "
     elif "rotowire" in lower_full:
         platform_prefix = "Rotowire "
-    elif "sleeper" in lower_full:
+    elif "sleeper platform" in lower_full or "sleeper app" in lower_full or "sleeper.com" in lower_full:
         platform_prefix = "Sleeper "
 
     lines = [ln.strip() for ln in clean_text.splitlines()]
@@ -699,7 +699,7 @@ def parse_pdf_cheatsheet(pdf_bytes: bytes) -> CheatsheetContext:
     return parse_plain_text_cheatsheet(full_text)
 
 
-def parse_cheatsheet_content(content: str) -> CheatsheetContext:
+def parse_cheatsheet_content(content: str, sheet_name: str | None = None) -> CheatsheetContext:
     """Auto-detect content format (JSON, CSV, or plain-text) and parse accordingly."""
     cleaned = content.strip()
     if cleaned.startswith("{") and cleaned.endswith("}"):
@@ -712,7 +712,7 @@ def parse_cheatsheet_content(content: str) -> CheatsheetContext:
             return parse_csv_cheatsheet(cleaned)
         except Exception:
             pass
-    return parse_plain_text_cheatsheet(cleaned)
+    return parse_plain_text_cheatsheet(cleaned, sheet_name=sheet_name)
 
 
 def apply_cheatsheet_context(players: list[Player], context: CheatsheetContext) -> list[Player]:

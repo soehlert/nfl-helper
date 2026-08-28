@@ -1473,13 +1473,16 @@
 
     async function previewFileCheatsheetDiff(file) {
       const statusEl = document.getElementById('cheatsheet-status-msg');
-      if (statusEl) statusEl.textContent = `Calculating diff for "${file.name}"...`;
+      const customName = document.getElementById('cheatsheet-name-input')?.value.trim() || file.name;
+      if (statusEl) statusEl.textContent = `Calculating diff for "${customName}"...`;
 
       const formData = new FormData();
       formData.append('file', file);
 
       try {
-        const res = await fetch('/api/cheatsheet/file-diff' + getLeagueQueryString(), {
+        const queryStr = getLeagueQueryString();
+        const sep = queryStr ? '&' : '?';
+        const res = await fetch(`/api/cheatsheet/file-diff${queryStr}${sep}name=${encodeURIComponent(customName)}`, {
           method: 'POST',
           body: formData
         });
@@ -1843,6 +1846,7 @@
 
     async function previewCheatsheetDiff() {
       const text = document.getElementById('cheatsheet-textarea').value;
+      const customName = document.getElementById('cheatsheet-name-input')?.value.trim() || 'Pasted Cheatsheet';
       if (!text.trim()) {
         showToast('Please paste or upload candidate cheatsheet text to preview changes.', 'error');
         return;
@@ -1855,7 +1859,7 @@
         const res = await fetch('/api/cheatsheet/diff' + getLeagueQueryString(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
+          body: JSON.stringify({ text, name: customName })
         });
 
         if (!res.ok) {
