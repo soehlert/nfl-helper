@@ -129,4 +129,3 @@ def get_cheatsheet_history(db_path: Path | str | None = None) -> list[dict[str, 
         return []
     finally:
         conn.close()
-

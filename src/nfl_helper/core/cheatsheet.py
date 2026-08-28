@@ -85,6 +85,42 @@ NFL_TEAMS = {
 }
 
 
+KNOWN_PLAYER_LOOKUP: dict[str, tuple[str, str, str]] = {
+    "hurts": ("Jalen Hurts", "QB", "PHI"),
+    "barkley": ("Saquon Barkley", "RB", "PHI"),
+    "gibbs": ("Jahmyr Gibbs", "RB", "DET"),
+    "mccaffrey": ("Christian McCaffrey", "RB", "SF"),
+    "burrow": ("Joe Burrow", "QB", "CIN"),
+    "maye": ("Drake Maye", "QB", "NE"),
+    "daniels": ("Jayden Daniels", "QB", "WAS"),
+    "herbert": ("Justin Herbert", "QB", "LAC"),
+    "williams": ("Caleb Williams", "QB", "CHI"),
+    "lawrence": ("Trevor Lawrence", "QB", "JAX"),
+    "prescott": ("Dak Prescott", "QB", "DAL"),
+    "purdy": ("Brock Purdy", "QB", "SF"),
+    "henry": ("Derrick Henry", "RB", "BAL"),
+    "achane": ("De'Von Achane", "RB", "MIA"),
+    "taylor": ("Jonathan Taylor", "RB", "IND"),
+    "cook": ("James Cook", "RB", "BUF"),
+    "corum": ("Blake Corum", "RB", "LAR"),
+    "pollard": ("Tony Pollard", "RB", "TEN"),
+    "dobbins": ("J.K. Dobbins", "RB", "LAC"),
+    "hubbard": ("Chuba Hubbard", "RB", "CAR"),
+    "hampton": ("Omarion Hampton", "RB", "LAC"),
+    "mason": ("Jordan Mason", "RB", "SF"),
+    "gainwell": ("Kenneth Gainwell", "RB", "PHI"),
+    "monangai": ("Kyle Monangai", "RB", "CHI"),
+    "croskey-merritt": ("Jacory Croskey-Merritt", "RB", "WAS"),
+    "jeanty": ("Ashton Jeanty", "RB", "DAL"),
+    "mitchell": ("Keaton Mitchell", "RB", "BAL"),
+    "marks": ("Woody Marks", "RB", "HOU"),
+    "white": ("Rachaad White", "RB", "TB"),
+    "robinson": ("Bijan Robinson", "RB", "ATL"),
+    "walker": ("Kenneth Walker", "RB", "SEA"),
+    "jackson": ("Lamar Jackson", "QB", "BAL"),
+}
+
+
 def _clean_position_header(raw_header: str) -> str | None:
     """Extract standard position from header line (e.g. 'RUNNING BACKS', 'RB con't' -> 'RB')."""
     cleaned = re.sub(r"[^A-Za-z0-9/ ]", "", raw_header).strip().upper()
@@ -173,10 +209,23 @@ def _parse_player_line(
     if len(player_name) < 2:
         return None
 
+    # Filter noise and header rows
+    name_lower = player_name.lower()
+    if ("adp" in name_lower or "tier" in name_lower or name_lower.startswith("page")) and len(player_name.split()) <= 4:
+        return None
+
+    # Canonical player resolution for ambiguous names
+    norm_key = normalize_player_name(player_name)
+    if norm_key in KNOWN_PLAYER_LOOKUP:
+        full_name, can_pos, can_team = KNOWN_PLAYER_LOOKUP[norm_key]
+        player_name = full_name
+        pos_found = pos_found or can_pos
+        team_found = team_found or can_team
+
     return CheatsheetEntry(
         player_name=player_name,
         normalized_name=normalize_player_name(player_name),
-        position=pos_found or current_pos or "WR",
+        position=pos_found or current_pos or "",
         team=team_found or "",
         tier=current_tier,
         adp=adp_val,
@@ -272,7 +321,9 @@ def _clean_kerning(text: str) -> str:
         return text
 
     t = text
-    # Fix broken team codes e.g. 'P HI' -> 'PHI', 'S EA' -> 'SEA', 'S F' -> 'SF'
+    # Fix broken team codes e.g. 'P HI' -> 'PHI', 'S EA' -> 'SEA', 'S F' -> 'SF', 'N YJ' -> 'NYJ'
+    t = re.sub(r"\b([A-Z])\s+([A-Z]{2})\b", r"\1\2", t)
+    t = re.sub(r"\b([A-Z]{2})\s+([A-Z])\b", r"\1\2", t)
     t = re.sub(r"\b([A-Z])\s+([A-Z])\s+([A-Z])\b", r"\1\2\3", t)
     t = re.sub(r"\b([A-Z])\s+([A-Z])\b", r"\1\2", t)
 

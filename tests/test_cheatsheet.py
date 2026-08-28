@@ -175,26 +175,33 @@ def test_parse_multi_column_and_broken_ocr_kerning() -> None:
     """
     context = parse_plain_text_cheatsheet(sample_text)
 
-    # Assert players were disentangled into individual records
+    # Assert players were disentangled and mapped to canonical records
     assert "allen" in context.entries
     assert context.entries["allen"].adp == 34.8
 
-    assert "gibbs" in context.entries
-    assert context.entries["gibbs"].adp == 1.1
+    assert "jahmyr gibbs" in context.entries
+    assert context.entries["jahmyr gibbs"].position == "RB"
+    assert context.entries["jahmyr gibbs"].team == "DET"
+    assert context.entries["jahmyr gibbs"].adp == 1.1
 
-    assert "price" in context.entries
+    assert "bijan robinson" in context.entries
+    assert context.entries["bijan robinson"].position == "RB"
+    assert context.entries["bijan robinson"].team == "ATL"
+    assert context.entries["bijan robinson"].adp == 2.1
 
-    assert "robinson" in context.entries
-    assert context.entries["robinson"].adp == 2.1
+    assert "dak prescott" in context.entries
+    assert context.entries["dak prescott"].position == "QB"
+    assert context.entries["dak prescott"].adp == 94.9
 
-    assert "prescott" in context.entries
-    assert context.entries["prescott"].adp == 94.9
+    assert "derrick henry" in context.entries
+    assert context.entries["derrick henry"].position == "RB"
+    assert context.entries["derrick henry"].team == "BAL"
+    assert context.entries["derrick henry"].adp == 22.4
 
-    assert "henry" in context.entries
-    assert context.entries["henry"].adp == 22.4
-
-    assert "purdy" in context.entries
-    assert context.entries["purdy"].adp == 118.7
+    assert "brock purdy" in context.entries
+    assert context.entries["brock purdy"].position == "QB"
+    assert context.entries["brock purdy"].team == "SF"
+    assert context.entries["brock purdy"].adp == 118.7
 
     # Assert header noise was filtered
     assert "adp adp" not in context.entries

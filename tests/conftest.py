@@ -13,4 +13,3 @@ def isolate_test_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("NFL_HELPER_DB_PATH", str(test_db))
     with patch("nfl_helper.core.db.DEFAULT_DB_PATH", test_db):
         yield test_db
-

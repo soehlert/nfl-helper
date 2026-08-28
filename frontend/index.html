@@ -1041,49 +1041,55 @@
         </div>
       </div>
 
-      <!-- PDF / CSV / TXT Cheatsheet Ingestion -->
+      <!-- Cheatsheet & PDF Ingestion -->
       <div class="card">
         <div class="card-header">
           <div class="card-title">📝 Cheatsheet & PDF Ingestion</div>
-          <button class="btn" style="font-size: 0.8rem;" onclick="loadSampleCheatsheet()">Load Sample</button>
-        </div>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
-          Import directly from a <strong>Web URL</strong>, upload a <strong>PDF / CSV</strong> file, or paste text below:
-        </p>
-
-        <!-- Web URL Ingestion Box -->
-        <div style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem;">
-          <label class="form-label" style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; color: var(--accent-cyan);">
-            <span>🌐</span> Ingest from Web Article / Online Rankings URL (ESPN, Yahoo, FantasyPros)
-          </label>
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem; flex-wrap: wrap;">
-            <input type="url" id="cheatsheet-url-input" class="form-control" style="flex: 1; min-width: 260px;" placeholder="https://www.espn.com/fantasy/football/story/_/id/..." />
-            <button class="btn btn-secondary" style="font-size: 0.85rem;" onclick="previewUrlCheatsheetDiff()">📊 Preview Web Diff</button>
-            <button class="btn btn-primary" style="font-size: 0.85rem;" onclick="importFromWebUrl()">🌐 Import from URL</button>
-          </div>
         </div>
         
-        <!-- Direct File Upload Dropzone -->
-        <div class="dropzone" onclick="document.getElementById('cheatsheet-file-input').click()">
-          <div style="font-size: 1.8rem; margin-bottom: 0.35rem;">📄</div>
-          <div style="font-weight: 600; font-size: 0.9rem;">Click to Upload Cheatsheet File (.pdf, .csv, .txt, .json)</div>
-          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Drop your PDF here to automatically parse all pages, tiers, ADPs, and rules</div>
-          <input type="file" id="cheatsheet-file-input" accept=".pdf,.csv,.txt,.json" style="display: none;" onchange="handleFileUpload(event)">
+        <!-- Source Tab Selector -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; flex-wrap: wrap;">
+          <button id="tab-btn-file" class="btn btn-primary" style="font-size: 0.85rem;" onclick="setCheatsheetSourceTab('file')">📄 File Upload (.pdf, .csv)</button>
+          <button id="tab-btn-url" class="btn btn-secondary" style="font-size: 0.85rem;" onclick="setCheatsheetSourceTab('url')">🌐 Web Article URL</button>
+          <button id="tab-btn-text" class="btn btn-secondary" style="font-size: 0.85rem;" onclick="setCheatsheetSourceTab('text')">✍️ Paste Text</button>
         </div>
 
-
-        <div class="form-group">
-          <label class="form-label">Or Paste Plain-Text / CSV / JSON Directly</label>
-          <textarea id="cheatsheet-textarea" class="form-control" rows="6" placeholder="Paste your plain-text cheatsheet, OCR table, CSV, or JSON here..."></textarea>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn btn-secondary" style="font-size: 0.85rem;" onclick="previewCheatsheetDiff()">📊 Preview Diff (Dry Run)</button>
-            <button class="btn btn-primary" style="font-size: 0.85rem;" onclick="submitCheatsheet()">💾 Save & Apply</button>
+        <!-- Panel 1: File Upload -->
+        <div id="cheatsheet-panel-file" style="display: block;">
+          <div class="dropzone" style="padding: 1.5rem 1rem;" onclick="document.getElementById('cheatsheet-file-input').click()">
+            <div style="font-size: 2rem; margin-bottom: 0.25rem;">📄</div>
+            <div style="font-weight: 600; font-size: 0.9rem;">Click to Upload Cheatsheet File (.pdf, .csv, .txt, .json)</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Drop your multi-column PDF or CSV here to extract all tiers, ADPs, and rules</div>
+            <input type="file" id="cheatsheet-file-input" accept=".pdf,.csv,.txt,.json" style="display: none;" onchange="handleFileUpload(event)">
           </div>
+        </div>
+
+        <!-- Panel 2: Web URL Ingestion -->
+        <div id="cheatsheet-panel-url" style="display: none;">
+          <div class="form-group" style="margin-bottom: 0.5rem;">
+            <label class="form-label" style="font-weight: 600; color: var(--accent-cyan);">Web Rankings or Article URL (ESPN, Yahoo, FantasyPros, Substack)</label>
+            <input type="url" id="cheatsheet-url-input" class="form-control" placeholder="https://www.espn.com/fantasy/football/story/_/id/..." />
+          </div>
+        </div>
+
+        <!-- Panel 3: Paste Text -->
+        <div id="cheatsheet-panel-text" style="display: none;">
+          <div class="form-group" style="margin-bottom: 0.5rem;">
+            <label class="form-label" style="font-weight: 600;">Paste Plain-Text, CSV, or OCR Output</label>
+            <textarea id="cheatsheet-textarea" class="form-control" rows="5" placeholder="Paste your plain-text cheatsheet, OCR table, CSV, or JSON here..."></textarea>
+          </div>
+        </div>
+
+        <!-- Unified Action Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem; flex-wrap: wrap; gap: 0.75rem;">
           <span id="cheatsheet-status-msg" style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;"></span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" style="font-size: 0.85rem;" onclick="executeUnifiedDiff()">📊 Preview Diff (Dry Run)</button>
+            <button class="btn btn-primary" style="font-size: 0.85rem;" onclick="executeUnifiedApply()">💾 Save & Apply</button>
+          </div>
         </div>
       </div>
+
 
 
       <!-- Parsed Cheatsheet Player Directory -->
@@ -1208,46 +1214,7 @@
     }
 
 
-    function loadSampleCheatsheet() {
-      const sample = `QB
-Allen BUF 34.8
 
-Jackson BAL 69.1
-Burrow CIN 65.5
-
-RB
-Gibbs DET 1.1
-Robinson ATL 2.1
-
-McCaffrey SF 8.7
-Taylor IND 8.9
-Cook BUF 9.3
-
-Hampton LAC 16.1
-Barkley PHI 16.8
-Achane MIA 16.5
-
-WR
-Chase CIN 3.1
-Nacua LAR 4.8
-St Brown DET 5.9
-Smith-Njigba SEA 5.5
-
-Lamb DAL 11.3
-Jefferson MIN 12.3
-
-TE
-Bowers LV 21.6
-McBride ARI 28.4
-Loveland CHI 43.8
-Warren IND 56.3
-
-Rounds 1-2 - Only RB/WR at least 1 RB
-TE - Target the top 4 in rounds 3-5 or take 2 from tiers 2-4
-QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
-* = injured a while`;
-      document.getElementById('cheatsheet-textarea').value = sample;
-    }
 
     async function handleFileUpload(event) {
       const file = event.target.files[0];
@@ -1328,6 +1295,42 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
       }
     }
 
+    let currentCheatsheetTab = 'file';
+
+    function setCheatsheetSourceTab(tab) {
+      currentCheatsheetTab = tab;
+      ['file', 'url', 'text'].forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const panel = document.getElementById(`cheatsheet-panel-${t}`);
+        if (btn) {
+          btn.className = (t === tab) ? 'btn btn-primary' : 'btn btn-secondary';
+        }
+        if (panel) {
+          panel.style.display = (t === tab) ? 'block' : 'none';
+        }
+      });
+    }
+
+    async function executeUnifiedDiff() {
+      if (currentCheatsheetTab === 'url') {
+        await previewUrlCheatsheetDiff();
+      } else if (currentCheatsheetTab === 'text') {
+        await previewCheatsheetDiff();
+      } else if (currentCheatsheetTab === 'file') {
+        document.getElementById('cheatsheet-file-input').click();
+      }
+    }
+
+    async function executeUnifiedApply() {
+      if (currentCheatsheetTab === 'url') {
+        await importFromWebUrl();
+      } else if (currentCheatsheetTab === 'text') {
+        await submitCheatsheet();
+      } else if (currentCheatsheetTab === 'file') {
+        document.getElementById('cheatsheet-file-input').click();
+      }
+    }
+
     async function fetchCheatsheet() {
       try {
         const res = await fetch('/api/cheatsheet');
@@ -1335,29 +1338,11 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           const data = await res.json();
           if (data && (Object.keys(data.entries || {}).length > 0 || (data.strategy_rules || []).length > 0)) {
             renderCheatsheetContext(data);
-            return;
           }
         }
-        // Auto-restore from localStorage if server has no active cheatsheet
-        const savedText = localStorage.getItem('fwr_cheatsheet_text');
-        if (savedText && savedText.trim()) {
-          const txtArea = document.getElementById('cheatsheet-textarea');
-          if (txtArea) txtArea.value = savedText;
-          const uploadRes = await fetch('/api/cheatsheet/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: savedText })
-          });
-          if (uploadRes.ok) {
-            const restoredData = await uploadRes.json();
-            renderCheatsheetContext(restoredData);
-            fetchDraftState();
-          }
-        }
-      } catch (e) {
-        console.log('Cheatsheet fetch completed');
-      }
+      } catch (e) {}
     }
+
 
     async function submitCheatsheet() {
       const text = document.getElementById('cheatsheet-textarea').value;
