@@ -753,6 +753,41 @@ def apply_cheatsheet_context(players: list[Player], context: CheatsheetContext) 
     return players
 
 
+_DIRECTIONAL_NOTE_KEYWORDS = {"sleeper", "bust", "breakout", "fade", "avoid"}
+
+
+def _is_directional_tag(segment: str) -> bool:
+    """Identify if a note segment is a directional fantasy classification tag (e.g. ESPN Bust, Sleeper)."""
+    s = segment.lower().strip()
+    words = s.split()
+    return len(words) <= 3 and any(
+        k in words or any(w.endswith(k) or w.startswith(k) for w in words) for k in _DIRECTIONAL_NOTE_KEYWORDS
+    )
+
+
+def _merge_player_notes(existing: str | None, new_note: str | None) -> str:
+    """Merge player notes across layers, allowing newer directional tags (Sleeper/Bust/Breakout) to replace older ones."""
+    if not existing:
+        return new_note or ""
+    if not new_note:
+        return existing
+
+    exist_segments = [s.strip() for s in existing.split(";") if s.strip()]
+    new_segments = [s.strip() for s in new_note.split(";") if s.strip()]
+
+    new_has_directional = any(_is_directional_tag(ns) for ns in new_segments)
+
+    filtered_existing = []
+    for es in exist_segments:
+        if new_has_directional and _is_directional_tag(es):
+            continue
+        if es not in new_segments:
+            filtered_existing.append(es)
+
+    combined = filtered_existing + [ns for ns in new_segments if ns not in filtered_existing]
+    return "; ".join(combined)
+
+
 def merge_cheatsheet_contexts(contexts: list[CheatsheetContext]) -> CheatsheetContext:
     """Consolidate multiple active cheatsheet contexts into a single unified context."""
     valid_contexts = [c for c in contexts if c is not None]
@@ -777,10 +812,7 @@ def merge_cheatsheet_contexts(contexts: list[CheatsheetContext]) -> CheatsheetCo
             else:
                 existing = merged_entries[key]
                 if entry.notes:
-                    if not existing.notes:
-                        existing.notes = entry.notes
-                    elif entry.notes not in existing.notes:
-                        existing.notes = f"{existing.notes}; {entry.notes}"
+                    existing.notes = _merge_player_notes(existing.notes, entry.notes)
                 if entry.tier is not None:
                     existing.tier = entry.tier
                 if entry.adp is not None:
