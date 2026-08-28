@@ -88,7 +88,10 @@ def calculate_tier_drop(current_tier: PlayerTier, next_tier: PlayerTier | None) 
 
 
 def _evaluate_on_the_clock_cliff(
-    tier: PlayerTier, next_tier: PlayerTier | None, snake_turn_gap: int
+    tier: PlayerTier,
+    next_tier: PlayerTier | None,
+    snake_turn_gap: int,
+    current_pick: int = 1,
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is currently on the clock."""
     drop = calculate_tier_drop(tier, next_tier)
@@ -97,11 +100,23 @@ def _evaluate_on_the_clock_cliff(
 
     remaining = len(tier.players)
     tier_size = max(remaining, tier.count)
-    # Require true tier depletion or <= 2 players remaining to trigger an active cliff
-    is_percentage_scarce = (remaining / tier_size) <= 0.50 if tier_size > 0 else False
+
+    # 1. Never alert on a full tier that has not started draining
+    if remaining >= tier_size and remaining > 1:
+        return None
+
+    # 2. Dynamic ADP Proximity: do not alert if tier is far out of draft range for current pick
+    adps = [p.adp for p in tier.players if p.adp is not None]
+    if adps:
+        avg_adp = sum(adps) / len(adps)
+        if avg_adp > current_pick + 8 and remaining > 1:
+            return None
+
+    # 3. Require true tier depletion (<= 50% remaining or down to the last player)
+    is_drained = (remaining / tier_size) <= 0.50 or remaining == 1
     is_gap_scarce = remaining <= max(2, (snake_turn_gap + 2) // 3)
 
-    if not ((is_percentage_scarce and is_gap_scarce) or remaining <= 2):
+    if not (is_drained and is_gap_scarce):
         return None
 
     risk = "CRITICAL" if (remaining == 1 or drop >= 3.0) else "HIGH"
@@ -194,7 +209,7 @@ def detect_tier_cliffs(
 
         warning: TierCliffWarning | None = None
         if is_on_the_clock or picks_until_turn <= 0:
-            warning = _evaluate_on_the_clock_cliff(top_tier, next_tier, snake_turn_gap)
+            warning = _evaluate_on_the_clock_cliff(top_tier, next_tier, snake_turn_gap, current_pick=current_pick)
         else:
             warning = _evaluate_waiting_cliff(top_tier, next_tier, picks_until_turn, snake_turn_gap, current_pick)
 
