@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -127,16 +128,114 @@ async def set_qa_mode(payload: QAModeRequest) -> dict[str, Any]:
     return {"qa_mode": _QA_MODE, "status": "updated"}
 
 
+# In-memory cache for live connected league player pools: league_id -> list[Player]
+_CONNECTED_LEAGUE_PLAYERS: dict[str, list[Player]] = {}
+LIVE_SNAPSHOT_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "cached_live_player_pool.json"
+TEST_FIXTURE_SNAPSHOT_PATH = (
+    Path(__file__).resolve().parent.parent.parent / "tests" / "fixtures" / "live_player_pool_snapshot.json"
+)
+
+
+def _save_live_player_pool_snapshot(players: list[Player]) -> None:
+    """Save live connected player pool snapshot for future test mocks."""
+    if not players:
+        return
+    try:
+        data = [p.model_dump(mode="json") for p in players]
+        json_str = json.dumps(data, indent=2)
+        LIVE_SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        LIVE_SNAPSHOT_PATH.write_text(json_str, encoding="utf-8")
+        TEST_FIXTURE_SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        TEST_FIXTURE_SNAPSHOT_PATH.write_text(json_str, encoding="utf-8")
+        logger.info("Saved live player pool snapshot (%d players) for future test mocks", len(players))
+    except Exception as err:
+        logger.warning("Failed to save live player pool snapshot: %s", err)
+
+
+def get_current_player_pool(
+    session_id: str | None = None,
+    platform: str | None = None,
+    league_id: str | None = None,
+    swid: str | None = None,
+    espn_s2: str | None = None,
+) -> list[Player]:
+    """Fetch live player pool from active league connection, saving snapshot for test fixtures."""
+    global _CONNECTED_LEAGUE_PLAYERS, _SAMPLE_PLAYERS
+
+    # Check active poller registry
+    if session_id:
+        poller = poller_registry.get(session_id)
+        if poller and poller.latest_state and poller.latest_state.available_players_by_pos:
+            all_p = [p for plist in poller.latest_state.available_players_by_pos.values() for p in plist]
+            if all_p:
+                _save_live_player_pool_snapshot(all_p)
+                return all_p
+
+    # Check connected platform/league
+    if platform and league_id and league_id not in ("12345678", "demo", ""):
+        if league_id in _CONNECTED_LEAGUE_PLAYERS:
+            return _CONNECTED_LEAGUE_PLAYERS[league_id]
+
+        try:
+            plat_type = PlatformType.SLEEPER if platform.lower() == "sleeper" else PlatformType.ESPN
+            profile = LeagueProfile(
+                session_id=session_id or f"sess_{league_id}",
+                invite_code=f"INV-{league_id[:5]}",
+                platform=plat_type,
+                league_id=league_id,
+                swid=swid,
+                espn_s2=espn_s2,
+            )
+            adapter = get_adapter_for_profile(profile)
+            live_draft = adapter.get_draft_state()
+
+            all_avail = [p for plist in live_draft.available_players_by_pos.values() for p in plist]
+            if all_avail:
+                _CONNECTED_LEAGUE_PLAYERS[league_id] = all_avail
+                _save_live_player_pool_snapshot(all_avail)
+                return all_avail
+        except Exception as exc:
+            logger.warning("Failed to fetch live league players for %s (%s): %s", platform, league_id, exc)
+
+    # If any league was previously connected and cached in memory
+    if _CONNECTED_LEAGUE_PLAYERS:
+        return next(iter(_CONNECTED_LEAGUE_PLAYERS.values()))
+
+    # Check if a live snapshot exists on disk
+    if LIVE_SNAPSHOT_PATH.exists():
+        try:
+            raw = json.loads(LIVE_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+            return [Player.model_validate(p) for p in raw]
+        except Exception:
+            pass
+
+    return _SAMPLE_PLAYERS
+
+
 @app.post("/api/cheatsheet/diff", response_model=CheatsheetDiffReport)
-async def preview_cheatsheet_diff(payload: CheatsheetUploadRequest) -> CheatsheetDiffReport:
+async def preview_cheatsheet_diff(
+    payload: CheatsheetUploadRequest,
+    session_id: str | None = None,
+    platform: str | None = None,
+    league_id: str | None = None,
+    swid: str | None = None,
+    espn_s2: str | None = None,
+) -> CheatsheetDiffReport:
     """Generate dry-run diff report of candidate cheatsheet against active baseline without DB writes."""
-    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
+    global _ACTIVE_CHEATSHEET
     candidate = parse_cheatsheet_content(payload.text)
     active = _ACTIVE_CHEATSHEET or get_active_cheatsheet()
+    pool = get_current_player_pool(
+        session_id=session_id,
+        platform=platform,
+        league_id=league_id,
+        swid=swid,
+        espn_s2=espn_s2,
+    )
     return compute_cheatsheet_diff(
         active_context=active,
         candidate_context=candidate,
-        player_pool=_SAMPLE_PLAYERS,
+        player_pool=pool,
         top_n=5,
     )
 
@@ -207,10 +306,13 @@ async def get_draft_state(
             )
             adapter = get_adapter_for_profile(profile)
             live_draft = adapter.get_draft_state()
-
             all_avail = []
             for plist in live_draft.available_players_by_pos.values():
                 all_avail.extend(plist)
+
+            if all_avail:
+                _CONNECTED_LEAGUE_PLAYERS[league_id] = all_avail
+                _save_live_player_pool_snapshot(all_avail)
 
             if _ACTIVE_CHEATSHEET:
                 all_avail = apply_cheatsheet_context(all_avail, _ACTIVE_CHEATSHEET)
@@ -471,16 +573,30 @@ async def upload_cheatsheet_url(payload: CheatsheetURLRequest) -> CheatsheetCont
 
 
 @app.post("/api/cheatsheet/url-diff", response_model=CheatsheetDiffReport)
-async def preview_cheatsheet_url_diff(payload: CheatsheetURLRequest) -> CheatsheetDiffReport:
+async def preview_cheatsheet_url_diff(
+    payload: CheatsheetURLRequest,
+    session_id: str | None = None,
+    platform: str | None = None,
+    league_id: str | None = None,
+    swid: str | None = None,
+    espn_s2: str | None = None,
+) -> CheatsheetDiffReport:
     """Dry-run diff comparing web rankings against active baseline without DB writes."""
-    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
+    global _ACTIVE_CHEATSHEET
     try:
         context, _, _ = await fetch_web_cheatsheet(payload.url)
         active = _ACTIVE_CHEATSHEET or get_active_cheatsheet()
+        pool = get_current_player_pool(
+            session_id=session_id,
+            platform=platform,
+            league_id=league_id,
+            swid=swid,
+            espn_s2=espn_s2,
+        )
         return compute_cheatsheet_diff(
             active_context=active,
             candidate_context=context,
-            player_pool=_SAMPLE_PLAYERS,
+            player_pool=pool,
             top_n=5,
         )
     except Exception as exc:
@@ -488,9 +604,16 @@ async def preview_cheatsheet_url_diff(payload: CheatsheetURLRequest) -> Cheatshe
 
 
 @app.post("/api/cheatsheet/file-diff", response_model=CheatsheetDiffReport)
-async def preview_cheatsheet_file_diff(file: UploadFile) -> CheatsheetDiffReport:
+async def preview_cheatsheet_file_diff(
+    file: UploadFile,
+    session_id: str | None = None,
+    platform: str | None = None,
+    league_id: str | None = None,
+    swid: str | None = None,
+    espn_s2: str | None = None,
+) -> CheatsheetDiffReport:
     """Dry-run diff comparing uploaded file rankings against active baseline without DB writes."""
-    global _ACTIVE_CHEATSHEET, _SAMPLE_PLAYERS
+    global _ACTIVE_CHEATSHEET
     filename = (file.filename or "").lower()
     content_bytes = await file.read()
 
@@ -502,10 +625,17 @@ async def preview_cheatsheet_file_diff(file: UploadFile) -> CheatsheetDiffReport
             candidate_context = parse_cheatsheet_content(text_str)
 
         active = _ACTIVE_CHEATSHEET or get_active_cheatsheet()
+        pool = get_current_player_pool(
+            session_id=session_id,
+            platform=platform,
+            league_id=league_id,
+            swid=swid,
+            espn_s2=espn_s2,
+        )
         return compute_cheatsheet_diff(
             active_context=active,
             candidate_context=candidate_context,
-            player_pool=_SAMPLE_PLAYERS,
+            player_pool=pool,
             top_n=5,
         )
     except Exception as exc:

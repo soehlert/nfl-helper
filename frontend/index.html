@@ -1258,6 +1258,20 @@
       if (statusMsg) statusMsg.textContent = `File "${file.name}" ready. Click "Preview Diff" or "Save & Apply".`;
     }
 
+    function getLeagueQueryString() {
+      const platform = document.getElementById('session-platform')?.value || '';
+      const leagueId = document.getElementById('session-league-id')?.value || '';
+      const swid = document.getElementById('session-swid')?.value || '';
+      const espnS2 = document.getElementById('session-espn-s2')?.value || '';
+      const params = new URLSearchParams();
+      if (platform) params.append('platform', platform);
+      if (leagueId) params.append('league_id', leagueId);
+      if (swid) params.append('swid', swid);
+      if (espnS2) params.append('espn_s2', espnS2);
+      const q = params.toString();
+      return q ? `?${q}` : '';
+    }
+
     async function previewFileCheatsheetDiff(file) {
       const statusEl = document.getElementById('cheatsheet-status-msg');
       if (statusEl) statusEl.textContent = `Calculating diff for "${file.name}"...`;
@@ -1266,10 +1280,11 @@
       formData.append('file', file);
 
       try {
-        const res = await fetch('/api/cheatsheet/file-diff', {
+        const res = await fetch('/api/cheatsheet/file-diff' + getLeagueQueryString(), {
           method: 'POST',
           body: formData
         });
+
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           alert('File diff preview failed: ' + (err.detail || 'Unknown error'));
@@ -1617,7 +1632,7 @@
       if (statusEl) statusEl.textContent = 'Fetching and calculating web diff...';
 
       try {
-        const res = await fetch('/api/cheatsheet/url-diff', {
+        const res = await fetch('/api/cheatsheet/url-diff' + getLeagueQueryString(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url })
@@ -1664,11 +1679,12 @@
       if (statusEl) statusEl.textContent = 'Calculating impact diff...';
 
       try {
-        const res = await fetch('/api/cheatsheet/diff', {
+        const res = await fetch('/api/cheatsheet/diff' + getLeagueQueryString(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text })
         });
+
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           alert('Diff preview failed: ' + (err.detail || 'Unknown error'));
