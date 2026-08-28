@@ -113,14 +113,17 @@ def _evaluate_strategy_rule_adjustments(
         return 0.0, None
 
     delta = 0.0
-    notes: list[str] = []
+    general_notes: list[str] = []
+    specific_notes: list[str] = []
 
     # 1. Evaluate Round Target Constraints (e.g. Rounds 1-2 only RB/WR)
     for rnd_rule in cheatsheet_context.round_targets:
         if current_round in rnd_rule.target_rounds:
             if rnd_rule.allowed_positions and player.position not in rnd_rule.allowed_positions:
                 delta -= 0.5
-                notes.append(f"Strategy Hint: Rd {current_round} prioritizes {', '.join(rnd_rule.allowed_positions)}")
+                general_notes.append(
+                    f"Strategy Hint: Rd {current_round} prioritizes {', '.join(rnd_rule.allowed_positions)}"
+                )
             elif rnd_rule.allowed_positions and player.position in rnd_rule.allowed_positions:
                 delta += 0.5
 
@@ -138,41 +141,45 @@ def _evaluate_strategy_rule_adjustments(
                 t_name, t_rnd = name_target_match.group(1).lower(), int(name_target_match.group(2))
                 if t_name in player.name.lower():
                     if current_round >= t_rnd:
-                        delta += 1.5
-                        notes.append(f"Strategy Target: {player.name} in Rd {t_rnd}")
+                        delta += 1.8
+                        specific_notes.append(f"Strategy Target: {player.name} in Rd {t_rnd}")
                     else:
-                        notes.append(f"Target {player.name} in Rd {t_rnd}")
+                        rounds_early = t_rnd - current_round
+                        delta -= 0.3 + (rounds_early * 0.15)
+                        specific_notes.append(f"Strategy Hint: Target {player.name} in Rd {t_rnd}")
                     continue
 
             # Check if this rule defines a specific round window (e.g. rounds 3-5)
             if pos_rule.target_rounds:
+                min_rnd = min(pos_rule.target_rounds)
                 if current_round in pos_rule.target_rounds:
                     if (
                         pos_rule.top_n_target and (player.cheatsheet_rank or 99) <= pos_rule.top_n_target
                     ) or p_tier == 1:
-                        delta += 1.2
-                        notes.append(f"Strategy Target: Top {pos_rule.position} in Rd {current_round}")
+                        delta += 1.5
+                        specific_notes.append(f"Strategy Target: Top {pos_rule.position} in Rd {current_round}")
                     elif pos_rule.target_tiers and p_tier in pos_rule.target_tiers:
                         delta += 0.8
-                        notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
-                elif current_round < min(pos_rule.target_rounds):
-                    delta -= 1.2
-                    notes.append(f"Strategy Hint: {pos_rule.position} targeted in Rd {min(pos_rule.target_rounds)}+")
+                        specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
+                elif current_round < min_rnd:
+                    rounds_early = min_rnd - current_round
+                    delta -= 0.8 + (rounds_early * 0.40)
+                    specific_notes.append(f"Strategy Hint: {pos_rule.position} targeted in Rd {min_rnd}+")
 
             # Check if this rule defines specific target tiers (e.g. tiers 3-4 for late-round approach)
             elif pos_rule.target_tiers:
                 if current_round <= 3 and min(pos_rule.target_tiers) >= 3:
                     delta -= 1.2
-                    notes.append(
+                    specific_notes.append(
                         f"Strategy Hint: Late-Round {pos_rule.position} (targeting Tiers {','.join(map(str, pos_rule.target_tiers))})"
                     )
                 elif current_round >= 4 and p_tier in pos_rule.target_tiers:
                     delta += 0.8
-                    notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
+                    specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
 
     # Clamp total strategy delta to prevent extreme distortions
-    clamped_delta = max(-2.0, min(2.0, delta))
-    final_note = notes[0] if notes else None
+    clamped_delta = max(-2.5, min(2.5, delta))
+    final_note = specific_notes[0] if specific_notes else (general_notes[0] if general_notes else None)
     return clamped_delta, final_note
 
 
