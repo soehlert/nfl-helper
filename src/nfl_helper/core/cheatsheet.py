@@ -3,7 +3,6 @@
 import csv
 import io
 import json
-import math
 import re
 
 from pypdf import PdfReader
@@ -522,8 +521,16 @@ def apply_cheatsheet_context(players: list[Player], context: CheatsheetContext) 
         norm = normalize_player_name(player.name)
         entry = context.entries.get(norm)
 
+        # If not exact match, check partial/last-name match with strict team and position validation
         if not entry:
-            entry = next((e for k, e in context.entries.items() if k in norm or norm in k), None)
+            for k, e in context.entries.items():
+                pos_match = not e.position or e.position == (
+                    player.position.value if hasattr(player.position, "value") else str(player.position)
+                )
+                team_match = not e.team or not player.team or e.team == player.team
+                if pos_match and team_match and (norm.endswith(k) or k in norm):
+                    entry = e
+                    break
 
         if entry:
             player.cheatsheet_tier = entry.tier
@@ -535,28 +542,5 @@ def apply_cheatsheet_context(players: list[Player], context: CheatsheetContext) 
                 player.injury_status = "IR"
                 if not player.cheatsheet_notes:
                     player.cheatsheet_notes = "Injured (multi-week recovery / out a while)"
-
-            # If user's cheatsheet assigns player to Tier 1 or high ADP, update projection curve
-            if entry.tier == 1 and player.projected_points < 17.0:
-                pos_str = str(player.position)
-                if pos_str == "QB":
-                    player.projected_points = max(player.projected_points, 22.0)
-                elif pos_str == "RB":
-                    player.projected_points = max(player.projected_points, 19.5)
-                elif pos_str == "WR":
-                    player.projected_points = max(player.projected_points, 19.0)
-                elif pos_str == "TE":
-                    player.projected_points = max(player.projected_points, 14.5)
-            elif entry.adp and entry.adp <= 30.0:
-                pos_str = str(player.position)
-                eff_rank = max(1.0, entry.adp / 4.0)
-                if pos_str == "QB":
-                    player.projected_points = max(player.projected_points, round(25.5 - 2.5 * math.log(eff_rank), 2))
-                elif pos_str == "RB":
-                    player.projected_points = max(player.projected_points, round(21.5 - 3.2 * math.log(eff_rank), 2))
-                elif pos_str == "WR":
-                    player.projected_points = max(player.projected_points, round(20.8 - 2.8 * math.log(eff_rank), 2))
-                elif pos_str == "TE":
-                    player.projected_points = max(player.projected_points, round(15.2 - 2.4 * math.log(eff_rank), 2))
 
     return players
