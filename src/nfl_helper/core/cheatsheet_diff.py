@@ -72,6 +72,12 @@ def compute_cheatsheet_diff(
         c_inj = c_player.injury_status not in ("ACTIVE", "Healthy") if c_player else False
         injury_changed = b_inj != c_inj
 
+        mover_note = player.cheatsheet_notes or ""
+        if not mover_note and rank_delta < 0:
+            mover_note = "Displaced by Risers"
+        elif not mover_note and rank_delta > 0:
+            mover_note = "Cheatsheet Rank"
+
         if rank_delta != 0 or tier_delta != 0 or injury_changed:
             movers.append(
                 PlayerMover(
@@ -85,7 +91,7 @@ def compute_cheatsheet_diff(
                     new_tier=new_tier,
                     tier_delta=tier_delta,
                     is_injury_update=injury_changed,
-                    note=player.cheatsheet_notes or "",
+                    note=mover_note,
                 )
             )
 
