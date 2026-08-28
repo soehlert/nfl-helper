@@ -415,6 +415,16 @@ async def get_draft_state(
                 ),
                 DraftPick(
                     round_num=1,
+                    round_pick=6,
+                    overall_pick=6,
+                    team_id="6",
+                    team_name="Team 6",
+                    player_id="rb_5",
+                    player_name="Jonathan Taylor",
+                    position="RB",
+                ),
+                DraftPick(
+                    round_num=1,
                     round_pick=5,
                     overall_pick=5,
                     team_id="5",

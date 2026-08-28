@@ -73,31 +73,31 @@ def _cluster_hybrid(players: list[Player], position: str) -> list[PlayerTier]:
     return tiers
 
 
-MACRO_POSITION_TIERS: dict[str, int] = {
-    "QB": 5,
-    "TE": 5,
-    "RB": 8,
-    "WR": 8,
-    "K": 4,
-    "D/ST": 4,
+MACRO_TIER_BOUNDS: dict[str, list[int]] = {
+    "QB": [4, 9, 16, 24],
+    "TE": [3, 8, 15, 23],
+    "RB": [4, 10, 18, 26, 36, 46, 56],
+    "WR": [5, 12, 20, 30, 42, 55, 70],
+    "K": [4, 10, 18],
+    "D/ST": [4, 10, 18],
 }
 
 
 def assign_global_macro_tiers(all_players: list[Player]) -> None:
-    """Assign canonical macro tiers (5 QB/TE, 8 RB/WR, 4 K/DST) across the full player pool."""
-    for pos, target_n in MACRO_POSITION_TIERS.items():
+    """Assign canonical macro tiers (5 QB/TE, 8 RB/WR, 4 K/DST) based on positional pool rankings."""
+    for pos, bounds in MACRO_TIER_BOUNDS.items():
         pos_all = sorted([p for p in all_players if p.position == pos], key=lambda x: x.projected_points, reverse=True)
-        if not pos_all:
-            continue
-        max_pts = pos_all[0].projected_points
-        min_pts = pos_all[-1].projected_points
-        step = max(0.4, (max_pts - min_pts) / target_n) if target_n > 1 else 1.0
-        for p in pos_all:
+        for rank_idx, p in enumerate(pos_all, start=1):
             if p.cheatsheet_tier is not None:
                 p.tier = p.cheatsheet_tier
-            else:
-                t_calc = int((max_pts - p.projected_points) / step) + 1
-                p.tier = min(target_n, max(1, t_calc))
+                continue
+            tier_num = 1
+            for b in bounds:
+                if rank_idx > b:
+                    tier_num += 1
+                else:
+                    break
+            p.tier = tier_num
 
 
 def cluster_position_tiers(
@@ -146,6 +146,25 @@ def cluster_position_tiers(
             )
         return tiers
 
+    if any(p.tier > 1 for p in pos_players):
+        tier_grouped: dict[int, list[Player]] = {}
+        for p in pos_players:
+            tier_grouped.setdefault(p.tier, []).append(p)
+        macro_tiers: list[PlayerTier] = []
+        for t_num in sorted(tier_grouped.keys()):
+            plist = sorted(tier_grouped[t_num], key=lambda x: x.projected_points, reverse=True)
+            avg = sum(p.projected_points for p in plist) / len(plist)
+            macro_tiers.append(
+                PlayerTier(
+                    tier_num=t_num,
+                    position=position,
+                    players=plist,
+                    avg_projected=round(avg, 2),
+                    count=len(plist),
+                )
+            )
+        return macro_tiers
+
     return _cluster_hybrid(pos_players, position)
 
 
@@ -171,15 +190,19 @@ def _evaluate_on_the_clock_cliff(
     remaining = len(tier.players)
     tier_size = max(remaining, tier.count)
 
-    # 1. Dynamic ADP Proximity: do not alert if tier is far out of draft range for current pick
+    # 1. Never alert on a full, undrained tier with 3+ players when on the clock
+    if remaining >= tier_size and remaining > 2:
+        return None
+
+    # 2. Dynamic ADP Proximity: do not alert if tier is far out of draft range for current pick
     adps = [p.adp for p in tier.players if p.adp is not None]
     if adps:
         avg_adp = sum(adps) / len(adps)
         if avg_adp > current_pick + 8 and remaining > 1:
             return None
 
-    # 2. Require true tier depletion or imminent wipeout across a wide turn gap
-    is_drained = (remaining / tier_size) <= 0.60 or remaining <= 2 or (remaining <= 3 and snake_turn_gap >= 8)
+    # 3. Require true tier depletion (drained tier or down to the last player)
+    is_drained = (remaining < tier_size and remaining <= 2) or ((remaining / tier_size) <= 0.50) or remaining <= 2
     is_gap_scarce = remaining <= max(2, (snake_turn_gap + 2) // 3)
 
     if not (is_drained and is_gap_scarce):
@@ -221,20 +244,19 @@ def _evaluate_waiting_cliff(
     remaining = len(tier.players)
     tier_size = max(remaining, tier.count)
 
-    # Dynamic ADP Proximity: check if this tier is expected to be drafted in the upcoming window
+    # 1. Dynamic ADP Proximity: check if this tier is expected to be drafted in the upcoming window
     adps = [p.adp for p in tier.players if p.adp is not None]
     if adps:
         avg_adp = sum(adps) / len(adps)
-        in_draft_range = (avg_adp <= current_pick + snake_turn_gap + 15) or (remaining < tier_size)
+        in_draft_range = avg_adp <= current_pick + picks_until_turn + snake_turn_gap + 5
         if not in_draft_range:
             return None
 
-    # Only alert for actionable upcoming turn cliffs (tier survives to your pick but depletes during turn gap)
+    # 2. Only alert for actionable upcoming turn cliffs (tier survives to your pick but depletes during turn gap)
     survives_to_turn = remaining > picks_until_turn
     wipes_in_gap = remaining <= (picks_until_turn + max(2, (snake_turn_gap + 2) // 3))
-    is_tier_draining = (remaining / tier_size) <= 0.60 or remaining <= 2 or (remaining <= 3 and snake_turn_gap >= 8)
 
-    if survives_to_turn and wipes_in_gap and is_tier_draining and snake_turn_gap >= 4:
+    if survives_to_turn and wipes_in_gap and snake_turn_gap >= 4:
         risk = "HIGH" if remaining <= picks_until_turn + 1 else "MODERATE"
         action = (
             f"{remaining} of {tier_size} Tier {tier.tier_num} {tier.position} left. Tier will survive to your pick in {picks_until_turn} turns "
