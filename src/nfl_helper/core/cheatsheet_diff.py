@@ -1,6 +1,6 @@
 """Cheatsheet dry-run diff engine for comparing candidate cheatsheets against active baseline."""
 
-from nfl_helper.core.cheatsheet import apply_cheatsheet_context
+from nfl_helper.core.cheatsheet import apply_cheatsheet_context, merge_cheatsheet_contexts
 from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.diff import CheatsheetDiffReport, PlayerMover
@@ -12,6 +12,7 @@ def compute_cheatsheet_diff(
     candidate_context: CheatsheetContext,
     player_pool: list[Player],
     top_n: int = 5,
+    layer_mode: bool = True,
 ) -> CheatsheetDiffReport:
     """Compute dry-run mover analytics and rule deltas without database mutations."""
     # 1. Evaluate baseline board state (pure player board rankings)
@@ -34,9 +35,14 @@ def compute_cheatsheet_diff(
     )
     base_map = {s.player.id: (s.rank, s.player) for s in base_state.top_suggestions}
 
-    # 2. Evaluate candidate board state (pure player board rankings)
-    cand_pool = apply_cheatsheet_context([p.model_copy() for p in player_pool], candidate_context)
-    cand_ctx_board = candidate_context.model_copy(
+    # 2. Evaluate candidate board state (in layer_mode, layer candidate onto active baseline)
+    effective_cand_context = (
+        merge_cheatsheet_contexts([active_context, candidate_context])
+        if (layer_mode and active_context)
+        else candidate_context
+    )
+    cand_pool = apply_cheatsheet_context([p.model_copy() for p in player_pool], effective_cand_context)
+    cand_ctx_board = effective_cand_context.model_copy(
         update={"strategy_rules": [], "round_targets": [], "positional_strategy": []}
     )
     cand_state = build_draft_state(

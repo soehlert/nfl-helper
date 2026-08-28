@@ -251,6 +251,7 @@ async def preview_cheatsheet_diff(
         candidate_context=candidate,
         player_pool=pool,
         top_n=5,
+        layer_mode=payload.layer_mode,
     )
 
 
@@ -640,6 +641,7 @@ async def preview_cheatsheet_url_diff(
             candidate_context=context,
             player_pool=pool,
             top_n=5,
+            layer_mode=payload.layer_mode,
         )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Failed to generate diff from URL: {exc}") from exc
@@ -649,6 +651,7 @@ async def preview_cheatsheet_url_diff(
 async def preview_cheatsheet_file_diff(
     file: UploadFile,
     name: str | None = None,
+    layer_mode: bool = True,
     session_id: str | None = None,
     platform: str | None = None,
     league_id: str | None = None,
@@ -681,6 +684,7 @@ async def preview_cheatsheet_file_diff(
             candidate_context=candidate_context,
             player_pool=pool,
             top_n=5,
+            layer_mode=layer_mode,
         )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Failed to generate file diff: {exc}") from exc

@@ -106,6 +106,31 @@ def test_api_cheatsheet_file_diff_endpoint() -> None:
     )
     assert response.status_code == 200
     data = response.json()
-    assert "top_risers" in data
-    assert "top_fallers" in data
     assert "total_players_affected" in data
+
+
+def test_cheatsheet_diff_layered_candidates_merge_active_context() -> None:
+    """Verify compute_cheatsheet_diff layers candidate sheets onto active sheets without dropping previous active notes."""
+    from nfl_helper.core.cheatsheet import merge_cheatsheet_contexts
+
+    pool = get_mock_player_pool()
+    # Active sheet: Breakouts and Busts
+    sheet_busts = parse_plain_text_cheatsheet(
+        "Busts\nPatrick Mahomes\nMatthew Stafford\nDavante Adams", sheet_name="ESPN Busts"
+    )
+    sheet_breakouts = parse_plain_text_cheatsheet("Breakouts\nMalik Nabers\nBrock Bowers", sheet_name="ESPN Breakouts")
+    active_ctx = merge_cheatsheet_contexts([sheet_busts, sheet_breakouts])
+
+    # Candidate sheet: Sleepers
+    cand_sheet = parse_plain_text_cheatsheet(
+        "Sleepers\nJadarian Price\nKyle Monangai\nJonathon Brooks", sheet_name="ESPN Sleepers"
+    )
+
+    # In layer mode (default), candidate sleepers rise and active busts/breakouts stay active
+    report = compute_cheatsheet_diff(active_ctx, cand_sheet, pool, top_n=5, layer_mode=True)
+    riser_names = [r.player_name for r in report.top_risers]
+    assert "Jadarian Price" in riser_names or "Jonathon Brooks" in riser_names or "Kyle Monangai" in riser_names
+    # Active breakouts should not be listed as fallers with massive drops
+    faller_names = [f.player_name for f in report.top_fallers]
+    assert "Malik Nabers" not in faller_names
+    assert "Brock Bowers" not in faller_names

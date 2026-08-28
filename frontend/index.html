@@ -592,8 +592,8 @@
 <body>
 
   <header>
-    <div class="brand" style="display: flex; align-items: center; gap: 0.75rem;">
-      <img src="/static/logo.png" alt="Craftroom Draftroom" class="brand-logo" style="height: 54px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));">
+    <div class="brand" style="display: flex; align-items: center; gap: 0.85rem;">
+      <img src="/static/logo.png" alt="Craftroom Draftroom" class="brand-logo" style="height: 58px; width: auto; max-width: 340px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));">
       <span id="platform-badge" class="badge badge-espn">ESPN</span>
     </div>
     <div class="header-actions">
@@ -1474,6 +1474,7 @@
     async function previewFileCheatsheetDiff(file) {
       const statusEl = document.getElementById('cheatsheet-status-msg');
       const customName = document.getElementById('cheatsheet-name-input')?.value.trim() || file.name;
+      const layerMode = document.getElementById('cheatsheet-layer-toggle')?.checked ?? true;
       if (statusEl) statusEl.textContent = `Calculating diff for "${customName}"...`;
 
       const formData = new FormData();
@@ -1482,7 +1483,7 @@
       try {
         const queryStr = getLeagueQueryString();
         const sep = queryStr ? '&' : '?';
-        const res = await fetch(`/api/cheatsheet/file-diff${queryStr}${sep}name=${encodeURIComponent(customName)}`, {
+        const res = await fetch(`/api/cheatsheet/file-diff${queryStr}${sep}name=${encodeURIComponent(customName)}&layer_mode=${layerMode}`, {
           method: 'POST',
           body: formData
         });
@@ -1847,6 +1848,7 @@
     async function previewCheatsheetDiff() {
       const text = document.getElementById('cheatsheet-textarea').value;
       const customName = document.getElementById('cheatsheet-name-input')?.value.trim() || 'Pasted Cheatsheet';
+      const layerMode = document.getElementById('cheatsheet-layer-toggle')?.checked ?? true;
       if (!text.trim()) {
         showToast('Please paste or upload candidate cheatsheet text to preview changes.', 'error');
         return;
@@ -1859,7 +1861,7 @@
         const res = await fetch('/api/cheatsheet/diff' + getLeagueQueryString(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, name: customName })
+          body: JSON.stringify({ text, name: customName, layer_mode: layerMode })
         });
 
         if (!res.ok) {
