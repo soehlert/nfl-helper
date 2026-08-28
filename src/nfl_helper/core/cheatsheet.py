@@ -434,14 +434,18 @@ def parse_csv_cheatsheet(csv_text: str) -> CheatsheetContext:
     reader = csv.DictReader(io.StringIO(csv_text.strip()))
 
     for row in reader:
-        norm_row = {k.lower().strip(): v.strip() for k, v in row.items() if k}
+        norm_row = {k.lower().strip(): (v.strip() if v else "") for k, v in row.items() if k}
         name = norm_row.get("player") or norm_row.get("name", "")
         if not name:
             continue
 
         norm_name = normalize_player_name(name)
         tier_val = int(norm_row.get("tier", 1)) if norm_row.get("tier", "").isdigit() else 1
-        adp_val = float(norm_row.get("adp")) if norm_row.get("adp") else None
+        adp_raw = norm_row.get("adp", "")
+        try:
+            adp_val = float(adp_raw) if adp_raw else None
+        except ValueError:
+            adp_val = None
 
         entry = CheatsheetEntry(
             player_name=name,
