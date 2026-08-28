@@ -26,6 +26,13 @@ def test_root_serves_html() -> None:
     assert "Craftroom Draftroom" in response.text
 
 
+def test_static_logo_served() -> None:
+    """Verify static asset mount serves logo.png successfully."""
+    response = client.get("/static/logo.png")
+    assert response.status_code == 200
+    assert "image/png" in response.headers["content-type"]
+
+
 def test_draft_state_endpoint() -> None:
     """Verify draft state endpoint returns expected schema, cliff alerts, and tier rolls."""
     response = client.get("/api/draft/state")

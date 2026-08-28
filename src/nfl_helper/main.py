@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from nfl_helper.adapters import get_adapter_for_profile
@@ -58,6 +59,10 @@ app.add_middleware(
 )
 
 FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "frontend" / "index.html"
+STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "static"
+
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # Initialize SQLite database schema

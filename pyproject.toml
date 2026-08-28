@@ -35,6 +35,7 @@ nfl-helper = "nfl_helper.cli:main"
 [dependency-groups]
 dev = [
     "fonttools>=4.63.0",
+    "pillow>=12.3.0",
 ]
 
 [tool.pytest.ini_options]
