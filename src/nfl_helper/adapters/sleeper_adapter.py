@@ -24,41 +24,6 @@ _GLOBAL_PROJ_DB: dict[str, dict[str, object]] = {}
 _GLOBAL_ESPN_ADP_DB: dict[str, float] = {}
 _GLOBAL_ACTIVE_DRAFT: dict[str, dict[str, object]] = {}
 
-_DEFENSE_CONSENSUS_ADPS: dict[str, float] = {
-    "LAR": 88.7,
-    "HOU": 97.4,
-    "SEA": 105.6,
-    "DEN": 119.0,
-    "PHI": 125.8,
-    "BAL": 131.2,
-    "PIT": 133.5,
-    "NE": 135.0,
-    "KC": 137.4,
-    "CLE": 139.8,
-    "BUF": 142.0,
-    "MIN": 144.5,
-    "DET": 146.2,
-    "GB": 148.0,
-    "DAL": 150.5,
-    "SF": 152.0,
-    "NYJ": 154.0,
-    "CHI": 156.0,
-    "TB": 158.0,
-    "LAC": 160.0,
-    "MIA": 162.0,
-    "IND": 164.0,
-    "ARI": 166.0,
-    "LV": 168.0,
-    "CIN": 170.0,
-    "NO": 172.0,
-    "ATL": 174.0,
-    "WAS": 176.0,
-    "JAX": 178.0,
-    "TEN": 180.0,
-    "NYG": 182.0,
-    "CAR": 184.0,
-}
-
 
 class SleeperAdapter(BaseLeagueAdapter):
     """Sleeper Fantasy Football REST provider adapter."""
@@ -121,17 +86,23 @@ class SleeperAdapter(BaseLeagueAdapter):
             try:
                 url = f"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{season}/segments/0/leaguedefaults/1?view=kona_player_info"
                 headers = {
-                    "x-fantasy-filter": '{"players":{"filterSlotIds":{"value":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,23,24]},"limit":250,"sortPercOwned":{"sortAsc":false,"sortPriority":1}}}'
+                    "x-fantasy-filter": '{"players":{"filterSlotIds":{"value":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,23,24]},"limit":400,"sortPercOwned":{"sortAsc":false,"sortPriority":1}}}'
                 }
                 res = self._client.get(url, headers=headers)
                 if res.status_code == 200:
                     for item in res.json().get("players", []):
                         p_info = item.get("player", {})
                         full_name = p_info.get("fullName")
+                        pos_id = p_info.get("defaultPositionId")
                         adp_num = p_info.get("ownership", {}).get("averageDraftPosition")
-                        if full_name and adp_num:
-                            _GLOBAL_ESPN_ADP_DB[normalize_player_name(full_name)] = float(adp_num)
-                    self._espn_adp_db = _GLOBAL_ESPN_ADP_DB
+                        if full_name and adp_num is not None and float(adp_num) > 0.0:
+                            adp_float = round(float(adp_num), 2)
+                            self._espn_adp_db[normalize_player_name(full_name)] = adp_float
+                            # For team defenses (pos_id == 16), index by team nickname (e.g. 'texans', 'rams')
+                            if pos_id == 16:
+                                clean_name = full_name.replace(" D/ST", "").strip().lower()
+                                self._espn_adp_db[clean_name] = adp_float
+                    _GLOBAL_ESPN_ADP_DB = self._espn_adp_db
             except Exception:
                 pass
         return self._espn_adp_db
@@ -206,21 +177,13 @@ class SleeperAdapter(BaseLeagueAdapter):
         is_dome = is_dome_stadium(team_str)
         espn_adps = self._ensure_espn_adp_db()
         norm_name = normalize_player_name(full_name)
-        adp_val = espn_adps.get(norm_name)
+        last_name_key = last_name.strip().lower()
+        adp_val = espn_adps.get(norm_name) or (espn_adps.get(last_name_key) if pos_enum == Position.DST else None)
 
         if adp_val is None:
-            if pos_enum == Position.DST:
-                adp_val = _DEFENSE_CONSENSUS_ADPS.get(team_str)
-                if adp_val is None:
-                    r = float(pos_rank) if pos_rank is not None else 10.0
-                    adp_val = round(88.0 + 8.0 * (r - 1), 1)
-            elif pos_enum == Position.K:
-                r = float(pos_rank) if pos_rank is not None else 10.0
-                adp_val = round(130.0 + 3.0 * (r - 1), 1)
-            else:
-                raw_adp = raw_meta.get("search_rank") or raw_meta.get("years_exp")
-                if raw_adp and str(raw_adp).isdigit():
-                    adp_val = float(raw_adp)
+            raw_adp = raw_meta.get("search_rank") or raw_meta.get("years_exp")
+            if raw_adp and str(raw_adp).isdigit():
+                adp_val = float(raw_adp)
 
         return Player(
             id=str(player_id),
