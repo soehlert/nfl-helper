@@ -27,10 +27,13 @@ class WebCheatsheetHTMLParser(HTMLParser):
         self.article_title = "Online Cheatsheet"
         self.in_title = False
         self.title_chunks: list[str] = []
+        self.ignored_depth = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self.current_tag = tag.lower()
-        if self.current_tag in ("h1", "h2", "h3", "h4", "h5"):
+        if self.current_tag in ("script", "style", "noscript", "svg"):
+            self.ignored_depth += 1
+        elif self.current_tag in ("h1", "h2", "h3", "h4", "h5"):
             self.text_chunks.append("\n")
         elif self.current_tag == "table":
             self.in_table = True
@@ -42,6 +45,16 @@ class WebCheatsheetHTMLParser(HTMLParser):
 
     def handle_endtag(self, tag: str) -> None:
         tag_lower = tag.lower()
+        if tag_lower == "title":
+            self.in_title = False
+            if self.title_chunks:
+                self.article_title = " ".join("".join(self.title_chunks).split()).strip()
+            return
+        if tag_lower in ("script", "style", "noscript", "svg"):
+            self.ignored_depth = max(0, self.ignored_depth - 1)
+            return
+        if self.ignored_depth > 0:
+            return
         if tag_lower in ("h1", "h2", "h3", "h4", "h5", "p", "li", "div"):
             self.text_chunks.append("\n")
         elif tag_lower == "tr":
@@ -54,12 +67,10 @@ class WebCheatsheetHTMLParser(HTMLParser):
         elif tag_lower == "table":
             self.in_table = False
             self.text_chunks.append("\n")
-        elif tag_lower == "title":
-            self.in_title = False
-            if self.title_chunks:
-                self.article_title = " ".join("".join(self.title_chunks).split()).strip()
 
     def handle_data(self, data: str) -> None:
+        if self.ignored_depth > 0:
+            return
         clean = data.strip()
         if not clean:
             return
@@ -96,11 +107,24 @@ async def fetch_web_cheatsheet(url: str, timeout: float = 10.0) -> tuple[Cheatsh
         res.raise_for_status()
         html_content = res.text
 
+    if "awsWafCookieDomainList" in html_content or ("Cloudflare" in html_content and "Just a moment" in html_content):
+        raise ValueError(
+            "This site is protected by anti-bot verification (WAF/Cloudflare). "
+            "Please copy and paste the article text or rankings directly into the Paste Text box."
+        )
+
     parser = WebCheatsheetHTMLParser()
     parser.feed(html_content)
-    extracted_text = parser.get_extracted_text()
-    title = parser.article_title or "Web Rankings"
 
-    logger.info("Successfully fetched %s ('%s'): %d characters extracted", url, title, len(extracted_text))
+    extracted_text = parser.get_extracted_text()
+    if not extracted_text or len(extracted_text) < 10:
+        raise ValueError("Could not extract readable article text or tables from this URL.")
+
     context = parse_plain_text_cheatsheet(extracted_text)
-    return context, title, extracted_text
+    if not context.entries:
+        raise ValueError(
+            "No player rankings or tiers could be detected from this webpage. "
+            "Please copy and paste the text directly into the Paste Text box."
+        )
+
+    return context, parser.article_title, extracted_text
