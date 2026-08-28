@@ -164,7 +164,8 @@ def _evaluate_on_the_clock_cliff(
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is currently on the clock."""
     drop = calculate_tier_drop(tier, next_tier)
-    if drop < 0.7:
+    min_drop = 0.9 if current_pick <= 40 else (0.7 if current_pick <= 80 else 0.5)
+    if drop < min_drop:
         return None
 
     remaining = len(tier.players)
@@ -213,7 +214,8 @@ def _evaluate_waiting_cliff(
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is waiting for upcoming pick with dynamic ADP proximity."""
     drop = calculate_tier_drop(tier, next_tier)
-    if drop < 0.7:
+    min_drop = 0.9 if current_pick <= 40 else (0.7 if current_pick <= 80 else 0.5)
+    if drop < min_drop:
         return None
 
     remaining = len(tier.players)
@@ -260,16 +262,23 @@ def detect_tier_cliffs(
     is_on_the_clock: bool,
     current_pick: int = 1,
     user_roster_counts: dict[str, int] | None = None,
+    cheatsheet_context: CheatsheetContext | None = None,
 ) -> list[TierCliffWarning]:
     """Identify 3-scenario positional tier cliffs across available player tiers."""
     warnings: list[TierCliffWarning] = []
     risk_rank = {"CRITICAL": 0, "HIGH": 1, "MODERATE": 2, "LOW": 3}
     roster = user_roster_counts or {}
+    rules = cheatsheet_context.strategy_rules if cheatsheet_context else []
+    has_2qb_rule = any("one from tier 4" in r.lower() or "two qb" in r.lower() or "2nd qb" in r.lower() for r in rules)
 
     for pos, tiers in tiers_by_pos.items():
         pos_upper = pos.upper()
-        # Suppress single-starter positions if user already filled their starting spot
-        if pos_upper == "QB" and roster.get("QB", 0) >= 1:
+        # Suppress single-starter positions if user already filled their starting spot (unless 2nd QB rule active in late rounds)
+        if (
+            pos_upper == "QB"
+            and roster.get("QB", 0) >= 1
+            and not (has_2qb_rule and current_pick >= 80 and roster.get("QB", 0) < 2)
+        ):
             continue
         if pos_upper == "TE" and roster.get("TE", 0) >= 1:
             continue

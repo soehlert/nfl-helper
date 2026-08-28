@@ -322,14 +322,21 @@ async def get_draft_state(
                 espn_s2=espn_s2,
             )
             adapter = get_adapter_for_profile(profile)
-            live_draft = adapter.get_draft_state()
-            all_avail = []
-            for plist in live_draft.available_players_by_pos.values():
-                all_avail.extend(plist)
-
-            if all_avail:
-                _CONNECTED_LEAGUE_PLAYERS[league_id] = all_avail
-                _save_live_player_pool_snapshot(all_avail)
+            cached_pool = _CONNECTED_LEAGUE_PLAYERS.get(league_id)
+            if cached_pool and hasattr(adapter, "get_draft_state"):
+                try:
+                    live_draft = adapter.get_draft_state(include_player_pool=False)
+                except TypeError:
+                    live_draft = adapter.get_draft_state()
+                all_avail = cached_pool
+            else:
+                live_draft = adapter.get_draft_state()
+                all_avail = []
+                for plist in live_draft.available_players_by_pos.values():
+                    all_avail.extend(plist)
+                if all_avail:
+                    _CONNECTED_LEAGUE_PLAYERS[league_id] = all_avail
+                    _save_live_player_pool_snapshot(all_avail)
 
             if _ACTIVE_CHEATSHEET:
                 all_avail = apply_cheatsheet_context(all_avail, _ACTIVE_CHEATSHEET)

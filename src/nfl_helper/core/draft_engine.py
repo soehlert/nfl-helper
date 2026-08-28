@@ -316,6 +316,7 @@ def generate_draft_suggestions(
     cliff_by_pos = {w.position: w for w in cliff_warnings}
     current_round = (overall_pick - 1) // total_teams + 1
     roster = user_roster_counts or {}
+    active_rules = cheatsheet_context.strategy_rules if cheatsheet_context else []
 
     top_tier_info: dict[str, tuple[int, int, float]] = {}
     for pos, pos_tiers in tiers_by_pos.items():
@@ -350,7 +351,13 @@ def generate_draft_suggestions(
         # Roster needs demand adjustment (satisfaction penalties for single-starter positions)
         pos_str = str(p.position).upper()
         if pos_str == "QB" and roster.get("QB", 0) >= 1:
-            base_score -= 3.5 if current_round < 12 else 1.0
+            has_2qb_rule = any(
+                "one from tier 4" in r.lower() or "two qb" in r.lower() or "2nd qb" in r.lower() for r in active_rules
+            )
+            if has_2qb_rule and p_tier == 4 and current_round >= 10:
+                base_score += 0.8  # Target second QB in round 10+
+            else:
+                base_score -= 3.5 if current_round < 12 else 1.0
         elif pos_str == "TE" and roster.get("TE", 0) >= 1:
             base_score -= 2.5 if current_round < 10 else 0.8
         elif pos_str in ("K", "D/ST", "DEF", "DST") and roster.get(pos_str, 0) >= 1:
@@ -543,6 +550,7 @@ def build_draft_state(
         on_the_clock,
         current_pick=overall_pick,
         user_roster_counts=user_roster_counts,
+        cheatsheet_context=cheatsheet_context,
     )
 
     baselines = calculate_vorp_baselines(all_players, total_teams)

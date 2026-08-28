@@ -1,7 +1,5 @@
 """Sleeper fantasy football league adapter via official Sleeper REST API."""
 
-import math
-
 import httpx
 
 from nfl_helper.adapters.base import BaseLeagueAdapter
@@ -19,6 +17,12 @@ from nfl_helper.models.session import LeagueProfile
 SLEEPER_API_BASE = "https://api.sleeper.app/v1"
 
 
+_GLOBAL_PLAYER_DB: dict[str, dict[str, object]] = {}
+_GLOBAL_PROJ_DB: dict[str, dict[str, object]] = {}
+_GLOBAL_ESPN_ADP_DB: dict[str, float] = {}
+_GLOBAL_ACTIVE_DRAFT: dict[str, dict[str, object]] = {}
+
+
 class SleeperAdapter(BaseLeagueAdapter):
     """Sleeper Fantasy Football REST provider adapter."""
 
@@ -32,36 +36,50 @@ class SleeperAdapter(BaseLeagueAdapter):
     ) -> None:
         super().__init__(profile)
         self._client = client or httpx.Client(base_url=SLEEPER_API_BASE, timeout=10.0)
-        self._player_db = player_db or {}
-        self._proj_db = proj_db or {}
-        self._espn_adp_db = espn_adp_db or {}
+        self._player_db = player_db or _GLOBAL_PLAYER_DB
+        self._proj_db = proj_db or _GLOBAL_PROJ_DB
+        self._espn_adp_db = espn_adp_db or _GLOBAL_ESPN_ADP_DB
 
     def _ensure_player_db(self) -> dict[str, dict[str, object]]:
         """Fetch and cache Sleeper NFL player database if not yet populated."""
+        global _GLOBAL_PLAYER_DB
         if not self._player_db:
+            if _GLOBAL_PLAYER_DB:
+                self._player_db = _GLOBAL_PLAYER_DB
+                return self._player_db
             try:
                 res = self._client.get("/players/nfl")
                 if res.status_code == 200:
-                    self._player_db = res.json()
+                    _GLOBAL_PLAYER_DB = res.json()
+                    self._player_db = _GLOBAL_PLAYER_DB
             except Exception:
                 pass
         return self._player_db
 
     def _ensure_proj_db(self) -> dict[str, dict[str, object]]:
         """Fetch and cache Sleeper NFL redraft projections and real ADP if not populated."""
+        global _GLOBAL_PROJ_DB
         if not self._proj_db:
+            if _GLOBAL_PROJ_DB:
+                self._proj_db = _GLOBAL_PROJ_DB
+                return self._proj_db
             season = self.profile.season_year or get_current_nfl_season_year()
             try:
                 res = self._client.get(f"/projections/nfl/regular/{season}/1")
                 if res.status_code == 200:
-                    self._proj_db = res.json()
+                    _GLOBAL_PROJ_DB = res.json()
+                    self._proj_db = _GLOBAL_PROJ_DB
             except Exception:
                 pass
         return self._proj_db
 
     def _ensure_espn_adp_db(self) -> dict[str, float]:
         """Fetch and cache ESPN public redraft consensus ADP mapping by normalized player name."""
+        global _GLOBAL_ESPN_ADP_DB
         if not self._espn_adp_db:
+            if _GLOBAL_ESPN_ADP_DB:
+                self._espn_adp_db = _GLOBAL_ESPN_ADP_DB
+                return self._espn_adp_db
             season = self.profile.season_year or get_current_nfl_season_year()
             try:
                 url = f"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{season}/segments/0/leaguedefaults/1?view=kona_player_info"
@@ -75,7 +93,8 @@ class SleeperAdapter(BaseLeagueAdapter):
                         full_name = p_info.get("fullName")
                         adp_num = p_info.get("ownership", {}).get("averageDraftPosition")
                         if full_name and adp_num:
-                            self._espn_adp_db[normalize_player_name(full_name)] = float(adp_num)
+                            _GLOBAL_ESPN_ADP_DB[normalize_player_name(full_name)] = float(adp_num)
+                    self._espn_adp_db = _GLOBAL_ESPN_ADP_DB
             except Exception:
                 pass
         return self._espn_adp_db
@@ -99,94 +118,73 @@ class SleeperAdapter(BaseLeagueAdapter):
         if not raw_pos:
             raise ValueError(f"Missing position on Sleeper player {player_id} ({full_name})")
 
-        if raw_pos in ("DEF", "DST"):
-            pos_str = "D/ST"
-        elif raw_pos == "FB":
-            pos_str = "RB"
-        else:
-            pos_str = raw_pos
-
-        try:
-            pos_enum = Position(pos_str)
-        except ValueError as err:
-            raise ValueError(f"Unrecognized Sleeper position '{pos_str}' for player {player_id} ({full_name})") from err
-
-        raw_injury = str(raw_meta.get("injury_status", "ACTIVE") or "ACTIVE").upper()
-        try:
-            injury_enum = InjuryStatus(raw_injury)
-        except ValueError:
-            injury_enum = InjuryStatus.ACTIVE
-
-        team = str(raw_meta.get("team", "FA") or "FA")
-        raw_slots = raw_meta.get("fantasy_positions")
-        slots = list(raw_slots) if isinstance(raw_slots, list) else [pos_str]
-
-        # Extract Sleeper Full PPR redraft ADP and fantasy point projections
-        projs = self._ensure_proj_db()
-        p_proj_data = projs.get(str(player_id), {}) if isinstance(projs, dict) else {}
-        sleeper_adp = (
-            p_proj_data.get("adp_dd_ppr") or p_proj_data.get("adp_dd_half_ppr") or p_proj_data.get("adp_dd_std")
+        pos_enum = (
+            Position.DST
+            if raw_pos in ("DEF", "DST", "D/ST")
+            else (Position.RB if raw_pos == "FB" else Position(raw_pos))
         )
-        s_adp_val = float(sleeper_adp) if sleeper_adp is not None and float(sleeper_adp) < 900.0 else None
 
-        # Ingest ESPN public consensus ADP and blend into multi-platform composite ADP
+        projs = self._ensure_proj_db()
+        proj_meta = projs.get(str(player_id), {})
+        stats = proj_meta.get("stats", {}) if isinstance(proj_meta, dict) else {}
+        fpts = float(stats.get("pts_ppr", 0.0) or stats.get("pts_half_ppr", 0.0) or stats.get("pts_std", 0.0) or 0.0)
+
+        # Fallback projection based on positional baseline if 0.0
+        if fpts <= 0.0:
+            if pos_enum == Position.QB:
+                fpts = 18.5
+            elif pos_enum in (Position.RB, Position.WR):
+                fpts = 10.5
+            elif pos_enum == Position.TE:
+                fpts = 8.5
+            elif pos_enum in (Position.K, Position.DST):
+                fpts = 7.5
+
+        injury_raw = str(raw_meta.get("injury_status") or "").upper()
+        injury_status = (
+            InjuryStatus.QUESTIONABLE
+            if injury_raw in ("QUESTIONABLE", "Q")
+            else (
+                InjuryStatus.DOUBTFUL
+                if injury_raw in ("DOUBTFUL", "D")
+                else (
+                    InjuryStatus.IR
+                    if injury_raw == "IR"
+                    else (
+                        InjuryStatus.OUT
+                        if injury_raw in ("OUT", "O")
+                        else (InjuryStatus.SUSPENDED if injury_raw in ("SUSPENDED", "SUSP") else InjuryStatus.ACTIVE)
+                    )
+                )
+            )
+        )
+
+        team_str = str(raw_meta.get("team") or "FA").upper()
+        bye_week = get_team_bye_week(team_str)
+        is_dome = is_dome_stadium(team_str)
+
         espn_adps = self._ensure_espn_adp_db()
         norm_name = normalize_player_name(full_name)
-        espn_adp_val = espn_adps.get(norm_name)
-
-        if s_adp_val is not None and espn_adp_val is not None:
-            adp_val = round(0.5 * s_adp_val + 0.5 * espn_adp_val, 1)
-        elif s_adp_val is not None:
-            adp_val = round(s_adp_val, 1)
-        elif espn_adp_val is not None:
-            adp_val = round(espn_adp_val, 1)
-        else:
-            adp_val = None
-
-        pos_adp = p_proj_data.get("pos_adp_dd_ppr")
-        raw_stats = p_proj_data.get("stats", {}) if isinstance(p_proj_data, dict) else {}
-        stat_pts = p_proj_data.get("pts_ppr") or raw_stats.get("pts_ppr") or raw_meta.get("projected_points")
-        raw_proj = float(str(stat_pts or 0.0))
-
-        # Derive realistic baseline fantasy projection differentiated by positional rank
-        if raw_proj <= 0.0:
-            rank = (
-                float(pos_adp)
-                if pos_adp is not None and float(pos_adp) > 0 and float(pos_adp) < 500
-                else (float(pos_rank) if pos_rank is not None else 50.0)
-            )
-            r = max(1.0, rank)
-            if pos_str == "QB":
-                proj_pts = max(12.0, 25.5 - 2.5 * math.log(r))
-            elif pos_str == "RB":
-                proj_pts = max(6.0, 21.5 - 3.2 * math.log(r))
-            elif pos_str == "WR":
-                proj_pts = max(6.0, 20.8 - 2.8 * math.log(r))
-            elif pos_str == "TE":
-                proj_pts = max(5.0, 15.2 - 2.4 * math.log(r))
-            elif pos_str in ("K", "D/ST", "DST", "DEF"):
-                proj_pts = max(5.0, 9.5 - 0.7 * math.log(r))
-            else:
-                proj_pts = 10.0
-        else:
-            proj_pts = raw_proj
-
-        bye_wk = get_team_bye_week(team)
-        is_dome = is_dome_stadium(team)
-        env = GameEnvironment(stadium_type="DOME" if is_dome else "OUTDOOR", is_dome=is_dome)
+        adp_val = espn_adps.get(norm_name)
+        if adp_val is None:
+            raw_adp = raw_meta.get("search_rank") or raw_meta.get("years_exp")
+            if raw_adp and str(raw_adp).isdigit():
+                adp_val = float(raw_adp)
 
         return Player(
             id=str(player_id),
             name=full_name,
             position=pos_enum,
-            team=team,
-            projected_points=round(proj_pts, 2),
-            adp=adp_val,
-            bye_week=bye_wk,
-            injury_status=injury_enum,
-            eligible_slots=slots,
+            team=team_str,
+            projected_points=fpts,
+            injury_status=injury_status,
             is_starter=is_starter,
-            game_context=env,
+            adp=adp_val,
+            bye_week=bye_week,
+            game_context=GameEnvironment(
+                is_dome=is_dome,
+                stadium_type="DOME" if is_dome else "OUTDOOR",
+            ),
         )
 
     def get_league_info(self) -> LeagueProfile:
@@ -199,37 +197,34 @@ class SleeperAdapter(BaseLeagueAdapter):
             self.profile.season_year = int(raw_season) if raw_season else get_current_nfl_season_year()
         return self.profile
 
+    def _fetch_rosters_and_users(self) -> tuple[list[dict[str, object]], dict[str, dict[str, object]]]:
+        """Fetch rosters and users dictionary for the current league."""
+        res_rosters = self._client.get(f"/league/{self.profile.league_id}/rosters")
+        rosters = res_rosters.json() if res_rosters.status_code == 200 else []
+
+        res_users = self._client.get(f"/league/{self.profile.league_id}/users")
+        users = res_users.json() if res_users.status_code == 200 else []
+        users_by_id = {str(u.get("user_id")): u for u in users if isinstance(u, dict) and "user_id" in u}
+
+        return rosters, users_by_id
+
     def get_league_teams(self) -> list[dict[str, str]]:
-        """Fetch all team IDs, names, and managers from Sleeper."""
+        """Fetch all teams in the Sleeper league."""
         rosters, users_by_id = self._fetch_rosters_and_users()
-        results = []
+        teams = []
         for r in rosters:
-            roster_id = str(r.get("roster_id", ""))
-            owner_id = str(r.get("owner_id", ""))
-            user_meta = users_by_id.get(owner_id, {})
-            raw_meta = user_meta.get("metadata")
-            team_name_meta = raw_meta.get("team_name") if isinstance(raw_meta, dict) else None
-            team_name = str(team_name_meta or user_meta.get("display_name") or f"Team {roster_id}")
-            owner_name = str(user_meta.get("display_name", ""))
-            results.append(
+            rid = str(r.get("roster_id", ""))
+            oid = str(r.get("owner_id", ""))
+            u_meta = users_by_id.get(oid, {})
+            disp_name = str(u_meta.get("display_name", "")) or f"Team {rid}"
+            teams.append(
                 {
-                    "team_id": roster_id,
-                    "team_name": team_name,
-                    "owner_name": owner_name,
+                    "team_id": rid,
+                    "team_name": disp_name,
+                    "owner_name": disp_name,
                 }
             )
-        return results
-
-    def _fetch_rosters_and_users(self) -> tuple[list[dict[str, object]], dict[str, dict[str, object]]]:
-        """Fetch raw rosters and users dictionaries from Sleeper REST endpoints."""
-        res_rosters = self._client.get(f"/league/{self.profile.league_id}/rosters")
-        res_users = self._client.get(f"/league/{self.profile.league_id}/users")
-
-        rosters = res_rosters.json() if res_rosters.status_code == 200 else []
-        users_by_id = {}
-        if res_users.status_code == 200:
-            users_by_id = {str(u.get("user_id")): u for u in res_users.json() if "user_id" in u}
-        return rosters, users_by_id
+        return teams
 
     def _build_team_roster(
         self,
@@ -237,16 +232,15 @@ class SleeperAdapter(BaseLeagueAdapter):
         target_roster: dict[str, object],
         user_meta: dict[str, object],
     ) -> TeamRoster:
-        """Transform raw Sleeper roster dict into structured TeamRoster model."""
-        raw_meta = user_meta.get("metadata")
-        team_name_meta = raw_meta.get("team_name") if isinstance(raw_meta, dict) else None
-        team_name = str(team_name_meta or user_meta.get("display_name") or f"Team {team_id}")
-
-        raw_players = target_roster.get("players")
-        all_player_ids = [str(pid) for pid in raw_players] if isinstance(raw_players, list) else []
+        """Construct TeamRoster object from raw Sleeper roster dict and user metadata."""
+        meta_dict = user_meta.get("metadata") if isinstance(user_meta.get("metadata"), dict) else {}
+        team_name = str(meta_dict.get("team_name") or user_meta.get("display_name") or f"Team {team_id}")
 
         raw_starters = target_roster.get("starters")
         starter_ids = {str(s) for s in raw_starters} if isinstance(raw_starters, list) else set()
+
+        raw_players = target_roster.get("players")
+        all_player_ids = [str(p) for p in raw_players] if isinstance(raw_players, list) else []
 
         raw_reserve = target_roster.get("reserve")
         reserve_ids = {str(r) for r in raw_reserve} if isinstance(raw_reserve, list) else set()
@@ -290,13 +284,17 @@ class SleeperAdapter(BaseLeagueAdapter):
         user_meta = users_by_id.get(owner_id, {})
         return self._build_team_roster(team_id, target_roster, user_meta)
 
-    def get_draft_state(self) -> DraftState:
-        """Fetch draft metadata, order, and live picks from Sleeper."""
-        res_drafts = self._client.get(f"/league/{self.profile.league_id}/drafts")
-        if res_drafts.status_code != 200 or not res_drafts.json():
-            return DraftState(league_id=self.profile.league_id)
+    def get_draft_state(self, include_player_pool: bool = True) -> DraftState:
+        """Fetch draft metadata, order, and live picks from Sleeper with smart caching."""
+        global _GLOBAL_ACTIVE_DRAFT
+        active_draft = _GLOBAL_ACTIVE_DRAFT.get(self.profile.league_id)
+        if not active_draft:
+            res_drafts = self._client.get(f"/league/{self.profile.league_id}/drafts")
+            if res_drafts.status_code != 200 or not res_drafts.json():
+                return DraftState(league_id=self.profile.league_id)
+            active_draft = res_drafts.json()[0]
+            _GLOBAL_ACTIVE_DRAFT[self.profile.league_id] = active_draft
 
-        active_draft = res_drafts.json()[0]
         draft_id = str(active_draft.get("draft_id", ""))
 
         res_picks = self._client.get(f"/draft/{draft_id}/picks")
@@ -323,7 +321,7 @@ class SleeperAdapter(BaseLeagueAdapter):
         total_rounds = int(str(settings.get("rounds", 16)))
         current_pick = len(picks_list) + 1
         current_round = ((current_pick - 1) // total_teams) + 1
-        by_pos = self.get_available_players_by_position(limit=150)
+        by_pos = self.get_available_players_by_position(limit=150) if include_player_pool else {}
 
         user_slot = self.profile.user_draft_slot
         if user_slot is None:
