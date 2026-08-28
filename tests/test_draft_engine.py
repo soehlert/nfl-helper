@@ -290,8 +290,8 @@ def test_strategy_rule_round_deferral_and_activation() -> None:
     # In Round 1 (2 rounds early for TE, 3 rounds early for Allen)
     d_te_r1, note_te_r1 = _evaluate_strategy_rule_adjustments(p_te, ctx, current_round=1)
     d_qb_r1, note_qb_r1 = _evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=1)
-    assert d_te_r1 == -1.2  # 2 * -0.6
-    assert d_qb_r1 == -1.8  # 3 * -0.6
+    assert d_te_r1 == -1.8  # 2 * -0.90
+    assert d_qb_r1 == -0.6  # 3 * -0.20
     assert "Strategy Hint: TE targeted in Rd 3+" in (note_te_r1 or "")
     assert "Strategy Hint: Target Josh Allen in Rd 4" in (note_qb_r1 or "")
 
@@ -299,7 +299,7 @@ def test_strategy_rule_round_deferral_and_activation() -> None:
     d_te_r3, note_te_r3 = _evaluate_strategy_rule_adjustments(p_te, ctx, current_round=3)
     d_qb_r3, note_qb_r3 = _evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=3)
     assert d_te_r3 == 1.5  # Target round activation bonus
-    assert d_qb_r3 == -0.6  # 1 * -0.6
+    assert d_qb_r3 == -0.2  # 1 * -0.20
     assert "Strategy Target: Top TE in Rd 3" in (note_te_r3 or "")
     assert "Strategy Hint: Target Josh Allen in Rd 4" in (note_qb_r3 or "")
 

@@ -116,14 +116,18 @@ def _evaluate_strategy_rule_adjustments(
     general_notes: list[str] = []
     specific_notes: list[str] = []
 
+    # Check if there is a specific positional strategy rule for this player
+    has_specific_rule = any(r.position == str(player.position) for r in cheatsheet_context.positional_strategy)
+
     # 1. Evaluate Round Target Constraints (e.g. Rounds 1-2 only RB/WR)
     for rnd_rule in cheatsheet_context.round_targets:
         if current_round in rnd_rule.target_rounds:
             if rnd_rule.allowed_positions and player.position not in rnd_rule.allowed_positions:
-                delta -= 0.5
-                general_notes.append(
-                    f"Strategy Hint: Rd {current_round} prioritizes {', '.join(rnd_rule.allowed_positions)}"
-                )
+                if not has_specific_rule:
+                    delta -= 0.5
+                    general_notes.append(
+                        f"Strategy Hint: Rd {current_round} prioritizes {', '.join(rnd_rule.allowed_positions)}"
+                    )
             elif rnd_rule.allowed_positions and player.position in rnd_rule.allowed_positions:
                 delta += 0.5
 
@@ -145,7 +149,7 @@ def _evaluate_strategy_rule_adjustments(
                         specific_notes.append(f"Strategy Target: {player.name} in Rd {t_rnd}")
                     else:
                         rounds_early = t_rnd - current_round
-                        delta -= rounds_early * 0.6
+                        delta -= rounds_early * 0.20
                         specific_notes.append(f"Strategy Hint: Target {player.name} in Rd {t_rnd}")
                     continue
 
@@ -163,7 +167,8 @@ def _evaluate_strategy_rule_adjustments(
                         specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
                 elif current_round < min_rnd:
                     rounds_early = min_rnd - current_round
-                    delta -= rounds_early * 0.6
+                    defer_rate = 0.90 if p_tier == 1 else 0.50
+                    delta -= rounds_early * defer_rate
                     specific_notes.append(f"Strategy Hint: {pos_rule.position} targeted in Rd {min_rnd}+")
 
             # Check if this rule defines specific target tiers (e.g. tiers 3-4 for late-round approach)
@@ -178,7 +183,7 @@ def _evaluate_strategy_rule_adjustments(
                     specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
 
     # Clamp total strategy delta to prevent extreme distortions
-    clamped_delta = round(max(-2.5, min(2.5, delta)), 2)
+    clamped_delta = round(max(-3.0, min(3.0, delta)), 2)
     final_note = specific_notes[0] if specific_notes else (general_notes[0] if general_notes else None)
     return clamped_delta, final_note
 
