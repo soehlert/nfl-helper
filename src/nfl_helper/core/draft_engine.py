@@ -214,7 +214,7 @@ def _build_suggestion_reason(
     else:
         lines.append(f"+{t_pts:.1f} pts (Tier {p_tier})")
 
-    # Row 3: ADP Market Context (Target Round & Pick / Value Steal)
+    # Row 3: ADP Market Context (Market Consensus Round & Pick / Value Steal)
     if player.adp:
         discount = overall_pick - player.adp
         target_round = int((player.adp - 1) // max(1, total_teams)) + 1
@@ -222,14 +222,16 @@ def _build_suggestion_reason(
 
         if discount >= 8.0:
             adp_pts = min(2.0, discount * 0.1)
-            lines.append(f"+{adp_pts:.1f} pts (ADP {player.adp:.1f} • Steal: fell +{discount:.0f} picks past ADP)")
+            lines.append(
+                f"+{adp_pts:.1f} pts (Market Steal • Available +{discount:.0f} picks past ADP {player.adp:.1f})"
+            )
         elif discount >= 3.0:
             adp_pts = min(2.0, discount * 0.1)
-            lines.append(f"+{adp_pts:.1f} pts (ADP {player.adp:.1f} • Good Value: fell +{discount:.0f} picks past ADP)")
-        elif discount >= -2.0:
-            lines.append(f"ADP {player.adp:.1f} (Target Now • Round {target_round}, Pick {target_pick})")
+            lines.append(
+                f"+{adp_pts:.1f} pts (Market Value • Available +{discount:.0f} picks past ADP {player.adp:.1f})"
+            )
         else:
-            lines.append(f"ADP {player.adp:.1f} (Target in Round {target_round}, Pick {target_pick})")
+            lines.append(f"Market Consensus: Round {target_round}, Pick {target_pick} (ADP {player.adp:.1f})")
 
     # Row 4: Strategy Delta & Stadium Environment
     is_dome = player.game_context and player.game_context.is_dome

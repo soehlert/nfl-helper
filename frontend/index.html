@@ -1586,18 +1586,17 @@ QB - Get one from tier 3 and one from tier 4 or get Allen in round 4
           } else if (part.includes('Steal')) {
             rowColor = '#10b981';
             fontWeight = '600';
-          } else if (part.includes('Good Value') || (part.startsWith('+') && part.includes('pts'))) {
+          } else if (part.includes('Market Value') || (part.startsWith('+') && part.includes('pts'))) {
             rowColor = 'var(--accent-green)';
-          } else if (part.includes('Good Pick')) {
-            rowColor = 'var(--text-main)';
-          } else if (part.includes('Reach')) {
-            rowColor = '#f59e0b';
+          } else if (part.includes('Market Consensus')) {
+            rowColor = 'var(--text-muted)';
           } else if (part.includes('Dome')) {
             rowColor = 'var(--accent-blue)';
           }
           reasonRowsHtml += `<div style="color: ${rowColor}; font-weight: ${fontWeight};">${part}</div>`;
         });
         reasonRowsHtml += '</div>';
+
 
 
         sugHtml += `
