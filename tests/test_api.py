@@ -43,6 +43,7 @@ def test_draft_state_endpoint() -> None:
     assert "tiers_by_position" in data
 
     # In standard mode (QA mode off), simulation params are ignored for safety
+    client.delete("/api/cheatsheet")
     client.post("/api/admin/qa-mode", json={"enabled": False})
     res_std = client.get("/api/draft/state?simulate_cliff=true")
     assert res_std.status_code == 200

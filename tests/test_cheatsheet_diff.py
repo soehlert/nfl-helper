@@ -86,6 +86,7 @@ def test_qa_mode_toggle_and_config_endpoint() -> None:
     assert len(res_cliff.json()["cliff_warnings"]) > 0
 
     # Disable QA mode
+    client.delete("/api/cheatsheet")
     res_off = client.post("/api/admin/qa-mode", json={"enabled": False})
     assert res_off.status_code == 200
     assert res_off.json()["qa_mode"] is False

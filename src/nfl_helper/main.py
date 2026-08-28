@@ -283,8 +283,23 @@ async def get_league_teams(
         ]
 
 
+def _get_canonical_default_pool() -> list[Player]:
+    """Return the real 2026 NFL Sleeper player pool."""
+    profile = LeagueProfile(
+        session_id="default_pool",
+        platform=PlatformType.SLEEPER,
+        league_id="1398753329177235456",
+        team_id="1",
+    )
+    try:
+        adapter = get_adapter_for_profile(profile)
+        return adapter.get_free_agents(limit=260)
+    except Exception:
+        return get_mock_player_pool()
+
+
 # Default sample player pool for initial load or exploratory testing
-_SAMPLE_PLAYERS: list[Player] = get_mock_player_pool()
+_SAMPLE_PLAYERS: list[Player] = _get_canonical_default_pool()
 
 
 @app.get("/api/draft/state", response_model=DraftState)
@@ -355,126 +370,108 @@ async def get_draft_state(
         except Exception as exc:
             logger.warning("Failed to fetch live draft state from %s (%s): %s", platform, league_id, exc)
 
-    # Default live calculation using engine
-    mock_picks: list[DraftPick] = [
-        DraftPick(
-            round_num=1,
-            round_pick=1,
-            overall_pick=1,
-            team_id="1",
-            team_name="Team 1",
-            player_id="rb_1",
-            player_name="Christian McCaffrey",
-            position="RB",
-        ),
-        DraftPick(
-            round_num=1,
-            round_pick=2,
-            overall_pick=2,
-            team_id="2",
-            team_name="Team 2",
-            player_id="wr_1",
-            player_name="CeeDee Lamb",
-            position="WR",
-        ),
-    ]
+    # Baseline real 2026 player pool
+    default_pool = _get_canonical_default_pool()
+    if _ACTIVE_CHEATSHEET:
+        default_pool = apply_cheatsheet_context(default_pool, _ACTIVE_CHEATSHEET)
 
+    mock_picks: list[DraftPick] = []
+    current_pick = 1
     if simulate_tier_roll:
-        # Simulate drafting all Tier 1 QBs and RBs
-        mock_picks.extend(
-            [
-                DraftPick(
-                    round_num=1,
-                    round_pick=3,
-                    overall_pick=3,
-                    team_id="3",
-                    team_name="Team 3",
-                    player_id="rb_2",
-                    player_name="Breece Hall",
-                    position="RB",
-                ),
-                DraftPick(
-                    round_num=1,
-                    round_pick=4,
-                    overall_pick=4,
-                    team_id="4",
-                    team_name="Team 4",
-                    player_id="rb_3",
-                    player_name="Bijan Robinson",
-                    position="RB",
-                ),
-                DraftPick(
-                    round_num=1,
-                    round_pick=5,
-                    overall_pick=5,
-                    team_id="5",
-                    team_name="Team 5",
-                    player_id="rb_4",
-                    player_name="Jahmyr Gibbs",
-                    position="RB",
-                ),
-                DraftPick(
-                    round_num=1,
-                    round_pick=6,
-                    overall_pick=6,
-                    team_id="6",
-                    team_name="Team 6",
-                    player_id="rb_5",
-                    player_name="Jonathan Taylor",
-                    position="RB",
-                ),
-                DraftPick(
-                    round_num=1,
-                    round_pick=5,
-                    overall_pick=5,
-                    team_id="5",
-                    team_name="Team 5",
-                    player_id="qb_1",
-                    player_name="Josh Allen",
-                    position="QB",
-                ),
-                DraftPick(
-                    round_num=1,
-                    round_pick=6,
-                    overall_pick=6,
-                    team_id="6",
-                    team_name="Team 6",
-                    player_id="qb_2",
-                    player_name="Lamar Jackson",
-                    position="QB",
-                ),
-                DraftPick(
-                    round_num=1,
-                    round_pick=7,
-                    overall_pick=7,
-                    team_id="7",
-                    team_name="Team 7",
-                    player_id="qb_3",
-                    player_name="Jalen Hurts",
-                    position="QB",
-                ),
-                DraftPick(
-                    round_num=1,
-                    round_pick=8,
-                    overall_pick=8,
-                    team_id="8",
-                    team_name="Team 8",
-                    player_id="qb_4",
-                    player_name="Joe Burrow",
-                    position="QB",
-                ),
-            ]
-        )
+        # QA simulation: simulate drafting Tier 1 RBs and QBs
+        mock_picks = [
+            DraftPick(
+                round_num=1,
+                round_pick=1,
+                overall_pick=1,
+                team_id="1",
+                team_name="Team 1",
+                player_id="fa_rb_1",
+                player_name="Jahmyr Gibbs",
+                position="RB",
+            ),
+            DraftPick(
+                round_num=1,
+                round_pick=2,
+                overall_pick=2,
+                team_id="2",
+                team_name="Team 2",
+                player_id="fa_rb_2",
+                player_name="Bijan Robinson",
+                position="RB",
+            ),
+            DraftPick(
+                round_num=1,
+                round_pick=3,
+                overall_pick=3,
+                team_id="3",
+                team_name="Team 3",
+                player_id="fa_rb_3",
+                player_name="Christian McCaffrey",
+                position="RB",
+            ),
+            DraftPick(
+                round_num=1,
+                round_pick=4,
+                overall_pick=4,
+                team_id="4",
+                team_name="Team 4",
+                player_id="fa_rb_4",
+                player_name="Jonathan Taylor",
+                position="RB",
+            ),
+            DraftPick(
+                round_num=1,
+                round_pick=5,
+                overall_pick=5,
+                team_id="5",
+                team_name="Team 5",
+                player_id="fa_qb_1",
+                player_name="Josh Allen",
+                position="QB",
+            ),
+            DraftPick(
+                round_num=1,
+                round_pick=6,
+                overall_pick=6,
+                team_id="6",
+                team_name="Team 6",
+                player_id="fa_qb_2",
+                player_name="Lamar Jackson",
+                position="QB",
+            ),
+            DraftPick(
+                round_num=1,
+                round_pick=7,
+                overall_pick=7,
+                team_id="7",
+                team_name="Team 7",
+                player_id="fa_qb_3",
+                player_name="Jalen Hurts",
+                position="QB",
+            ),
+            DraftPick(
+                round_num=1,
+                round_pick=8,
+                overall_pick=8,
+                team_id="8",
+                team_name="Team 8",
+                player_id="fa_qb_4",
+                player_name="Joe Burrow",
+                position="QB",
+            ),
+        ]
+        current_pick = 9
 
     state = build_draft_state(
-        league_id="default_league",
+        league_id="sleeper_2026_demo",
         draft_id="draft_live",
-        overall_pick=14 if not simulate_tier_roll else 18,
-        user_draft_slot=6,
-        total_teams=12,
-        total_rounds=16,
+        overall_pick=current_pick,
+        user_draft_slot=1,
+        total_teams=10,
+        total_rounds=15,
         recent_picks=mock_picks,
-        all_players=_SAMPLE_PLAYERS,
+        all_players=default_pool,
         cheatsheet_context=_ACTIVE_CHEATSHEET,
     )
 

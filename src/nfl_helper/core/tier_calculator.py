@@ -190,8 +190,8 @@ def _evaluate_on_the_clock_cliff(
     remaining = len(tier.players)
     tier_size = max(remaining, tier.count)
 
-    # 1. Never alert on a full, undrained tier with 3+ players when on the clock
-    if remaining >= tier_size and remaining > 2:
+    # 1. Never alert on a full, undrained tier with multiple players (0 players drafted)
+    if remaining >= tier_size and remaining > 1:
         return None
 
     # 2. Dynamic ADP Proximity: do not alert if tier is far out of draft range for current pick
@@ -202,7 +202,7 @@ def _evaluate_on_the_clock_cliff(
             return None
 
     # 3. Require true tier depletion (drained tier or down to the last player)
-    is_drained = (remaining < tier_size and remaining <= 2) or ((remaining / tier_size) <= 0.50) or remaining <= 2
+    is_drained = (remaining < tier_size and remaining <= 2) or ((remaining / tier_size) <= 0.50) or remaining == 1
     is_gap_scarce = remaining <= max(2, (snake_turn_gap + 2) // 3)
 
     if not (is_drained and is_gap_scarce):
@@ -244,7 +244,11 @@ def _evaluate_waiting_cliff(
     remaining = len(tier.players)
     tier_size = max(remaining, tier.count)
 
-    # 1. Dynamic ADP Proximity: check if this tier is expected to be drafted in the upcoming window
+    # 1. At draft start (Picks 1-3), never alert on a full, untouched tier with 3+ players
+    if current_pick <= 3 and remaining >= tier_size and remaining >= 3:
+        return None
+
+    # 2. Dynamic ADP Proximity: check if this tier is expected to be drafted in the upcoming window
     adps = [p.adp for p in tier.players if p.adp is not None]
     if adps:
         avg_adp = sum(adps) / len(adps)
@@ -252,7 +256,7 @@ def _evaluate_waiting_cliff(
         if not in_draft_range:
             return None
 
-    # 2. Only alert for actionable upcoming turn cliffs (tier survives to your pick but depletes during turn gap)
+    # 3. Only alert for actionable upcoming turn cliffs (tier survives to your pick but depletes during turn gap)
     survives_to_turn = remaining > picks_until_turn
     wipes_in_gap = remaining <= (picks_until_turn + max(2, (snake_turn_gap + 2) // 3))
 

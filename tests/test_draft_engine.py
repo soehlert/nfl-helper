@@ -145,7 +145,9 @@ def test_tier_cliffs_actionable_scenarios() -> None:
     ]
     t2_wr = [Player(id="wr4", name="Evans", position=Position.WR, team="TB", projected_points=15.0, tier=2)]
     tiers_upcoming = {"WR": cluster_position_tiers(t1_wr + t2_wr, "WR")}
-    cliffs_upcoming = detect_tier_cliffs(tiers_upcoming, picks_until_turn=2, snake_turn_gap=12, is_on_the_clock=False)
+    cliffs_upcoming = detect_tier_cliffs(
+        tiers_upcoming, picks_until_turn=2, snake_turn_gap=12, is_on_the_clock=False, current_pick=4
+    )
     assert len(cliffs_upcoming) == 1
     assert cliffs_upcoming[0].cliff_type == CliffType.UPCOMING_TURN_CLIFF
     assert "Target Tier 1" in cliffs_upcoming[0].recommended_action
