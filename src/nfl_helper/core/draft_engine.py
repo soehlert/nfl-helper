@@ -304,11 +304,13 @@ def generate_draft_suggestions(
     top_n: int = 150,
     cheatsheet_context: CheatsheetContext | None = None,
     total_teams: int = 12,
+    user_roster_counts: dict[str, int] | None = None,
 ) -> list[DraftSuggestion]:
-    """Generate ranked tactical draft suggestions balancing VORP, cliffs, rules, and ADP value."""
+    """Generate ranked tactical draft suggestions balancing VORP, cliffs, rules, roster needs, and ADP value."""
     vorp_scores = calculate_vorp(available_players, baselines)
     cliff_by_pos = {w.position: w for w in cliff_warnings}
     current_round = (overall_pick - 1) // total_teams + 1
+    roster = user_roster_counts or {}
 
     top_tier_info: dict[str, tuple[int, int, float]] = {}
     for pos, pos_tiers in tiers_by_pos.items():
@@ -339,6 +341,15 @@ def generate_draft_suggestions(
         elif p_tier == 2:
             tier_bonus = 0.8 * demand_weight
         base_score += tier_bonus
+
+        # Roster needs demand adjustment (satisfaction penalties for single-starter positions)
+        pos_str = str(p.position).upper()
+        if pos_str == "QB" and roster.get("QB", 0) >= 1:
+            base_score -= 3.5 if current_round < 12 else 1.0
+        elif pos_str == "TE" and roster.get("TE", 0) >= 1:
+            base_score -= 2.5 if current_round < 10 else 0.8
+        elif pos_str in ("K", "D/ST", "DEF", "DST") and roster.get(pos_str, 0) >= 1:
+            base_score -= 4.0
 
         # Positional Scarcity Weighting: only when ADP is in reachable range for current pick
         scarcity_bonus = 0.0
@@ -503,7 +514,28 @@ def build_draft_state(
             for p in t.players:
                 p.tier = t.tier_num
 
-    cliffs = detect_tier_cliffs(tiers_by_pos, picks_until_turn, turn_gap, on_the_clock, current_pick=overall_pick)
+    user_picks: list[DraftPick] = []
+    for pick in recent_picks:
+        pick_owner_slot = calculate_snake_pick_owner(pick.overall_pick, total_teams)
+        if pick_owner_slot == user_draft_slot:
+            user_picks.append(pick)
+
+    user_roster_counts: dict[str, int] = {}
+    for pick in user_picks:
+        p_pos = (pick.position or "").upper()
+        if p_pos in ("DEF", "DST", "D/ST"):
+            p_pos = "D/ST"
+        if p_pos:
+            user_roster_counts[p_pos] = user_roster_counts.get(p_pos, 0) + 1
+
+    cliffs = detect_tier_cliffs(
+        tiers_by_pos,
+        picks_until_turn,
+        turn_gap,
+        on_the_clock,
+        current_pick=overall_pick,
+        user_roster_counts=user_roster_counts,
+    )
 
     baselines = calculate_vorp_baselines(all_players, total_teams)
     suggestions = generate_draft_suggestions(
@@ -515,6 +547,7 @@ def build_draft_state(
         top_n=len(available_players),
         cheatsheet_context=cheatsheet_context,
         total_teams=total_teams,
+        user_roster_counts=user_roster_counts,
     )
 
     current_round = (overall_pick - 1) // total_teams + 1

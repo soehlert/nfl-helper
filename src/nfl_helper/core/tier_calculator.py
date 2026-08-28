@@ -4,16 +4,16 @@ from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import CliffType, PlayerTier, TierCliffWarning
 from nfl_helper.models.player import Player
 
-# Refined realistic drop-off thresholds (single step drop, maximum tier span)
-_DROP_THRESHOLDS: dict[str, tuple[float, float]] = {
-    "QB": (0.7, 1.2),
-    "RB": (1.3, 2.2),
-    "WR": (1.3, 2.2),
-    "TE": (1.3, 2.2),
-    "K": (0.3, 0.6),
-    "D/ST": (0.3, 0.6),
+# Refined realistic drop-off thresholds (single step drop, maximum tier span, max tier cluster size)
+_DROP_THRESHOLDS: dict[str, tuple[float, float, int]] = {
+    "QB": (0.6, 1.1, 4),
+    "RB": (0.8, 1.5, 4),
+    "WR": (0.8, 1.5, 4),
+    "TE": (0.7, 1.3, 4),
+    "K": (0.3, 0.6, 3),
+    "D/ST": (0.3, 0.6, 3),
 }
-_DEFAULT_THRESHOLD: tuple[float, float] = (1.3, 2.2)
+_DEFAULT_THRESHOLD: tuple[float, float, int] = (0.8, 1.5, 4)
 
 
 def _cluster_hybrid(players: list[Player], position: str) -> list[PlayerTier]:
@@ -22,7 +22,7 @@ def _cluster_hybrid(players: list[Player], position: str) -> list[PlayerTier]:
         return []
 
     sorted_p = sorted(players, key=lambda x: x.projected_points, reverse=True)
-    single_drop, max_span = _DROP_THRESHOLDS.get(position.upper(), _DEFAULT_THRESHOLD)
+    single_drop, max_span, max_size = _DROP_THRESHOLDS.get(position.upper(), _DEFAULT_THRESHOLD)
 
     clusters: list[list[Player]] = [[sorted_p[0]]]
     current_tier_max = sorted_p[0].projected_points
@@ -40,11 +40,15 @@ def _cluster_hybrid(players: list[Player], position: str) -> list[PlayerTier]:
             p_cs_tier is not None
             and current_cs_tier is not None
             and p_cs_tier > current_cs_tier
-            and (step_drop >= 0.4 or span_drop >= 1.5)
+            and (step_drop >= 0.3 or span_drop >= 0.8)
         )
 
-        # Statistical step or span drop
-        stat_transition = step_drop >= single_drop or span_drop >= max_span
+        # Statistical step or span drop or max cluster size
+        stat_transition = (
+            step_drop >= single_drop
+            or span_drop >= max_span
+            or (len(clusters[-1]) >= max_size and (step_drop >= 0.25 or span_drop >= 0.5))
+        )
 
         if stat_transition or cs_transition:
             clusters.append([p])
@@ -232,12 +236,23 @@ def detect_tier_cliffs(
     snake_turn_gap: int,
     is_on_the_clock: bool,
     current_pick: int = 1,
+    user_roster_counts: dict[str, int] | None = None,
 ) -> list[TierCliffWarning]:
     """Identify 3-scenario positional tier cliffs across available player tiers."""
     warnings: list[TierCliffWarning] = []
     risk_rank = {"CRITICAL": 0, "HIGH": 1, "MODERATE": 2, "LOW": 3}
+    roster = user_roster_counts or {}
 
-    for tiers in tiers_by_pos.values():
+    for pos, tiers in tiers_by_pos.items():
+        pos_upper = pos.upper()
+        # Suppress single-starter positions if user already filled their starting spot
+        if pos_upper == "QB" and roster.get("QB", 0) >= 1:
+            continue
+        if pos_upper == "TE" and roster.get("TE", 0) >= 1:
+            continue
+        if pos_upper in ("K", "D/ST", "DEF", "DST") and roster.get(pos_upper, 0) >= 1:
+            continue
+
         active_tiers = [t for t in tiers if len(t.players) > 0]
         if not active_tiers:
             continue

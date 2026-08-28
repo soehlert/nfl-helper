@@ -2272,17 +2272,16 @@
           formatLabel.textContent = `${data.total_teams} Teams • ${data.total_rounds || 15} Rds`;
         }
         const userSlotLabel = document.getElementById('user-slot-label');
-        if (userSlotLabel) {
-          const slot = data.user_draft_slot || 1;
-          userSlotLabel.textContent = `Your Slot: #${slot}`;
-        }
+        const slot = data.user_draft_slot || 1;
         const picksUntilElem = document.getElementById('picks-until-turn-val');
         if (data.is_user_on_the_clock || data.picks_until_user_turn === 0) {
           picksUntilElem.textContent = 'ON THE CLOCK!';
           picksUntilElem.style.color = 'var(--accent-green)';
+          if (userSlotLabel) userSlotLabel.textContent = `Draft Slot #${slot} (Pick Now)`;
         } else {
-          picksUntilElem.textContent = data.picks_until_user_turn + ' picks';
+          picksUntilElem.textContent = `${data.picks_until_user_turn} picks away`;
           picksUntilElem.style.color = 'var(--accent-amber)';
+          if (userSlotLabel) userSlotLabel.textContent = `Draft Slot #${slot}`;
         }
         document.getElementById('snake-turn-gap-val').textContent = data.snake_turn_gap + ' picks';
 
