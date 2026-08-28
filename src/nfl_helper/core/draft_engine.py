@@ -3,7 +3,12 @@
 import math
 import re
 
-from nfl_helper.core.tier_calculator import calculate_tier_drop, cluster_position_tiers, detect_tier_cliffs
+from nfl_helper.core.tier_calculator import (
+    assign_global_macro_tiers,
+    calculate_tier_drop,
+    cluster_position_tiers,
+    detect_tier_cliffs,
+)
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import DraftPick, DraftState, DraftSuggestion, PlayerTier, TierCliffWarning
 from nfl_helper.models.player import Player
@@ -493,6 +498,9 @@ def build_draft_state(
     cheatsheet_context: CheatsheetContext | None = None,
 ) -> DraftState:
     """Construct full DraftState snapshot with snake lookahead, tiers, cliffs, and suggestions."""
+    # Ensure canonical macro tiers (5 QB/TE, 8 RB/WR, 4 K/DST) across the full player pool
+    assign_global_macro_tiers(all_players)
+
     drafted_ids = {pick.player_id for pick in recent_picks}
     drafted_names = {pick.player_name.lower() for pick in recent_picks if pick.player_name}
     available_players = [p for p in all_players if p.id not in drafted_ids and p.name.lower() not in drafted_names]

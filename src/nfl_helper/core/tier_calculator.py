@@ -73,6 +73,33 @@ def _cluster_hybrid(players: list[Player], position: str) -> list[PlayerTier]:
     return tiers
 
 
+MACRO_POSITION_TIERS: dict[str, int] = {
+    "QB": 5,
+    "TE": 5,
+    "RB": 8,
+    "WR": 8,
+    "K": 4,
+    "D/ST": 4,
+}
+
+
+def assign_global_macro_tiers(all_players: list[Player]) -> None:
+    """Assign canonical macro tiers (5 QB/TE, 8 RB/WR, 4 K/DST) across the full player pool."""
+    for pos, target_n in MACRO_POSITION_TIERS.items():
+        pos_all = sorted([p for p in all_players if p.position == pos], key=lambda x: x.projected_points, reverse=True)
+        if not pos_all:
+            continue
+        max_pts = pos_all[0].projected_points
+        min_pts = pos_all[-1].projected_points
+        step = max(0.4, (max_pts - min_pts) / target_n) if target_n > 1 else 1.0
+        for p in pos_all:
+            if p.cheatsheet_tier is not None:
+                p.tier = p.cheatsheet_tier
+            else:
+                t_calc = int((max_pts - p.projected_points) / step) + 1
+                p.tier = min(target_n, max(1, t_calc))
+
+
 def cluster_position_tiers(
     players: list[Player], position: str, cheatsheet_context: CheatsheetContext | None = None
 ) -> list[PlayerTier]:
