@@ -310,6 +310,7 @@ def generate_draft_suggestions(
     cheatsheet_context: CheatsheetContext | None = None,
     total_teams: int = 12,
     user_roster_counts: dict[str, int] | None = None,
+    total_rounds: int = 16,
 ) -> list[DraftSuggestion]:
     """Generate ranked tactical draft suggestions balancing VORP, cliffs, rules, roster needs, and ADP value."""
     vorp_scores = calculate_vorp(available_players, baselines)
@@ -317,6 +318,12 @@ def generate_draft_suggestions(
     current_round = (overall_pick - 1) // total_teams + 1
     roster = user_roster_counts or {}
     active_rules = cheatsheet_context.strategy_rules if cheatsheet_context else []
+    rounds_remaining = max(1, total_rounds - current_round + 1)
+    unfilled_mandatory: list[str] = []
+    if roster.get("K", 0) < 1:
+        unfilled_mandatory.append("K")
+    if roster.get("D/ST", 0) < 1:
+        unfilled_mandatory.append("D/ST")
 
     top_tier_info: dict[str, tuple[int, int, float]] = {}
     for pos, pos_tiers in tiers_by_pos.items():
@@ -350,6 +357,9 @@ def generate_draft_suggestions(
 
         # Roster needs demand adjustment (satisfaction penalties for single-starter positions)
         pos_str = str(p.position).upper()
+        if pos_str in ("D/ST", "DEF", "DST"):
+            pos_str = "D/ST"
+
         if pos_str == "QB" and roster.get("QB", 0) >= 1:
             has_2qb_rule = any(
                 "one from tier 4" in r.lower() or "two qb" in r.lower() or "2nd qb" in r.lower() for r in active_rules
@@ -360,8 +370,15 @@ def generate_draft_suggestions(
                 base_score -= 3.5 if current_round < 12 else 1.0
         elif pos_str == "TE" and roster.get("TE", 0) >= 1:
             base_score -= 2.5 if current_round < 10 else 0.8
-        elif pos_str in ("K", "D/ST", "DEF", "DST") and roster.get(pos_str, 0) >= 1:
+        elif pos_str in ("K", "D/ST") and roster.get(pos_str, 0) >= 1:
             base_score -= 4.0
+
+        # Mandatory starter slots emergency fill in final rounds (e.g. Rounds 14-15 of 15)
+        if pos_str in ("K", "D/ST") and roster.get(pos_str, 0) < 1:
+            if rounds_remaining <= len(unfilled_mandatory):
+                base_score += 15.0  # Highest priority to fill mandatory starter
+            elif rounds_remaining <= len(unfilled_mandatory) + 1:
+                base_score += 6.0
 
         # Positional Scarcity Weighting: only when ADP is in reachable range for current pick
         scarcity_bonus = 0.0
@@ -564,6 +581,7 @@ def build_draft_state(
         cheatsheet_context=cheatsheet_context,
         total_teams=total_teams,
         user_roster_counts=user_roster_counts,
+        total_rounds=total_rounds,
     )
 
     current_round = (overall_pick - 1) // total_teams + 1

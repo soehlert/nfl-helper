@@ -1,5 +1,7 @@
 """Sleeper fantasy football league adapter via official Sleeper REST API."""
 
+import math
+
 import httpx
 
 from nfl_helper.adapters.base import BaseLeagueAdapter
@@ -129,16 +131,21 @@ class SleeperAdapter(BaseLeagueAdapter):
         stats = proj_meta.get("stats", {}) if isinstance(proj_meta, dict) else {}
         fpts = float(stats.get("pts_ppr", 0.0) or stats.get("pts_half_ppr", 0.0) or stats.get("pts_std", 0.0) or 0.0)
 
-        # Fallback projection based on positional baseline if 0.0
+        # Derive realistic baseline fantasy projection differentiated by positional rank
         if fpts <= 0.0:
+            r = max(1.0, float(pos_rank) if pos_rank is not None else 40.0)
             if pos_enum == Position.QB:
-                fpts = 18.5
-            elif pos_enum in (Position.RB, Position.WR):
-                fpts = 10.5
+                fpts = round(max(12.0, 25.5 - 2.5 * math.log(r)), 2)
+            elif pos_enum == Position.RB:
+                fpts = round(max(6.0, 21.5 - 3.2 * math.log(r)), 2)
+            elif pos_enum == Position.WR:
+                fpts = round(max(6.0, 20.8 - 2.8 * math.log(r)), 2)
             elif pos_enum == Position.TE:
-                fpts = 8.5
+                fpts = round(max(5.0, 15.2 - 2.4 * math.log(r)), 2)
             elif pos_enum in (Position.K, Position.DST):
-                fpts = 7.5
+                fpts = round(max(5.0, 9.5 - 0.7 * math.log(r)), 2)
+            else:
+                fpts = 10.0
 
         injury_raw = str(raw_meta.get("injury_status") or "").upper()
         injury_status = (
@@ -352,8 +359,8 @@ class SleeperAdapter(BaseLeagueAdapter):
             available_players_by_pos=by_pos,
         )
 
-    def get_free_agents(self, limit: int = 150) -> list[Player]:
-        """Fetch available free agents from Sleeper sorted by multi-platform consensus ADP."""
+    def get_free_agents(self, limit: int = 250) -> list[Player]:
+        """Fetch available free agents from Sleeper sorted by multi-platform consensus ADP with guaranteed positional quotas."""
         db = self._ensure_player_db()
         projs = self._ensure_proj_db()
         espn_adps = self._ensure_espn_adp_db()
@@ -384,18 +391,20 @@ class SleeperAdapter(BaseLeagueAdapter):
 
                 valid_candidates.append((comp_adp, pid, meta))
 
-        # Group by canonical position to determine true positional rank
+        # Group by canonical position to guarantee depth across all positions (including all 32 D/ST teams)
         by_pos_candidates: dict[str, list[tuple[float, str, dict[str, object]]]] = {}
         for rank_val, pid, meta in valid_candidates:
             raw_pos = str(meta.get("position", "")).upper()
-            pos_key = "D/ST" if raw_pos in ("DEF", "DST") else ("RB" if raw_pos == "FB" else raw_pos)
+            pos_key = "D/ST" if raw_pos in ("DEF", "DST", "D/ST") else ("RB" if raw_pos == "FB" else raw_pos)
             by_pos_candidates.setdefault(pos_key, []).append((rank_val, pid, meta))
 
+        pos_quotas = {"QB": 32, "RB": 65, "WR": 85, "TE": 32, "K": 20, "D/ST": 32}
         mapped_players: list[Player] = []
-        for candidates in by_pos_candidates.values():
+        for pos_key, candidates in by_pos_candidates.items():
             candidates.sort(key=lambda x: x[0])
-            for pos_rank, (_, pid, meta) in enumerate(candidates, start=1):
+            quota = pos_quotas.get(pos_key, 30)
+            for pos_rank, (_, pid, meta) in enumerate(candidates[:quota], start=1):
                 mapped_players.append(self._map_player(pid, meta_override=meta, pos_rank=pos_rank))
 
         mapped_players.sort(key=lambda p: p.adp if p.adp is not None else 999)
-        return mapped_players[:limit]
+        return mapped_players
