@@ -163,9 +163,9 @@ def test_vorp_and_suggestion_generation() -> None:
     baselines = calculate_vorp_baselines(players, total_teams=12)
     vorp_scores = calculate_vorp(players, baselines)
 
-    # Bijan (19.0 - 10.0 = 9.0 VORP) vs Josh Allen ((24.0 - 17.0) * 0.45 = 3.15 VORP)
+    # Bijan (19.0 - 10.0 = 9.0 VORP) vs Josh Allen (24.0 - 17.0 = 7.0 VORP)
     assert vorp_scores["rb1"] == 9.0
-    assert vorp_scores["qb1"] == 3.15
+    assert vorp_scores["qb1"] == 7.0
 
     tiers = {"RB": cluster_position_tiers([players[3]], "RB"), "QB": cluster_position_tiers([players[0]], "QB")}
     suggestions = generate_draft_suggestions(players, tiers, [], baselines, overall_pick=1, top_n=3)

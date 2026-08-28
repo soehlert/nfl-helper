@@ -18,14 +18,14 @@ _STARTER_DEPTH: dict[str, float] = {
     "D/ST": 1.0,
 }
 
-# Positional starting demand weights for single-QB / 1-TE format (1 QB vs 5-6 RB/WR)
+# Positional starting demand weights (baseline VORP calibrated by starter depth)
 _POS_DEMAND_WEIGHT: dict[str, float] = {
     "RB": 1.0,
     "WR": 1.0,
-    "QB": 0.45,
-    "TE": 0.65,
-    "K": 0.25,
-    "D/ST": 0.25,
+    "QB": 1.0,
+    "TE": 1.0,
+    "K": 0.5,
+    "D/ST": 0.5,
 }
 
 
@@ -69,13 +69,15 @@ def calculate_lookahead(
 
     next_pick = future_picks[0]
     picks_until_turn = next_pick - overall_pick
-    subsequent_pick = future_picks[1] if len(future_picks) > 1 else next_pick + total_teams
+    idx = schedule.index(next_pick)
+    subsequent_pick = schedule[idx + 1] if idx + 1 < len(schedule) else schedule[-1] + total_teams
     turn_gap = max(0, subsequent_pick - next_pick - 1)
     return picks_until_turn, turn_gap, is_on_the_clock
 
 
 def calculate_vorp_baselines(all_players: list[Player], total_teams: int) -> dict[str, float]:
-    """Compute and return positional replacement baseline scores."""
+    """Determine replacement baseline projected points per position based on starter depth."""
+
     baselines: dict[str, float] = {}
     by_pos: dict[str, list[Player]] = {}
     for p in all_players:
@@ -118,10 +120,10 @@ def _evaluate_strategy_rule_adjustments(
     for rnd_rule in cheatsheet_context.round_targets:
         if current_round in rnd_rule.target_rounds:
             if rnd_rule.allowed_positions and player.position not in rnd_rule.allowed_positions:
-                delta -= 1.8
-                notes.append(f"Deprioritized: Rd {current_round} targets {', '.join(rnd_rule.allowed_positions)}")
+                delta -= 0.5
+                notes.append(f"Strategy Hint: Rd {current_round} prioritizes {', '.join(rnd_rule.allowed_positions)}")
             elif rnd_rule.allowed_positions and player.position in rnd_rule.allowed_positions:
-                delta += 0.8
+                delta += 0.5
 
     # 2. Evaluate Positional and Round Target Strategies dynamically
     for pos_rule in cheatsheet_context.positional_strategy:
@@ -137,7 +139,7 @@ def _evaluate_strategy_rule_adjustments(
                 t_name, t_rnd = name_target_match.group(1).lower(), int(name_target_match.group(2))
                 if t_name in player.name.lower():
                     if current_round >= t_rnd:
-                        delta += 2.5
+                        delta += 1.0
                         notes.append(f"Strategy Target: {player.name} in Rd {t_rnd}")
                     else:
                         notes.append(f"Target {player.name} in Rd {t_rnd}")
@@ -149,28 +151,28 @@ def _evaluate_strategy_rule_adjustments(
                     if (
                         pos_rule.top_n_target and (player.cheatsheet_rank or 99) <= pos_rule.top_n_target
                     ) or p_tier == 1:
-                        delta += 2.0
+                        delta += 0.8
                         notes.append(f"Strategy Target: Top {pos_rule.position} in Rd {current_round}")
                     elif pos_rule.target_tiers and p_tier in pos_rule.target_tiers:
-                        delta += 1.2
+                        delta += 0.5
                         notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
                 elif current_round < min(pos_rule.target_rounds):
-                    delta -= 1.5
-                    notes.append(f"Deprioritized: {pos_rule.position} targeted in Rd {min(pos_rule.target_rounds)}+")
+                    delta -= 0.5
+                    notes.append(f"Strategy Hint: {pos_rule.position} targeted in Rd {min(pos_rule.target_rounds)}+")
 
             # Check if this rule defines specific target tiers (e.g. tiers 3-4 for late-round approach)
             elif pos_rule.target_tiers:
                 if current_round <= 3 and min(pos_rule.target_tiers) >= 3:
-                    delta -= 1.5
+                    delta -= 0.5
                     notes.append(
-                        f"Deprioritized: Late-Round {pos_rule.position} (targeting Tiers {','.join(map(str, pos_rule.target_tiers))})"
+                        f"Strategy Hint: Late-Round {pos_rule.position} (targeting Tiers {','.join(map(str, pos_rule.target_tiers))})"
                     )
                 elif current_round >= 4 and p_tier in pos_rule.target_tiers:
-                    delta += 1.5
+                    delta += 0.5
                     notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
 
     # Clamp total strategy delta to prevent extreme distortions
-    clamped_delta = max(-2.5, min(3.5, delta))
+    clamped_delta = max(-1.0, min(1.5, delta))
     final_note = notes[0] if notes else None
     return clamped_delta, final_note
 
