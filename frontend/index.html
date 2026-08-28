@@ -1056,30 +1056,30 @@
         </div>
 
         <!-- Middle: Responsive Columns for File Upload & Copy/Paste -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem; align-items: stretch;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
           
           <!-- Left Column: File Upload Dropzone -->
           <div style="display: flex; flex-direction: column;">
-            <label class="form-label" style="font-weight: 600;">
+            <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem;">
               Upload File (PDF, CSV, TXT, JSON)
             </label>
-            <div id="cheatsheet-dropzone-box" class="dropzone" style="flex: 1; min-height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.25rem 1rem; border-radius: 8px; text-align: center; box-sizing: border-box;" onclick="document.getElementById('cheatsheet-file-input').click()">
+            <div id="cheatsheet-dropzone-box" class="dropzone" style="height: 130px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; border-radius: 8px; text-align: center;" onclick="document.getElementById('cheatsheet-file-input').click()">
               <div id="dropzone-main-text" style="font-weight: 600; font-size: 0.92rem; color: var(--text-main); margin-bottom: 0.35rem;">Click or Drop File Here</div>
-              <div id="dropzone-sub-text" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Supports PDF, CSV, TXT, or JSON formats</div>
-              <div id="dropzone-detail-text" style="font-size: 0.74rem; color: var(--text-muted);">Extracts multi-column tiers, ADPs, and strategy rules</div>
+              <div id="dropzone-sub-text" style="font-size: 0.8rem; color: var(--text-muted);">Supports PDF, CSV, TXT, or JSON formats</div>
               <input type="file" id="cheatsheet-file-input" accept=".pdf,.csv,.txt,.json" style="display: none;" onchange="handleFileSelected(event)">
             </div>
           </div>
 
           <!-- Right Column: Copy/Paste Textarea -->
           <div style="display: flex; flex-direction: column;">
-            <label class="form-label" style="font-weight: 600;">
+            <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem;">
               Paste Text (Plain Text, CSV, JSON, OCR)
             </label>
-            <textarea id="cheatsheet-textarea" class="form-control" style="flex: 1; min-height: 140px; box-sizing: border-box; resize: vertical;" placeholder="Paste plain text, CSV, JSON, or OCR rankings here..."></textarea>
+            <textarea id="cheatsheet-textarea" class="form-control" style="height: 130px; box-sizing: border-box; resize: none; margin: 0; padding: 0.75rem;" placeholder="Paste plain text, CSV, JSON, or OCR rankings here..."></textarea>
           </div>
 
         </div>
+
 
 
         <!-- Bottom: Single Unified Action Bar -->
