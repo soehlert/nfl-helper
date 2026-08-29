@@ -199,32 +199,38 @@ def _evaluate_on_the_clock_cliff(
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is currently on the clock."""
     drop = calculate_tier_drop(tier, next_tier)
-    min_drop = 0.9 if current_pick <= 40 else (0.7 if current_pick <= 80 else 0.5)
+    min_drop = 1.5 if current_pick <= 40 else (1.2 if current_pick <= 80 else 1.0)
     if drop < min_drop:
         return None
 
     remaining = len(tier.players)
     tier_size = max(remaining, tier.count)
 
-    # 1. Never alert on a full, undrained tier with multiple players (0 players drafted)
+    # 1. Never alert on single-player tiers unless drop is substantial (>= 2.0 pts)
+    if tier_size <= 1 and drop < 2.0:
+        return None
+
+    # 2. Never alert on a full, undrained tier with multiple players (0 players drafted)
     if remaining >= tier_size and remaining > 1:
         return None
 
-    # 2. Dynamic ADP Proximity: do not alert if tier is far out of draft range for current pick
+    # 3. Dynamic ADP Proximity: do not alert if tier is far out of draft range for current pick
     adps = [p.adp for p in tier.players if p.adp is not None]
     if adps:
         avg_adp = sum(adps) / len(adps)
         if avg_adp > current_pick + 8 and remaining > 1:
             return None
 
-    # 3. Require true tier depletion (drained tier or down to the last player)
+    # 4. Require true tier depletion (drained tier or down to the last player)
     is_drained = (remaining < tier_size and remaining <= 2) or ((remaining / tier_size) <= 0.50) or remaining == 1
     is_gap_scarce = remaining <= max(2, (snake_turn_gap + 2) // 3)
 
     if not (is_drained and is_gap_scarce):
         return None
 
-    risk = "CRITICAL" if (remaining == 1 or drop >= 2.5) else ("HIGH" if remaining <= 2 else "MODERATE")
+    risk = (
+        "CRITICAL" if (remaining == 1 and drop >= 2.5) else ("HIGH" if (remaining <= 2 or drop >= 2.0) else "MODERATE")
+    )
     next_num = next_tier.tier_num if next_tier else tier.tier_num + 1
     action = (
         f"Only {remaining} of {tier_size} Tier {tier.tier_num} {tier.position} remaining "
@@ -253,18 +259,22 @@ def _evaluate_waiting_cliff(
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is waiting for upcoming pick with dynamic ADP proximity."""
     drop = calculate_tier_drop(tier, next_tier)
-    min_drop = 0.9 if current_pick <= 40 else (0.7 if current_pick <= 80 else 0.5)
+    min_drop = 1.5 if current_pick <= 40 else (1.2 if current_pick <= 80 else 1.0)
     if drop < min_drop:
         return None
 
     remaining = len(tier.players)
     tier_size = max(remaining, tier.count)
 
-    # 1. At draft start (Picks 1-3), never alert on a full, untouched tier with 3+ players
+    # 1. Never alert on single-player tiers unless drop is substantial (>= 2.0 pts)
+    if tier_size <= 1 and drop < 2.0:
+        return None
+
+    # 2. At draft start (Picks 1-3), never alert on a full, untouched tier with 3+ players
     if current_pick <= 3 and remaining >= tier_size and remaining >= 3:
         return None
 
-    # 2. Dynamic ADP Proximity: check if this tier is expected to be drafted in the upcoming window
+    # 3. Dynamic ADP Proximity: check if this tier is expected to be drafted in the upcoming window
     adps = [p.adp for p in tier.players if p.adp is not None]
     if adps:
         avg_adp = sum(adps) / len(adps)
@@ -272,7 +282,7 @@ def _evaluate_waiting_cliff(
         if not in_draft_range:
             return None
 
-    # 3. Only alert for actionable upcoming turn cliffs (tier survives to your pick but depletes during turn gap)
+    # 4. Only alert for actionable upcoming turn cliffs (tier survives to your pick but depletes during turn gap)
     survives_to_turn = remaining > picks_until_turn
     wipes_in_gap = remaining <= (picks_until_turn + max(2, (snake_turn_gap + 2) // 3))
 
@@ -297,6 +307,49 @@ def _evaluate_waiting_cliff(
     return None
 
 
+def _is_position_cliff_suppressed(
+    pos: str,
+    roster: dict[str, int],
+    current_pick: int,
+    user_drafted_players: list[Player] | None,
+    cheatsheet_context: CheatsheetContext | None,
+) -> bool:
+    """Determine if cliff warnings for a position should be suppressed based on roster and strategy rules."""
+    pos_upper = pos.upper()
+
+    # 1. Check structured positional strategy rules
+    if cheatsheet_context and cheatsheet_context.positional_strategy and user_drafted_players:
+        drafted_pos = [dp for dp in user_drafted_players if str(dp.position).upper() == pos_upper]
+        pos_rules = [r for r in cheatsheet_context.positional_strategy if r.position == pos_upper]
+        for rule in pos_rules:
+            for dp in drafted_pos:
+                dp_tier = dp.cheatsheet_tier or dp.tier or 1
+                if dp_tier in rule.conditional_max_count:
+                    max_allowed = rule.conditional_max_count[dp_tier]
+                    if len(drafted_pos) >= max_allowed:
+                        return True
+                if rule.no_second_if_top_tier and dp_tier == 1 and len(drafted_pos) >= 1:
+                    return True
+
+    # 2. General baseline roster suppression
+    if pos_upper == "QB":
+        if roster.get("QB", 0) >= 2:
+            return True
+        if roster.get("QB", 0) >= 1:
+            rules = cheatsheet_context.strategy_rules if cheatsheet_context else []
+            has_2qb_rule = any(
+                "one from tier 4" in r.lower() or "two qb" in r.lower() or "2nd qb" in r.lower() for r in rules
+            )
+            if not (has_2qb_rule and current_pick >= 80):
+                return True
+    elif (pos_upper == "TE" and roster.get("TE", 0) >= 1) or (
+        pos_upper in ("K", "D/ST", "DEF", "DST") and (roster.get(pos_upper, 0) >= 1 or current_pick < 120)
+    ):
+        return True
+
+    return False
+
+
 def detect_tier_cliffs(
     tiers_by_pos: dict[str, list[PlayerTier]],
     picks_until_turn: int,
@@ -305,26 +358,15 @@ def detect_tier_cliffs(
     current_pick: int = 1,
     user_roster_counts: dict[str, int] | None = None,
     cheatsheet_context: CheatsheetContext | None = None,
+    user_drafted_players: list[Player] | None = None,
 ) -> list[TierCliffWarning]:
     """Identify 3-scenario positional tier cliffs across available player tiers."""
     warnings: list[TierCliffWarning] = []
     risk_rank = {"CRITICAL": 0, "HIGH": 1, "MODERATE": 2, "LOW": 3}
     roster = user_roster_counts or {}
-    rules = cheatsheet_context.strategy_rules if cheatsheet_context else []
-    has_2qb_rule = any("one from tier 4" in r.lower() or "two qb" in r.lower() or "2nd qb" in r.lower() for r in rules)
 
     for pos, tiers in tiers_by_pos.items():
-        pos_upper = pos.upper()
-        # Suppress single-starter positions if user already filled their starting spot (unless 2nd QB rule active in late rounds)
-        if (
-            pos_upper == "QB"
-            and roster.get("QB", 0) >= 1
-            and not (has_2qb_rule and current_pick >= 80 and roster.get("QB", 0) < 2)
-        ):
-            continue
-        if pos_upper == "TE" and roster.get("TE", 0) >= 1:
-            continue
-        if pos_upper in ("K", "D/ST", "DEF", "DST") and (roster.get(pos_upper, 0) >= 1 or current_pick < 120):
+        if _is_position_cliff_suppressed(pos, roster, current_pick, user_drafted_players, cheatsheet_context):
             continue
 
         active_tiers = [t for t in tiers if len(t.players) > 0]

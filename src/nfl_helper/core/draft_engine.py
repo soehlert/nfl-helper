@@ -789,6 +789,7 @@ def build_draft_state(
         current_pick=overall_pick,
         user_roster_counts=user_roster_counts,
         cheatsheet_context=cheatsheet_context,
+        user_drafted_players=user_drafted_players,
     )
 
     baselines = calculate_vorp_baselines(all_players, total_teams)

@@ -214,13 +214,15 @@ def get_current_player_pool(
     if _CONNECTED_LEAGUE_PLAYERS:
         return next(iter(_CONNECTED_LEAGUE_PLAYERS.values()))
 
-    # Check if a live snapshot exists on disk
-    if LIVE_SNAPSHOT_PATH.exists():
-        try:
-            raw = json.loads(LIVE_SNAPSHOT_PATH.read_text(encoding="utf-8"))
-            return [Player.model_validate(p) for p in raw]
-        except Exception:
-            pass
+    # Check if a live or test fixture snapshot exists on disk
+    for snap_path in (LIVE_SNAPSHOT_PATH, TEST_FIXTURE_SNAPSHOT_PATH):
+        if snap_path.exists():
+            try:
+                raw = json.loads(snap_path.read_text(encoding="utf-8"))
+                if raw:
+                    return [Player.model_validate(p) for p in raw]
+            except Exception:
+                pass
 
     if _QA_MODE:
         try:

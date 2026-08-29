@@ -14,8 +14,13 @@ from nfl_helper.core.draft_engine import (
     calculate_vorp_baselines,
     generate_draft_suggestions,
 )
-from nfl_helper.core.tier_calculator import calculate_tier_drop, cluster_position_tiers, detect_tier_cliffs
-from nfl_helper.models.draft import CliffType, DraftPick
+from nfl_helper.core.tier_calculator import (
+    _evaluate_on_the_clock_cliff,
+    calculate_tier_drop,
+    cluster_position_tiers,
+    detect_tier_cliffs,
+)
+from nfl_helper.models.draft import CliffType, DraftPick, PlayerTier
 from nfl_helper.models.player import Player, Position
 
 
@@ -499,3 +504,109 @@ def test_two_qb_quota_evaluation_when_tier3_drafted() -> None:
     assert note_t3 is None or "Strategy" not in (note_t3 or "")
     assert d_t4 == 1.0
     assert "Strategy Target: Tier 4 QB" in (note_t4 or "")
+
+
+def test_tier_cliff_suppression_when_tier1_qb_drafted() -> None:
+    """Verify drafting a Tier 1 QB suppresses subsequent QB cliff warnings under Max 1 QB strategy."""
+    rules_text = """
+    QB - Get a tier 1 in round 4 or one from tier 3 and one from tier 4. If you get a tier 1 only one QB total.
+    """
+    ctx = parse_plain_text_cheatsheet(rules_text)
+
+    p_hurts = Player(
+        id="q_hurts", name="Jalen Hurts", position=Position.QB, team="PHI", projected_points=23.0, cheatsheet_tier=1
+    )
+    p_kyler = Player(
+        id="q_kyler", name="Kyler Murray", position=Position.QB, team="ARI", projected_points=19.5, cheatsheet_tier=2
+    )
+    p_stafford = Player(
+        id="q_stafford",
+        name="Matthew Stafford",
+        position=Position.QB,
+        team="LAR",
+        projected_points=17.5,
+        cheatsheet_tier=3,
+    )
+
+    tiers_by_pos = {
+        "QB": [
+            PlayerTier(tier_num=2, position="QB", players=[p_kyler], avg_projected=19.5, count=1),
+            PlayerTier(tier_num=3, position="QB", players=[p_stafford], avg_projected=17.5, count=1),
+        ]
+    }
+
+    # At Pick 85 (Round 9), user has drafted Jalen Hurts
+    cliffs = detect_tier_cliffs(
+        tiers_by_pos=tiers_by_pos,
+        picks_until_turn=0,
+        snake_turn_gap=10,
+        is_on_the_clock=True,
+        current_pick=85,
+        user_roster_counts={"QB": 1},
+        cheatsheet_context=ctx,
+        user_drafted_players=[p_hurts],
+    )
+
+    # Must be strictly suppressed (0 QB cliff warnings)
+    qb_cliffs = [w for w in cliffs if w.position == "QB"]
+    assert len(qb_cliffs) == 0
+
+
+def test_calibrated_scarcity_thresholds_ignore_minor_drops() -> None:
+    """Verify minor -0.7 pt drops for single-player tiers in late rounds do not trigger cliff warnings."""
+    p_single = Player(id="rb_single", name="Single RB", position=Position.RB, team="FA", projected_points=12.2, tier=4)
+    p_next = Player(id="rb_next", name="Next RB", position=Position.RB, team="FA", projected_points=11.5, tier=5)
+
+    tier_4 = PlayerTier(tier_num=4, position="RB", players=[p_single], avg_projected=12.2, count=1)
+    tier_5 = PlayerTier(tier_num=5, position="RB", players=[p_next], avg_projected=11.5, count=1)
+
+    # Pick 76 (Round 8): drop is only 0.7 pts (12.2 - 11.5)
+    warning = _evaluate_on_the_clock_cliff(tier_4, tier_5, snake_turn_gap=8, current_pick=76)
+    assert warning is None
+
+
+def test_player_pool_depth_preserves_non_qbs_late_rounds() -> None:
+    """Verify in round 9+ (pick 85+) that deep player pools provide available RBs, WRs, and TEs."""
+    from tests.fixtures.demo_rosters import get_mock_player_pool
+
+    full_pool = get_mock_player_pool()
+    assert len(full_pool) >= 250
+
+    # Simulate 84 picks made across positions
+    drafted_picks = [
+        DraftPick(
+            round_num=(i // 10) + 1,
+            round_pick=(i % 10) + 1,
+            overall_pick=i + 1,
+            team_id=str((i % 10) + 1),
+            team_name=f"Team {(i % 10) + 1}",
+            player_id=full_pool[i].id,
+            player_name=full_pool[i].name,
+            position=str(full_pool[i].position),
+        )
+        for i in range(84)
+    ]
+
+    state = build_draft_state(
+        league_id="test_league",
+        draft_id="draft_1",
+        overall_pick=85,
+        user_draft_slot=5,
+        total_teams=10,
+        total_rounds=15,
+        recent_picks=drafted_picks,
+        all_players=full_pool,
+    )
+
+    # Assert multiple positions remain available in top suggestions and pools
+    avail_rb = state.available_players_by_pos.get("RB", [])
+    avail_wr = state.available_players_by_pos.get("WR", [])
+    avail_te = state.available_players_by_pos.get("TE", [])
+
+    assert len(avail_rb) >= 15
+    assert len(avail_wr) >= 20
+    assert len(avail_te) >= 10
+
+    # Top suggestions should not be exclusively QBs
+    suggested_positions = {s.player.position for s in state.top_suggestions[:10]}
+    assert len(suggested_positions) >= 3

@@ -336,7 +336,7 @@ class SleeperAdapter(BaseLeagueAdapter):
         current_pick = len(picks_list) + 1
         is_complete = (len(picks_list) >= (total_teams * total_rounds)) or (active_draft.get("status") == "complete")
         current_round = min(total_rounds, ((current_pick - 1) // total_teams) + 1)
-        by_pos = self.get_available_players_by_position(limit=150) if include_player_pool else {}
+        by_pos = self.get_available_players_by_position(limit=300) if include_player_pool else {}
 
         user_slot = self.profile.user_draft_slot
         if user_slot is None:
@@ -368,7 +368,7 @@ class SleeperAdapter(BaseLeagueAdapter):
             available_players_by_pos=by_pos,
         )
 
-    def get_free_agents(self, limit: int = 250) -> list[Player]:
+    def get_free_agents(self, limit: int = 330) -> list[Player]:
         """Fetch available free agents from Sleeper sorted by multi-platform consensus ADP with guaranteed positional quotas."""
         db = self._ensure_player_db()
         projs = self._ensure_proj_db()
@@ -407,7 +407,7 @@ class SleeperAdapter(BaseLeagueAdapter):
             pos_key = "D/ST" if raw_pos in ("DEF", "DST", "D/ST") else ("RB" if raw_pos == "FB" else raw_pos)
             by_pos_candidates.setdefault(pos_key, []).append((rank_val, pid, meta))
 
-        pos_quotas = {"QB": 32, "RB": 65, "WR": 85, "TE": 32, "K": 20, "D/ST": 32}
+        pos_quotas = {"QB": 36, "RB": 90, "WR": 110, "TE": 40, "K": 24, "D/ST": 32}
         mapped_players: list[Player] = []
         for pos_key, candidates in by_pos_candidates.items():
             candidates.sort(key=lambda x: x[0])
