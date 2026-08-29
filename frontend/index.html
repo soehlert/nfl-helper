@@ -1076,15 +1076,15 @@
           <!-- Col 2: League ID -->
           <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label">League ID</label>
-            <input type="text" id="session-league-id" class="form-control" style="height: 44px; font-size: 0.92rem; padding: 0.6rem 0.85rem;" value="12345678" onchange="loadLeagueTeams()">
+            <input type="text" id="session-league-id" class="form-control" style="height: 44px; font-size: 0.92rem; padding: 0.6rem 0.85rem;" value="12345678" onchange="loadLeagueTeams(true)" onkeydown="if(event.key==='Enter'){event.preventDefault(); loadLeagueTeams(true);}">
           </div>
           <!-- Col 3: Select Your Team -->
           <div class="form-group" style="margin-bottom: 0;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
               <label class="form-label" style="margin-bottom: 0;">Select Your Team</label>
-              <button type="button" style="background: none; border: none; color: var(--accent-blue); font-size: 0.78rem; font-weight: 600; cursor: pointer;" onclick="loadLeagueTeams()">🔄 Refresh</button>
+              <button type="button" style="background: none; border: none; color: var(--accent-blue); font-size: 0.78rem; font-weight: 600; cursor: pointer;" onclick="loadLeagueTeams(true)">🔄 Refresh</button>
             </div>
-            <select id="session-team-select" class="form-control" style="height: 44px; font-size: 0.92rem; padding: 0.6rem 0.85rem;" onchange="onTeamSelectChange()">
+            <select id="session-team-select" class="form-control" style="height: 44px; font-size: 0.92rem; padding: 0.6rem 0.85rem;" onchange="onTeamSelectChange(true)">
               <option value="1">Lamar Squad (You)</option>
               <option value="2">Gridiron Kings</option>
               <option value="3">Mahomes Magic</option>
@@ -1302,7 +1302,7 @@
       }
     }
 
-    function onTeamSelectChange() {
+    function onTeamSelectChange(userTriggered = false) {
       const select = document.getElementById('session-team-select');
       if (!select || select.selectedIndex < 0) return;
       const selectedOption = select.options[select.selectedIndex];
@@ -1314,14 +1314,17 @@
         localStorage.setItem('fwr_team_id', teamId);
         localStorage.setItem('fwr_team_name', teamName);
       } catch (e) {}
+      if (userTriggered) {
+        showToast(`Active team updated: ${selectedOption.text}`, 'info');
+      }
       fetchDraftState();
     }
 
-    async function loadLeagueTeams() {
+    async function loadLeagueTeams(userTriggered = false) {
       const platform = document.getElementById('session-platform').value;
-      const leagueId = document.getElementById('session-league-id').value;
-      const swid = document.getElementById('session-swid').value;
-      const espnS2 = document.getElementById('session-espn-s2').value;
+      const leagueId = document.getElementById('session-league-id').value.trim();
+      const swid = document.getElementById('session-swid').value.trim();
+      const espnS2 = document.getElementById('session-espn-s2').value.trim();
 
       try {
         localStorage.setItem('fwr_platform', platform);
@@ -1356,10 +1359,19 @@
             badge.textContent = platform.toUpperCase();
             badge.className = 'badge badge-' + platform;
           }
+          if (userTriggered) {
+            showToast(`Saved ${platform.toUpperCase()} League ID: ${leagueId} (${teams.length} teams synced)`, 'success');
+          }
           fetchDraftState();
+        } else {
+          if (userTriggered) {
+            showToast(`Saved League ID: ${leagueId}`, 'info');
+          }
         }
       } catch (e) {
-        console.log('League teams lookup synced');
+        if (userTriggered) {
+          showToast(`Saved League ID: ${leagueId}`, 'info');
+        }
       }
     }
 
