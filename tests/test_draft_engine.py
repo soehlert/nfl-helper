@@ -456,11 +456,11 @@ def test_roster_aware_conditional_caps_suppression() -> None:
         user_drafted_players=drafted_players,
     )
 
-    # Pittman should be rank #1; Kelce and Stafford should be pushed below WR
+    # Pittman should be rank #1; Kelce and Stafford should be completely excluded from suggestions
     assert suggs[0].player.id == "w_pittman"
-    ranks = {s.player.id: s.rank for s in suggs}
-    assert ranks["w_pittman"] < ranks["t_kelce"]
-    assert ranks["w_pittman"] < ranks["q_stafford"]
+    suggested_ids = {s.player.id for s in suggs}
+    assert "q_stafford" not in suggested_ids
+    assert "t_kelce" not in suggested_ids
 
 
 def test_two_qb_quota_evaluation_when_tier3_drafted() -> None:

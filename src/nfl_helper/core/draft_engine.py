@@ -522,19 +522,37 @@ def generate_draft_suggestions(
             t_drop = calculate_tier_drop(top_t, next_t)
             top_tier_info[pos] = (top_t.tier_num, len(top_t.players), t_drop)
 
-    # Check conditional caps from strategy rules (e.g. max 1 if tier 1 drafted)
-    has_qb_cap = False
-    has_te_cap = False
+    # Check conditional caps from strategy rules and single-starter roster limits
+    capped_positions: set[str] = set()
     if cheatsheet_context:
         for pr in cheatsheet_context.positional_strategy:
             if pr.position == "QB" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
                 for dp in user_drafted_players or []:
                     if str(dp.position).upper() == "QB":
-                        has_qb_cap = True
+                        capped_positions.add("QB")
             elif pr.position == "TE" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
                 for dp in user_drafted_players or []:
                     if str(dp.position).upper() == "TE":
-                        has_te_cap = True
+                        capped_positions.add("TE")
+
+    if any("only one qb" in r.lower() for r in active_rules) and roster.get("QB", 0) >= 1:
+        capped_positions.add("QB")
+    if any("no second te" in r.lower() for r in active_rules) and roster.get("TE", 0) >= 1:
+        capped_positions.add("TE")
+
+    # Hard single-starter caps once drafted
+    if roster.get("K", 0) >= 1:
+        capped_positions.add("K")
+    if roster.get("D/ST", 0) >= 1:
+        capped_positions.add("D/ST")
+
+    if capped_positions:
+        available_players = [
+            p
+            for p in available_players
+            if str(p.position).upper() not in capped_positions
+            and not (str(p.position).upper() in ("DEF", "DST") and "D/ST" in capped_positions)
+        ]
 
     # Pass 1: Compute baseline score without note_delta to establish board density & ranks
     raw_scored: list[tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]] = []
@@ -564,17 +582,9 @@ def generate_draft_suggestions(
             pos_str = "D/ST"
 
         if pos_str == "QB" and roster.get("QB", 0) >= 1:
-            # Suppress backup QBs; apply strict suppression if QB cap is active
-            if has_qb_cap or any("only one qb" in r.lower() for r in active_rules):
-                base_score -= 10.0
-            else:
-                base_score -= 5.0 if current_round < 12 else 1.5
+            base_score -= 5.0 if current_round < 12 else 1.5
         elif pos_str == "TE" and roster.get("TE", 0) >= 1:
-            # Suppress backup TEs; apply strict suppression if TE cap is active
-            if has_te_cap or any("no second te" in r.lower() for r in active_rules):
-                base_score -= 10.0
-            else:
-                base_score -= 4.5 if current_round < 10 else 1.2
+            base_score -= 4.5 if current_round < 10 else 1.2
         elif pos_str in ("K", "D/ST"):
             if roster.get(pos_str, 0) >= 1:
                 base_score -= 10.0  # Already drafted K/DST, never draft a second one
