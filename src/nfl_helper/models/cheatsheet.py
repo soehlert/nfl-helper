@@ -25,6 +25,16 @@ class DraftRoundTarget(BaseModel):
     rule_description: str = ""
 
 
+class PositionalStrategyBranch(BaseModel):
+    """Specific strategy branch within a positional rule."""
+
+    target_rounds: list[int] = Field(default_factory=list)
+    target_tiers: list[int] = Field(default_factory=list)
+    target_tier_quotas: dict[int, int] = Field(default_factory=dict)
+    top_n_target: int | None = None
+    target_player_names: list[tuple[str, int]] = Field(default_factory=list)
+
+
 class PositionalStrategyRule(BaseModel):
     """Position-level draft targets and tier acquisition rules."""
 
@@ -32,6 +42,9 @@ class PositionalStrategyRule(BaseModel):
     target_rounds: list[int] = Field(default_factory=list)
     target_tiers: list[int] = Field(default_factory=list)
     top_n_target: int | None = None
+    conditional_max_count: dict[int, int] = Field(default_factory=dict)
+    branches: list[PositionalStrategyBranch] = Field(default_factory=list)
+    no_second_if_top_tier: bool = False
     rule_description: str = ""
 
 

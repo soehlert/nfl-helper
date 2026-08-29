@@ -12,6 +12,7 @@ from nfl_helper.models.cheatsheet import (
     CheatsheetContext,
     CheatsheetEntry,
     DraftRoundTarget,
+    PositionalStrategyBranch,
     PositionalStrategyRule,
 )
 from nfl_helper.models.player import Player
@@ -278,6 +279,129 @@ def _parse_player_line(
     )
 
 
+def _parse_positional_branch(clause: str, pos: str) -> PositionalStrategyBranch | None:
+    """Parse a single strategy branch within a positional rule."""
+    clause_lower = clause.lower().strip()
+    target_tiers: list[int] = []
+    target_rounds: list[int] = []
+    quotas: dict[int, int] = {}
+    top_n: int | None = None
+    target_players: list[tuple[str, int]] = []
+
+    # Check top N targets (e.g. 'top 4')
+    top_match = re.search(r"top\s+(\d+)", clause_lower)
+    if top_match:
+        top_n = int(top_match.group(1))
+
+    # Check tier ranges (e.g. 'tiers 3-4') vs individual tier mentions
+    tier_range = re.search(r"tiers?\s+(\d+)\s*-\s*(\d+)", clause_lower)
+    if tier_range:
+        start_t, end_t = int(tier_range.group(1)), int(tier_range.group(2))
+        target_tiers = list(range(start_t, end_t + 1))
+    else:
+        tier_matches = re.findall(r"(?:(one|two|1|2)\s+(?:from\s+)?)?tier\s+(\d+)", clause_lower)
+        for count_str, tier_str in tier_matches:
+            t_num = int(tier_str)
+            if t_num not in target_tiers:
+                target_tiers.append(t_num)
+            c_val = 2 if count_str in ("two", "2") else 1
+            quotas[t_num] = c_val
+
+    # Check round ranges and single round targets
+    rnd_range = re.search(r"rounds?\s+(\d+)\s*-\s*(\d+)", clause_lower)
+    if rnd_range:
+        target_rounds = list(range(int(rnd_range.group(1)), int(rnd_range.group(2)) + 1))
+    else:
+        single_rnd = re.search(r"(?:in\s+round\s+|in\s+the\s+)(\d+)(?:st|nd|rd|th)?\s+round", clause_lower)
+        if not single_rnd:
+            single_rnd = re.search(r"round\s+(\d+)", clause_lower)
+        if single_rnd and "first" not in clause_lower:
+            target_rounds = [int(single_rnd.group(1))]
+
+    # Check named player targets (e.g. 'Josh Allen in the fourth round', 'Allen in round 4')
+    name_match = re.search(
+        r"([a-z]+(?:\s+[a-z]+)?)\s+in\s+(?:the\s+)?(\d+|fourth|third|second|first)(?:st|nd|rd|th)?\s+round",
+        clause_lower,
+    )
+    if name_match:
+        p_name = name_match.group(1).strip()
+        word_to_num = {"first": 1, "second": 2, "third": 3, "fourth": 4}
+        r_str = name_match.group(2)
+        r_num = word_to_num.get(r_str, int(r_str) if r_str.isdigit() else 1)
+        if p_name not in ("tier", "the", "a tier", "one"):
+            target_players.append((p_name, r_num))
+
+    if not target_tiers and not target_rounds and top_n is None and not target_players:
+        return None
+
+    return PositionalStrategyBranch(
+        target_rounds=target_rounds,
+        target_tiers=target_tiers,
+        target_tier_quotas=quotas,
+        top_n_target=top_n,
+        target_player_names=target_players,
+    )
+
+
+def _parse_positional_strategy_rule(norm_line: str, pos: str) -> PositionalStrategyRule:
+    """Parse positional draft targets, branches, and conditional constraints."""
+    line_lower = norm_line.lower()
+    cond_caps: dict[int, int] = {}
+    no_second_top = False
+
+    # 1. Parse conditional max caps (e.g. 'no second TE if you have a tier 1 TE')
+    if "no second" in line_lower and ("tier 1" in line_lower or "top" in line_lower):
+        no_second_top = True
+        cond_caps[1] = 1
+
+    cond_m = re.search(
+        r"(?:if\s+you\s+(?:get|have)\s+a\s+tier\s+(\d+)|if\s+tier\s+(\d+)).*?only\s+(one|two|1|2)",
+        line_lower,
+    )
+    if cond_m:
+        t_val = int(cond_m.group(1) or cond_m.group(2))
+        c_str = cond_m.group(3)
+        c_val = 2 if c_str in ("two", "2") else 1
+        cond_caps[t_val] = c_val
+
+    # 2. Split strategy branches on ' or '
+    main_part = re.split(r"(?:if\s+you\s+get|if\s+you\s+have|no\s+second)", line_lower)[0]
+    branches: list[PositionalStrategyBranch] = []
+    for seg in main_part.split(" or "):
+        branch = _parse_positional_branch(seg, pos)
+        if branch:
+            branches.append(branch)
+
+    if not branches:
+        b = _parse_positional_branch(main_part, pos)
+        if b:
+            branches.append(b)
+
+    all_rounds: list[int] = []
+    all_tiers: list[int] = []
+    top_n: int | None = None
+    for b in branches:
+        for r in b.target_rounds:
+            if r not in all_rounds:
+                all_rounds.append(r)
+        for t in b.target_tiers:
+            if t not in all_tiers:
+                all_tiers.append(t)
+        if b.top_n_target is not None:
+            top_n = b.top_n_target
+
+    return PositionalStrategyRule(
+        position=pos,
+        target_rounds=sorted(all_rounds),
+        target_tiers=sorted(all_tiers),
+        top_n_target=top_n,
+        conditional_max_count=cond_caps,
+        branches=branches,
+        no_second_if_top_tier=no_second_top,
+        rule_description=norm_line,
+    )
+
+
 def _parse_strategy_rule(line: str) -> tuple[DraftRoundTarget | None, PositionalStrategyRule | None]:
     """Parse natural language draft strategy rules into structured target models."""
     norm_line = line.strip()
@@ -301,31 +425,7 @@ def _parse_strategy_rule(line: str) -> tuple[DraftRoundTarget | None, Positional
 
     elif any(norm_line.upper().startswith(f"{pos} -") for pos in ("TE", "QB", "RB", "WR")):
         pos = norm_line[:2].upper()
-        top_n = 4 if "top 4" in norm_line.lower() else None
-        target_tiers = []
-        tier_range_match = re.search(r"tiers?\s+(\d+)\s*-\s*(\d+)", norm_line, re.IGNORECASE)
-        if tier_range_match:
-            t_start, t_end = int(tier_range_match.group(1)), int(tier_range_match.group(2))
-            target_tiers = list(range(t_start, t_end + 1))
-        elif "tier 3" in norm_line.lower() and "tier 4" in norm_line.lower():
-            target_tiers = [3, 4]
-        elif "tier 1" in norm_line.lower():
-            target_tiers = [1]
-
-        target_rounds = []
-        rnd_match = re.search(r"rounds?\s+(\d+)(?:\s*-\s*(\d+))?", norm_line, re.IGNORECASE)
-        if rnd_match:
-            r_start = int(rnd_match.group(1))
-            r_end = int(rnd_match.group(2)) if rnd_match.group(2) else r_start
-            target_rounds = list(range(r_start, r_end + 1))
-
-        pos_target = PositionalStrategyRule(
-            position=pos,
-            target_rounds=target_rounds,
-            target_tiers=target_tiers,
-            top_n_target=top_n,
-            rule_description=norm_line,
-        )
+        pos_target = _parse_positional_strategy_rule(norm_line, pos)
 
     return round_target, pos_target
 

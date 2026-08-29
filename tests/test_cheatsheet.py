@@ -300,3 +300,46 @@ def test_sheet_name_platform_prefix_notes() -> None:
     # When sheet_name is just "My Sleepers", notes should be "Sleeper" (no duplication)
     ctx_plain = parse_plain_text_cheatsheet(text, sheet_name="My Sleepers")
     assert ctx_plain.entries["kyle monangai"].notes == "Sleeper"
+
+
+def test_parse_composite_and_conditional_strategy_rules() -> None:
+    """Verify parser extracts conditional max counts, multi-tier quotas, and branching rules."""
+    text = """
+    Rounds 1-2 - only RB/WR and at least 1 RB
+    QB - Get a tier 1 in round 4 or one from tier 3 and one from tier 4. If you get a tier 1 only one QB total.
+    RB - Get 4 in the first 10 rounds and minimum 4 for the whole draft
+    WR - Get 4 minimum
+    TE - Target the top 4 in rounds 3-5, no second TE if you have a tier 1 TE
+    """
+    ctx = parse_plain_text_cheatsheet(text)
+
+    # 1. Round targets
+    assert len(ctx.round_targets) == 1
+    assert ctx.round_targets[0].target_rounds == [1, 2]
+    assert ctx.round_targets[0].allowed_positions == ["RB", "WR"]
+    assert ctx.round_targets[0].min_counts == {"RB": 1}
+
+    # 2. QB rule
+    qb_rule = next(r for r in ctx.positional_strategy if r.position == "QB")
+    assert qb_rule.conditional_max_count == {1: 1}
+    assert 1 in qb_rule.target_tiers
+    assert 3 in qb_rule.target_tiers
+    assert 4 in qb_rule.target_tiers
+    assert len(qb_rule.branches) == 2
+    assert qb_rule.branches[0].target_tiers == [1]
+    assert qb_rule.branches[0].target_rounds == [4]
+    assert qb_rule.branches[1].target_tiers == [3, 4]
+    assert qb_rule.branches[1].target_tier_quotas == {3: 1, 4: 1}
+
+    # 3. TE rule
+    te_rule = next(r for r in ctx.positional_strategy if r.position == "TE")
+    assert te_rule.top_n_target == 4
+    assert te_rule.target_rounds == [3, 4, 5]
+    assert te_rule.no_second_if_top_tier is True
+    assert te_rule.conditional_max_count == {1: 1}
+
+    # 4. RB and WR rules
+    rb_rule = next(r for r in ctx.positional_strategy if r.position == "RB")
+    assert rb_rule.position == "RB"
+    wr_rule = next(r for r in ctx.positional_strategy if r.position == "WR")
+    assert wr_rule.position == "WR"

@@ -11,7 +11,7 @@ from nfl_helper.core.tier_calculator import (
 )
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import DraftPick, DraftState, DraftSuggestion, PlayerTier, TierCliffWarning
-from nfl_helper.models.player import Player
+from nfl_helper.models.player import Player, Position
 
 # Positional starter depth multipliers for baseline VORP calculation
 _STARTER_DEPTH: dict[str, float] = {
@@ -112,6 +112,7 @@ def _evaluate_strategy_rule_adjustments(
     player: Player,
     cheatsheet_context: CheatsheetContext | None,
     current_round: int,
+    user_drafted_players: list[Player] | None = None,
 ) -> tuple[float, str | None]:
     """Calculate deterministic score delta and reason note from active strategy rules dynamically."""
     if not cheatsheet_context:
@@ -142,6 +143,34 @@ def _evaluate_strategy_rule_adjustments(
             rule_desc = pos_rule.rule_description
             p_tier = player.cheatsheet_tier or player.tier or 1
 
+            # Check drafted players of this position
+            drafted_pos = [
+                dp for dp in (user_drafted_players or []) if str(dp.position).upper() == str(player.position).upper()
+            ]
+
+            # Check conditional max caps (e.g. 'if you get a tier 1 only one QB total', 'no second TE if you have tier 1')
+            hit_cap = False
+            for dp in drafted_pos:
+                dp_tier = dp.cheatsheet_tier or dp.tier or 1
+                if dp_tier in pos_rule.conditional_max_count:
+                    max_allowed = pos_rule.conditional_max_count[dp_tier]
+                    if len(drafted_pos) >= max_allowed:
+                        delta -= 3.0
+                        specific_notes.append(
+                            f"Strategy: Max {max_allowed} {pos_rule.position} (Drafted Tier {dp_tier} {dp.name})"
+                        )
+                        hit_cap = True
+                        break
+                if pos_rule.no_second_if_top_tier and dp_tier == 1 and len(drafted_pos) >= 1:
+                    delta -= 3.0
+                    specific_notes.append(f"Strategy: No 2nd {pos_rule.position} (Drafted Tier 1 {dp.name})")
+                    hit_cap = True
+                    break
+
+            if hit_cap:
+                clamped_delta = round(max(-3.0, min(3.0, delta)), 2)
+                return clamped_delta, specific_notes[0]
+
             # Check dynamic player name targets in rule (e.g. 'or get Allen in round 4', 'target Mahomes in round 3')
             name_target_match = re.search(
                 r"(?:get|target)\s+([A-Za-z]+)\s+in\s+round\s+(\d+)", rule_desc, re.IGNORECASE
@@ -156,6 +185,62 @@ def _evaluate_strategy_rule_adjustments(
                         rounds_early = t_rnd - current_round
                         delta -= rounds_early * 0.20
                         specific_notes.append(f"Strategy Hint: Target {player.name} in Rd {t_rnd}")
+                    continue
+
+            # Evaluate branches if available
+            if pos_rule.branches:
+                branch_evaluated = False
+                for branch in pos_rule.branches:
+                    # Check player targets in branch
+                    for target_p_name, target_rnd in branch.target_player_names:
+                        if target_p_name.lower() in player.name.lower():
+                            if current_round >= target_rnd:
+                                delta += 1.5
+                                specific_notes.append(f"Strategy Target: {player.name} in Rd {target_rnd}")
+                            else:
+                                rounds_early = target_rnd - current_round
+                                delta -= rounds_early * 0.20
+                                specific_notes.append(f"Strategy Hint: Target {player.name} in Rd {target_rnd}")
+                            branch_evaluated = True
+                            break
+                    if branch_evaluated:
+                        break
+
+                    # Check branch target rounds
+                    if branch.target_rounds and current_round in branch.target_rounds:
+                        if (
+                            (branch.top_n_target and (player.cheatsheet_rank or 99) <= branch.top_n_target)
+                            or (branch.target_tiers and p_tier in branch.target_tiers)
+                            or p_tier == 1
+                        ):
+                            delta += 1.5
+                            specific_notes.append(f"Strategy Target: Top {pos_rule.position} in Rd {current_round}")
+                            branch_evaluated = True
+                            break
+                    elif branch.target_rounds and current_round < min(branch.target_rounds):
+                        rounds_early = min(branch.target_rounds) - current_round
+                        defer_rate = 0.90 if p_tier == 1 else 0.50
+                        delta -= rounds_early * defer_rate
+                        specific_notes.append(
+                            f"Strategy Hint: {pos_rule.position} targeted in Rd {min(branch.target_rounds)}+"
+                        )
+                        branch_evaluated = True
+                        break
+
+                    # Check branch tier quotas (e.g. 1 from Tier 3, 1 from Tier 4)
+                    if branch.target_tier_quotas and p_tier in branch.target_tier_quotas:
+                        drafted_same_tier = [dp for dp in drafted_pos if (dp.cheatsheet_tier or dp.tier or 1) == p_tier]
+                        quota = branch.target_tier_quotas[p_tier]
+                        if len(drafted_same_tier) < quota:
+                            delta += 1.0
+                            specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
+                        else:
+                            delta -= 0.5
+                            specific_notes.append(f"Strategy Hint: Tier {p_tier} {pos_rule.position} already rostered")
+                        branch_evaluated = True
+                        break
+
+                if branch_evaluated:
                     continue
 
             # Check if this rule defines a specific round window (e.g. rounds 3-5)
@@ -377,6 +462,7 @@ def generate_draft_suggestions(
     total_teams: int = 12,
     user_roster_counts: dict[str, int] | None = None,
     total_rounds: int = 16,
+    user_drafted_players: list[Player] | None = None,
 ) -> list[DraftSuggestion]:
     """Generate ranked tactical draft suggestions balancing VORP, cliffs, rules, roster needs, and ADP value."""
     vorp_scores = calculate_vorp(available_players, baselines)
@@ -409,6 +495,20 @@ def generate_draft_suggestions(
             t_drop = calculate_tier_drop(top_t, next_t)
             top_tier_info[pos] = (top_t.tier_num, len(top_t.players), t_drop)
 
+    # Check conditional caps from strategy rules (e.g. max 1 if tier 1 drafted)
+    has_qb_cap = False
+    has_te_cap = False
+    if cheatsheet_context:
+        for pr in cheatsheet_context.positional_strategy:
+            if pr.position == "QB" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
+                for dp in user_drafted_players or []:
+                    if str(dp.position).upper() == "QB" and (dp.cheatsheet_tier or dp.tier or 1) == 1:
+                        has_qb_cap = True
+            elif pr.position == "TE" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
+                for dp in user_drafted_players or []:
+                    if str(dp.position).upper() == "TE" and (dp.cheatsheet_tier or dp.tier or 1) == 1:
+                        has_te_cap = True
+
     # Pass 1: Compute baseline score without note_delta to establish board density & ranks
     raw_scored: list[tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]] = []
 
@@ -437,10 +537,17 @@ def generate_draft_suggestions(
             pos_str = "D/ST"
 
         if pos_str == "QB" and roster.get("QB", 0) >= 1:
-            # Starter QB already rostered; suppress backup QBs so skill position depth (RB/WR) takes priority
-            base_score -= 2.8 if current_round < 13 else 0.8
+            # Suppress backup QBs; apply strict suppression if QB cap is active
+            if has_qb_cap:
+                base_score -= 4.5
+            else:
+                base_score -= 2.8 if current_round < 13 else 0.8
         elif pos_str == "TE" and roster.get("TE", 0) >= 1:
-            base_score -= 2.5 if current_round < 10 else 0.8
+            # Suppress backup TEs; apply strict suppression if TE cap is active
+            if has_te_cap:
+                base_score -= 4.5
+            else:
+                base_score -= 2.5 if current_round < 10 else 0.8
         elif pos_str in ("K", "D/ST"):
             if roster.get(pos_str, 0) >= 1:
                 base_score -= 10.0  # Already drafted K/DST, never draft a second one
@@ -471,7 +578,9 @@ def generate_draft_suggestions(
             base_score += steal_bonus
 
         # Strategy Rules Adjustment
-        rule_delta, rule_note = _evaluate_strategy_rule_adjustments(p, cheatsheet_context, current_round)
+        rule_delta, rule_note = _evaluate_strategy_rule_adjustments(
+            p, cheatsheet_context, current_round, user_drafted_players=user_drafted_players
+        )
         base_score += rule_delta
 
         adp_delta = 0.0
@@ -631,6 +740,47 @@ def build_draft_state(
         if p_pos:
             user_roster_counts[p_pos] = user_roster_counts.get(p_pos, 0) + 1
 
+    # Resolve user_drafted_players with attached tiers and notes
+    players_by_id = {p.id: p for p in all_players}
+    players_by_name = {p.name.lower(): p for p in all_players}
+    user_drafted_players: list[Player] = []
+    for pick in user_picks:
+        matched = players_by_id.get(pick.player_id) or (
+            players_by_name.get(pick.player_name.lower()) if pick.player_name else None
+        )
+        if matched:
+            user_drafted_players.append(matched)
+        else:
+            raw_pos = (pick.position or "").upper()
+            pos_enum = (
+                Position.QB
+                if raw_pos == "QB"
+                else (
+                    Position.RB
+                    if raw_pos == "RB"
+                    else (
+                        Position.WR
+                        if raw_pos == "WR"
+                        else (Position.TE if raw_pos == "TE" else (Position.K if raw_pos == "K" else Position.DST))
+                    )
+                )
+            )
+            cs_entry = (
+                cheatsheet_context.entries.get(pick.player_name.lower())
+                if cheatsheet_context and pick.player_name
+                else None
+            )
+            user_drafted_players.append(
+                Player(
+                    id=pick.player_id,
+                    name=pick.player_name,
+                    position=pos_enum,
+                    team="NFL",
+                    projected_points=10.0,
+                    cheatsheet_tier=cs_entry.tier if cs_entry else None,
+                )
+            )
+
     cliffs = detect_tier_cliffs(
         tiers_by_pos,
         picks_until_turn,
@@ -653,6 +803,7 @@ def build_draft_state(
         total_teams=total_teams,
         user_roster_counts=user_roster_counts,
         total_rounds=total_rounds,
+        user_drafted_players=user_drafted_players,
     )
 
     is_complete = overall_pick > (total_teams * total_rounds)

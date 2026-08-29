@@ -358,3 +358,144 @@ def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
         active_rules=ctx.strategy_rules,
     )
     assert req_rd9 == {"RB"}
+
+
+def test_roster_aware_conditional_caps_suppression() -> None:
+    """Verify drafting Tier 1 QB/TE strictly suppresses subsequent QBs/TEs from top suggestions at Round 10."""
+    rules_text = """
+    Rounds 1-2 - only RB/WR and at least 1 RB
+    QB - Get a tier 1 in round 4 or one from tier 3 and one from tier 4. If you get a tier 1 only one QB total.
+    RB - Get 4 in the first 10 rounds and minimum 4 for the whole draft
+    WR - Get 4 minimum
+    TE - Target the top 4 in rounds 3-5, no second TE if you have a tier 1 TE
+    """
+    ctx = parse_plain_text_cheatsheet(rules_text)
+
+    # Drafted roster with Tier 1 QB (Burrow) and Tier 1 TE (Loveland)
+    p_burrow = Player(
+        id="q_burrow", name="Joe Burrow", position=Position.QB, team="CIN", projected_points=22.0, cheatsheet_tier=1
+    )
+    p_loveland = Player(
+        id="t_loveland",
+        name="Colston Loveland",
+        position=Position.TE,
+        team="CHI",
+        projected_points=14.0,
+        cheatsheet_tier=1,
+    )
+    drafted_players = [p_burrow, p_loveland]
+
+    # Evaluate Matthew Stafford (Tier 3 QB) and Travis Kelce (Tier 3 TE) in Round 10
+    p_stafford = Player(
+        id="q_stafford",
+        name="Matthew Stafford",
+        position=Position.QB,
+        team="LAR",
+        projected_points=18.9,
+        cheatsheet_tier=3,
+        adp=83.4,
+    )
+    p_kelce = Player(
+        id="t_kelce",
+        name="Travis Kelce",
+        position=Position.TE,
+        team="KC",
+        projected_points=13.0,
+        cheatsheet_tier=3,
+        adp=96.3,
+    )
+    p_pittman = Player(
+        id="w_pittman",
+        name="Michael Pittman",
+        position=Position.WR,
+        team="PIT",
+        projected_points=10.6,
+        cheatsheet_tier=5,
+        adp=90.4,
+    )
+
+    d_q, note_q = _evaluate_strategy_rule_adjustments(
+        p_stafford, ctx, current_round=10, user_drafted_players=drafted_players
+    )
+    d_t, note_t = _evaluate_strategy_rule_adjustments(
+        p_kelce, ctx, current_round=10, user_drafted_players=drafted_players
+    )
+    _d_w, _note_w = _evaluate_strategy_rule_adjustments(
+        p_pittman, ctx, current_round=10, user_drafted_players=drafted_players
+    )
+
+    # Assert strict suppression of QB and TE
+    assert d_q == -3.0
+    assert "Strategy: Max 1 QB (Drafted Tier 1 Joe Burrow)" in (note_q or "")
+    assert d_t == -3.0
+    assert "Strategy: Max 1 TE (Drafted Tier 1 Colston Loveland)" in (note_t or "")
+
+    # Suggestions test at Pick 96 (Round 10)
+    avail = [p_stafford, p_kelce, p_pittman]
+    baselines = {"QB": 17.0, "RB": 10.0, "WR": 10.0, "TE": 9.0, "K": 8.0, "D/ST": 8.0}
+    tiers_by_pos = {
+        "QB": cluster_position_tiers([p_stafford], "QB"),
+        "TE": cluster_position_tiers([p_kelce], "TE"),
+        "WR": cluster_position_tiers([p_pittman], "WR"),
+    }
+    suggs = generate_draft_suggestions(
+        available_players=avail,
+        tiers_by_pos=tiers_by_pos,
+        cliff_warnings=[],
+        baselines=baselines,
+        overall_pick=96,
+        cheatsheet_context=ctx,
+        total_teams=10,
+        user_roster_counts={"QB": 1, "TE": 1, "WR": 3, "RB": 4},
+        total_rounds=15,
+        user_drafted_players=drafted_players,
+    )
+
+    # Pittman should be rank #1; Kelce and Stafford should be pushed below WR
+    assert suggs[0].player.id == "w_pittman"
+    ranks = {s.player.id: s.rank for s in suggs}
+    assert ranks["w_pittman"] < ranks["t_kelce"]
+    assert ranks["w_pittman"] < ranks["q_stafford"]
+
+
+def test_two_qb_quota_evaluation_when_tier3_drafted() -> None:
+    """Verify when user drafts Tier 3 QB, remaining Tier 3 QBs are not boosted while Tier 4 QBs are boosted."""
+    rules_text = """
+    QB - Get a tier 1 in round 4 or one from tier 3 and one from tier 4. If you get a tier 1 only one QB total.
+    """
+    ctx = parse_plain_text_cheatsheet(rules_text)
+
+    # User already drafted a Tier 3 QB
+    p_goff = Player(
+        id="q_goff", name="Jared Goff", position=Position.QB, team="DET", projected_points=18.0, cheatsheet_tier=3
+    )
+    drafted_players = [p_goff]
+
+    p_stafford = Player(
+        id="q_stafford",
+        name="Matthew Stafford",
+        position=Position.QB,
+        team="LAR",
+        projected_points=18.5,
+        cheatsheet_tier=3,
+    )
+    p_mayfield = Player(
+        id="q_mayfield",
+        name="Baker Mayfield",
+        position=Position.QB,
+        team="TB",
+        projected_points=16.5,
+        cheatsheet_tier=4,
+    )
+
+    d_t3, note_t3 = _evaluate_strategy_rule_adjustments(
+        p_stafford, ctx, current_round=7, user_drafted_players=drafted_players
+    )
+    d_t4, note_t4 = _evaluate_strategy_rule_adjustments(
+        p_mayfield, ctx, current_round=7, user_drafted_players=drafted_players
+    )
+
+    assert d_t3 == -0.5
+    assert "Strategy Hint: Tier 3 QB already rostered" in (note_t3 or "")
+    assert d_t4 == 1.0
+    assert "Strategy Target: Tier 4 QB" in (note_t4 or "")
