@@ -495,7 +495,7 @@ def test_two_qb_quota_evaluation_when_tier3_drafted() -> None:
         p_mayfield, ctx, current_round=7, user_drafted_players=drafted_players
     )
 
-    assert d_t3 == -0.5
-    assert "Strategy Hint: Tier 3 QB already rostered" in (note_t3 or "")
+    assert d_t3 == 0.0
+    assert note_t3 is None or "Strategy" not in (note_t3 or "")
     assert d_t4 == 1.0
     assert "Strategy Target: Tier 4 QB" in (note_t4 or "")

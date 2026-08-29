@@ -235,8 +235,8 @@ def _evaluate_strategy_rule_adjustments(
                             delta += 1.0
                             specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
                         else:
-                            delta -= 0.5
-                            specific_notes.append(f"Strategy Hint: Tier {p_tier} {pos_rule.position} already rostered")
+                            # Quota for this tier already met; do not bump or penalize
+                            delta += 0.0
                         branch_evaluated = True
                         break
 

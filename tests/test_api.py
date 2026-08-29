@@ -70,7 +70,13 @@ def test_draft_state_endpoint() -> None:
 
 def test_lineup_optimize_endpoint() -> None:
     """Verify lineup optimization endpoint returns expected schema."""
-    response = client.get("/api/lineup/optimize")
+    # Empty default without league or demo
+    res_empty = client.get("/api/lineup/optimize")
+    assert res_empty.status_code == 200
+    assert len(res_empty.json()["optimal_starters"]) == 0
+
+    # Demo mode
+    response = client.get("/api/lineup/optimize?demo=true")
     assert response.status_code == 200
     data = response.json()
     assert "optimal_starters" in data
@@ -80,22 +86,28 @@ def test_lineup_optimize_endpoint() -> None:
 
 def test_lineup_optimize_strategy_modes_and_randomizer() -> None:
     """Verify strategy parameters and randomizer query flags work via API."""
-    res_ceil = client.get("/api/lineup/optimize?strategy=CEILING")
+    res_ceil = client.get("/api/lineup/optimize?strategy=CEILING&demo=true")
     assert res_ceil.status_code == 200
     assert res_ceil.json()["strategy"] == "CEILING"
 
-    res_floor = client.get("/api/lineup/optimize?strategy=FLOOR")
+    res_floor = client.get("/api/lineup/optimize?strategy=FLOOR&demo=true")
     assert res_floor.status_code == 200
     assert res_floor.json()["strategy"] == "FLOOR"
 
-    res_rand = client.get("/api/lineup/optimize?randomize=true")
+    res_rand = client.get("/api/lineup/optimize?randomize=true&demo=true")
     assert res_rand.status_code == 200
     assert len(res_rand.json()["optimal_starters"]) == 9
 
 
 def test_waiver_recommendations_endpoint() -> None:
     """Verify waiver recommendations endpoint returns expected schema."""
-    response = client.get("/api/waiver/recommendations")
+    # Empty default without league or demo
+    res_empty = client.get("/api/waiver/recommendations")
+    assert res_empty.status_code == 200
+    assert len(res_empty.json()["top_add_drop_pairs"]) == 0
+
+    # Demo mode
+    response = client.get("/api/waiver/recommendations?demo=true")
     assert response.status_code == 200
     data = response.json()
     assert "positional_weaknesses" in data

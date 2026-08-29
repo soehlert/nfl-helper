@@ -39,7 +39,6 @@ from nfl_helper.models.roster import (
     WaiverAnalysis,
 )
 from nfl_helper.models.session import LeagueProfile, PlatformType
-from tests.fixtures.demo_rosters import generate_randomized_roster, get_demo_roster, get_mock_player_pool
 
 logger = logging.getLogger("nfl_helper.api")
 
@@ -223,6 +222,14 @@ def get_current_player_pool(
         except Exception:
             pass
 
+    if _QA_MODE:
+        try:
+            from tests.fixtures.demo_rosters import get_mock_player_pool
+
+            return get_mock_player_pool()
+        except ImportError:
+            pass
+
     return _SAMPLE_PLAYERS
 
 
@@ -275,31 +282,17 @@ async def get_league_teams(
         adapter = get_adapter_for_profile(profile)
         return adapter.get_league_teams()
     except Exception:
-        # Fallback list for local test exploration
-        return [
-            {"team_id": "1", "team_name": "Lamar Squad", "owner_name": "You"},
-            {"team_id": "2", "team_name": "Gridiron Kings", "owner_name": "Friend"},
-            {"team_id": "3", "team_name": "Mahomes Magic", "owner_name": "Rival"},
-        ]
+        if _QA_MODE or league_id in ("12345678", "demo"):
+            return [
+                {"team_id": "1", "team_name": "Lamar Squad", "owner_name": "You"},
+                {"team_id": "2", "team_name": "Gridiron Kings", "owner_name": "Friend"},
+                {"team_id": "3", "team_name": "Mahomes Magic", "owner_name": "Rival"},
+            ]
+        return []
 
 
-def _get_canonical_default_pool() -> list[Player]:
-    """Return the real 2026 NFL Sleeper player pool."""
-    profile = LeagueProfile(
-        session_id="default_pool",
-        platform=PlatformType.SLEEPER,
-        league_id="1398753329177235456",
-        team_id="1",
-    )
-    try:
-        adapter = get_adapter_for_profile(profile)
-        return adapter.get_free_agents(limit=260)
-    except Exception:
-        return get_mock_player_pool()
-
-
-# Default sample player pool for initial load or exploratory testing
-_SAMPLE_PLAYERS: list[Player] = _get_canonical_default_pool()
+# Default sample player pool starts clean & empty
+_SAMPLE_PLAYERS: list[Player] = []
 
 
 @app.get("/api/draft/state", response_model=DraftState)
@@ -370,127 +363,152 @@ async def get_draft_state(
         except Exception as exc:
             logger.warning("Failed to fetch live draft state from %s (%s): %s", platform, league_id, exc)
 
-    # Baseline real 2026 player pool
-    default_pool = _get_canonical_default_pool()
-    if _ACTIVE_CHEATSHEET:
-        default_pool = apply_cheatsheet_context(default_pool, _ACTIVE_CHEATSHEET)
+    # If QA mode is enabled, run simulation
+    if _QA_MODE:
+        try:
+            from tests.fixtures.demo_rosters import get_mock_player_pool
 
-    mock_picks: list[DraftPick] = []
-    current_pick = 1
-    if simulate_tier_roll:
-        # QA simulation: simulate drafting Tier 1 RBs and QBs
-        mock_picks = [
-            DraftPick(
-                round_num=1,
-                round_pick=1,
-                overall_pick=1,
-                team_id="1",
-                team_name="Team 1",
-                player_id="fa_rb_1",
-                player_name="Jahmyr Gibbs",
-                position="RB",
-            ),
-            DraftPick(
-                round_num=1,
-                round_pick=2,
-                overall_pick=2,
-                team_id="2",
-                team_name="Team 2",
-                player_id="fa_rb_2",
-                player_name="Bijan Robinson",
-                position="RB",
-            ),
-            DraftPick(
-                round_num=1,
-                round_pick=3,
-                overall_pick=3,
-                team_id="3",
-                team_name="Team 3",
-                player_id="fa_rb_3",
-                player_name="Christian McCaffrey",
-                position="RB",
-            ),
-            DraftPick(
-                round_num=1,
-                round_pick=4,
-                overall_pick=4,
-                team_id="4",
-                team_name="Team 4",
-                player_id="fa_rb_4",
-                player_name="Jonathan Taylor",
-                position="RB",
-            ),
-            DraftPick(
-                round_num=1,
-                round_pick=5,
-                overall_pick=5,
-                team_id="5",
-                team_name="Team 5",
-                player_id="fa_qb_1",
-                player_name="Josh Allen",
-                position="QB",
-            ),
-            DraftPick(
-                round_num=1,
-                round_pick=6,
-                overall_pick=6,
-                team_id="6",
-                team_name="Team 6",
-                player_id="fa_qb_2",
-                player_name="Lamar Jackson",
-                position="QB",
-            ),
-            DraftPick(
-                round_num=1,
-                round_pick=7,
-                overall_pick=7,
-                team_id="7",
-                team_name="Team 7",
-                player_id="fa_qb_3",
-                player_name="Jalen Hurts",
-                position="QB",
-            ),
-            DraftPick(
-                round_num=1,
-                round_pick=8,
-                overall_pick=8,
-                team_id="8",
-                team_name="Team 8",
-                player_id="fa_qb_4",
-                player_name="Joe Burrow",
-                position="QB",
-            ),
-        ]
-        current_pick = 9
+            default_pool = get_mock_player_pool()
+            if _ACTIVE_CHEATSHEET:
+                default_pool = apply_cheatsheet_context(default_pool, _ACTIVE_CHEATSHEET)
 
-    state = build_draft_state(
-        league_id="sleeper_2026_demo",
-        draft_id="draft_live",
-        overall_pick=current_pick,
-        user_draft_slot=1,
-        total_teams=10,
-        total_rounds=15,
-        recent_picks=mock_picks,
-        all_players=default_pool,
-        cheatsheet_context=_ACTIVE_CHEATSHEET,
-    )
+            mock_picks: list[DraftPick] = []
+            current_pick = 1
+            if simulate_tier_roll:
+                mock_picks = [
+                    DraftPick(
+                        round_num=1,
+                        round_pick=1,
+                        overall_pick=1,
+                        team_id="1",
+                        team_name="Team 1",
+                        player_id="fa_rb_1",
+                        player_name="Jahmyr Gibbs",
+                        position="RB",
+                    ),
+                    DraftPick(
+                        round_num=1,
+                        round_pick=2,
+                        overall_pick=2,
+                        team_id="2",
+                        team_name="Team 2",
+                        player_id="fa_rb_2",
+                        player_name="Bijan Robinson",
+                        position="RB",
+                    ),
+                    DraftPick(
+                        round_num=1,
+                        round_pick=3,
+                        overall_pick=3,
+                        team_id="3",
+                        team_name="Team 3",
+                        player_id="fa_rb_3",
+                        player_name="Christian McCaffrey",
+                        position="RB",
+                    ),
+                    DraftPick(
+                        round_num=1,
+                        round_pick=4,
+                        overall_pick=4,
+                        team_id="4",
+                        team_name="Team 4",
+                        player_id="fa_rb_4",
+                        player_name="Jonathan Taylor",
+                        position="RB",
+                    ),
+                    DraftPick(
+                        round_num=1,
+                        round_pick=5,
+                        overall_pick=5,
+                        team_id="5",
+                        team_name="Team 5",
+                        player_id="fa_qb_1",
+                        player_name="Josh Allen",
+                        position="QB",
+                    ),
+                    DraftPick(
+                        round_num=1,
+                        round_pick=6,
+                        overall_pick=6,
+                        team_id="6",
+                        team_name="Team 6",
+                        player_id="fa_qb_2",
+                        player_name="Lamar Jackson",
+                        position="QB",
+                    ),
+                    DraftPick(
+                        round_num=1,
+                        round_pick=7,
+                        overall_pick=7,
+                        team_id="7",
+                        team_name="Team 7",
+                        player_id="fa_qb_3",
+                        player_name="Jalen Hurts",
+                        position="QB",
+                    ),
+                    DraftPick(
+                        round_num=1,
+                        round_pick=8,
+                        overall_pick=8,
+                        team_id="8",
+                        team_name="Team 8",
+                        player_id="fa_qb_4",
+                        player_name="Joe Burrow",
+                        position="QB",
+                    ),
+                ]
+                current_pick = 9
 
-    if simulate_cliff:
-        state.cliff_warnings = [
-            TierCliffWarning(
-                position="RB",
-                current_tier=1 if not simulate_tier_roll else 2,
-                players_remaining=1,
-                picks_until_turn=4,
-                snake_turn_gap=12,
-                cliff_risk="CRITICAL",
-                cliff_type=CliffType.ON_THE_CLOCK_CLIFF,
-                next_tier_drop_points=4.2,
-                recommended_action="Draft remaining Tier RB now before a 4.2 pt drop-off across your 12-pick turn gap.",
+            state = build_draft_state(
+                league_id="sleeper_2026_demo",
+                draft_id="draft_live",
+                overall_pick=current_pick,
+                user_draft_slot=1,
+                total_teams=10,
+                total_rounds=15,
+                recent_picks=mock_picks,
+                all_players=default_pool,
+                cheatsheet_context=_ACTIVE_CHEATSHEET,
             )
-        ]
 
-    return state
+            if simulate_cliff:
+                state.cliff_warnings = [
+                    TierCliffWarning(
+                        position="RB",
+                        current_tier=1 if not simulate_tier_roll else 2,
+                        players_remaining=1,
+                        picks_until_turn=4,
+                        snake_turn_gap=12,
+                        cliff_risk="CRITICAL",
+                        cliff_type=CliffType.ON_THE_CLOCK_CLIFF,
+                        next_tier_drop_points=4.2,
+                        recommended_action="Draft remaining Tier RB now before a 4.2 pt drop-off across your 12-pick turn gap.",
+                    )
+                ]
+
+            return state
+        except ImportError:
+            pass
+
+    # Clean empty state when no active league is connected and QA mode is disabled
+    return DraftState(
+        league_id="",
+        draft_id="",
+        is_complete=False,
+        total_rounds=15,
+        total_teams=10,
+        current_pick=1,
+        current_round=1,
+        user_draft_slot=1,
+        picks_until_user_turn=0,
+        snake_turn_gap=0,
+        is_user_on_the_clock=False,
+        recent_picks=[],
+        available_players_by_pos={},
+        tiers_by_position={},
+        cliff_warnings=[],
+        top_suggestions=[],
+    )
 
 
 @app.get("/api/lineup/optimize", response_model=LineupSolution)
@@ -523,40 +541,68 @@ async def get_lineup_optimization(
         except Exception:
             pass
 
-    # Demo sandbox mode with realistic scenarios
-    roster = generate_randomized_roster() if randomize else get_demo_roster()
-    return solve_optimal_lineup(roster, strategy=strategy)
+    # QA simulation mode
+    if _QA_MODE or demo:
+        try:
+            from tests.fixtures.demo_rosters import generate_randomized_roster, get_demo_roster
+
+            roster = generate_randomized_roster() if randomize else get_demo_roster()
+            return solve_optimal_lineup(roster, strategy=strategy)
+        except ImportError:
+            pass
+
+    return LineupSolution(
+        team_id="",
+        starters=[],
+        bench=[],
+        total_projected_points=0.0,
+        tactical_reasons=[],
+    )
 
 
 @app.get("/api/waiver/recommendations", response_model=WaiverAnalysis)
-async def get_waiver_recommendations(session_id: str | None = None) -> WaiverAnalysis:
+async def get_waiver_recommendations(session_id: str | None = None, demo: bool = False) -> WaiverAnalysis:
     """Analyze team positional weaknesses and return ranked add/drop pairs and streaming options."""
-    roster = get_demo_roster()
+    if _QA_MODE or demo:
+        try:
+            from tests.fixtures.demo_rosters import get_demo_roster
 
-    free_agents: list[Player] = [
-        Player(id="fa_jmason", name="Jordan Mason", position=Position.RB, team="SF", projected_points=14.2),
-        Player(id="fa_tboyd", name="Tyler Boyd", position=Position.WR, team="TEN", projected_points=12.8),
-        Player(id="fa_bucky", name="Bucky Irving", position=Position.RB, team="TB", projected_points=12.5),
-        Player(id="fa_qjohnston", name="Quentin Johnston", position=Position.WR, team="LAC", projected_points=12.1),
-        Player(id="fa_csteele", name="Carson Steele", position=Position.RB, team="KC", projected_points=11.6),
-        Player(
-            id="fa_jwhittington", name="Jordan Whittington", position=Position.WR, team="LAR", projected_points=11.2
-        ),
-        Player(id="fa_braelon", name="Braelon Allen", position=Position.RB, team="NYJ", projected_points=10.9),
-        Player(id="fa_tconklin", name="Tyler Conklin", position=Position.TE, team="NYJ", projected_points=10.4),
-        Player(id="fa_drobinson", name="Demarcus Robinson", position=Position.WR, team="LAR", projected_points=10.1),
-        Player(id="fa_kherbert", name="Khalil Herbert", position=Position.RB, team="CHI", projected_points=9.8),
-        Player(id="fa_gsmith", name="Geno Smith", position=Position.QB, team="SEA", projected_points=16.5),
-        Player(id="fa_adarnold", name="Sam Darnold", position=Position.QB, team="MIN", projected_points=16.1),
-        Player(id="dst_sea", name="Seahawks D/ST", position=Position.DST, team="SEA", projected_points=8.8),
-        Player(id="dst_lac", name="Chargers D/ST", position=Position.DST, team="LAC", projected_points=8.5),
-        Player(id="dst_tb", name="Buccaneers D/ST", position=Position.DST, team="TB", projected_points=8.2),
-        Player(id="k_jmoody", name="Jake Moody", position=Position.K, team="SF", projected_points=8.7),
-        Player(id="k_cdicker", name="Cameron Dicker", position=Position.K, team="LAC", projected_points=8.4),
-        Player(id="k_cboswell", name="Chris Boswell", position=Position.K, team="PIT", projected_points=8.1),
-    ]
+            roster = get_demo_roster()
+            free_agents: list[Player] = [
+                Player(id="fa_jmason", name="Jordan Mason", position=Position.RB, team="SF", projected_points=14.2),
+                Player(id="fa_tboyd", name="Tyler Boyd", position=Position.WR, team="TEN", projected_points=12.8),
+                Player(id="fa_bucky", name="Bucky Irving", position=Position.RB, team="TB", projected_points=12.5),
+                Player(
+                    id="fa_qjohnston", name="Quentin Johnston", position=Position.WR, team="LAC", projected_points=12.1
+                ),
+                Player(id="fa_csteele", name="Carson Steele", position=Position.RB, team="KC", projected_points=11.6),
+                Player(
+                    id="fa_jwhittington",
+                    name="Jordan Whittington",
+                    position=Position.WR,
+                    team="LAR",
+                    projected_points=11.2,
+                ),
+                Player(id="fa_braelon", name="Braelon Allen", position=Position.RB, team="NYJ", projected_points=10.9),
+                Player(id="fa_tconklin", name="Tyler Conklin", position=Position.TE, team="NYJ", projected_points=10.4),
+                Player(
+                    id="fa_drobinson", name="Demarcus Robinson", position=Position.WR, team="LAR", projected_points=10.1
+                ),
+                Player(id="fa_kherbert", name="Khalil Herbert", position=Position.RB, team="CHI", projected_points=9.8),
+                Player(id="fa_gsmith", name="Geno Smith", position=Position.QB, team="SEA", projected_points=16.5),
+                Player(id="fa_adarnold", name="Sam Darnold", position=Position.QB, team="MIN", projected_points=16.1),
+            ]
+            return generate_waiver_recommendations(roster, free_agents)
+        except ImportError:
+            pass
 
-    return generate_waiver_recommendations(roster, free_agents, max_recommendations=15)
+    return WaiverAnalysis(
+        team_id="",
+        team_weaknesses={},
+        top_add_drop_pairs=[],
+        dst_streaming=[],
+        kicker_streaming=[],
+    )
 
 
 @app.post("/api/cheatsheet/upload", response_model=CheatsheetContext)
