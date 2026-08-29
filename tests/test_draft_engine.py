@@ -610,3 +610,51 @@ def test_player_pool_depth_preserves_non_qbs_late_rounds() -> None:
     # Top suggestions should not be exclusively QBs
     suggested_positions = {s.player.position for s in state.top_suggestions[:10]}
     assert len(suggested_positions) >= 3
+
+
+def test_draft_turn_qb_suppression_when_drafted_on_first_turn_pick() -> None:
+    """Verify drafting a QB on the first pick of a turn (e.g. pick 50 in slot 10) suppresses QBs on pick 51."""
+    from tests.fixtures.demo_rosters import get_mock_player_pool
+
+    rules_text = """
+    QB - Get a tier 1 in round 4 or one from tier 3 and one from tier 4. If you get a tier 1 only one QB total.
+    """
+    ctx = parse_plain_text_cheatsheet(rules_text)
+    pool = get_mock_player_pool()
+
+    maye = next(p for p in pool if "Maye" in p.name)
+
+    picks = [
+        DraftPick(
+            round_num=5,
+            round_pick=10,
+            overall_pick=50,
+            team_id="10",
+            team_name="My Team",
+            player_id=maye.id,
+            player_name=maye.name,
+            position="QB",
+        )
+    ]
+
+    state = build_draft_state(
+        league_id="test_league",
+        draft_id="d1",
+        overall_pick=51,
+        user_draft_slot=10,
+        total_teams=10,
+        total_rounds=15,
+        recent_picks=picks,
+        all_players=pool,
+        cheatsheet_context=ctx,
+        user_team_id="10",
+    )
+
+    # User now has 1 QB; subsequent QBs (Hurts, Burrow) must NOT be promoted as strategy targets in top suggestions
+    top_3_positions = [s.player.position for s in state.top_suggestions[:3]]
+    assert Position.QB not in top_3_positions
+
+    # Verify no strategy target bonus for other QBs
+    for s in state.top_suggestions:
+        if s.player.position == Position.QB:
+            assert "Strategy Target: Tier 1 QB" not in s.reason

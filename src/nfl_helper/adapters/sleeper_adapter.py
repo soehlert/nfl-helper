@@ -141,7 +141,7 @@ class SleeperAdapter(BaseLeagueAdapter):
         if fpts <= 0.0:
             r = max(1.0, float(pos_rank) if pos_rank is not None else 40.0)
             if pos_enum == Position.QB:
-                fpts = round(max(12.0, 25.5 - 2.5 * math.log(r)), 2)
+                fpts = round(max(11.0, 25.0 - 3.5 * math.log(r)), 2)
             elif pos_enum == Position.RB:
                 fpts = round(max(6.0, 21.5 - 3.2 * math.log(r)), 2)
             elif pos_enum == Position.WR:
@@ -364,6 +364,7 @@ class SleeperAdapter(BaseLeagueAdapter):
             current_pick=min(total_teams * total_rounds, current_pick) if is_complete else current_pick,
             current_round=current_round,
             user_draft_slot=user_slot or 1,
+            user_team_id=str(self.profile.team_id) if self.profile.team_id else None,
             recent_picks=picks_list,
             available_players_by_pos=by_pos,
         )

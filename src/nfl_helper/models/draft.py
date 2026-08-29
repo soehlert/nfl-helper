@@ -74,6 +74,7 @@ class DraftState(BaseModel):
     current_pick: int = 1
     current_round: int = 1
     user_draft_slot: int = 1
+    user_team_id: str | None = None
     picks_until_user_turn: int = 0
     snake_turn_gap: int = 0
     is_user_on_the_clock: bool = False

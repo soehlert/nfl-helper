@@ -361,6 +361,7 @@ async def get_draft_state(
                 recent_picks=live_draft.recent_picks,
                 all_players=all_avail,
                 cheatsheet_context=_ACTIVE_CHEATSHEET,
+                user_team_id=live_draft.user_team_id or team_id,
             )
         except Exception as exc:
             logger.warning("Failed to fetch live draft state from %s (%s): %s", platform, league_id, exc)

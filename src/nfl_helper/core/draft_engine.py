@@ -189,8 +189,26 @@ def _evaluate_strategy_rule_adjustments(
 
             # Evaluate branches if available
             if pos_rule.branches:
+                active_branches = pos_rule.branches
+                if drafted_pos:
+                    matching_branches = [
+                        b
+                        for b in pos_rule.branches
+                        if sum(b.target_tier_quotas.values()) > len(drafted_pos)
+                        and (
+                            not b.target_tiers
+                            or any(
+                                (dp.cheatsheet_tier or dp.tier or 1) in b.target_tiers
+                                or (dp.cheatsheet_tier or dp.tier or 1) in b.target_tier_quotas
+                                for dp in drafted_pos
+                            )
+                            or (len(drafted_pos) < 2 and sum(b.target_tier_quotas.values()) >= 2)
+                        )
+                    ]
+                    active_branches = matching_branches
+
                 branch_evaluated = False
-                for branch in pos_rule.branches:
+                for branch in active_branches:
                     # Check player targets in branch
                     for target_p_name, target_rnd in branch.target_player_names:
                         if target_p_name.lower() in player.name.lower():
@@ -240,8 +258,17 @@ def _evaluate_strategy_rule_adjustments(
                         branch_evaluated = True
                         break
 
-                if branch_evaluated:
-                    continue
+                if not branch_evaluated:
+                    all_target_tiers = pos_rule.target_tiers or [
+                        t for b in pos_rule.branches for t in (b.target_tiers or list(b.target_tier_quotas.keys()))
+                    ]
+                    if all_target_tiers and p_tier not in all_target_tiers:
+                        delta -= 0.6
+                        specific_notes.append(
+                            f"Strategy Hint: Rule prefers Tier {','.join(map(str, sorted(set(all_target_tiers))))} {pos_rule.position}"
+                        )
+
+                continue
 
             # Check if this rule defines a specific round window (e.g. rounds 3-5)
             if pos_rule.target_rounds:
@@ -700,6 +727,7 @@ def build_draft_state(
     recent_picks: list[DraftPick],
     all_players: list[Player],
     cheatsheet_context: CheatsheetContext | None = None,
+    user_team_id: str | None = None,
 ) -> DraftState:
     """Construct full DraftState snapshot with snake lookahead, tiers, cliffs, and suggestions."""
     # Ensure canonical macro tiers (5 QB/TE, 8 RB/WR, 4 K/DST) across the full player pool
@@ -718,18 +746,26 @@ def build_draft_state(
     avail_by_pos: dict[str, list[Player]] = {}
 
     for pos in positions:
+        pos_all = [p for p in all_players if p.position == pos]
+        all_clustered = cluster_position_tiers(pos_all, pos, cheatsheet_context)
+        for t in all_clustered:
+            for p in t.players:
+                p.tier = t.tier_num
+
         pos_avail = [p for p in available_players if p.position == pos]
         avail_by_pos[pos] = pos_avail
         clustered = cluster_position_tiers(pos_avail, pos, cheatsheet_context)
         tiers_by_pos[pos] = clustered
-        for t in clustered:
-            for p in t.players:
-                p.tier = t.tier_num
 
     user_picks: list[DraftPick] = []
     for pick in recent_picks:
         pick_owner_slot = calculate_snake_pick_owner(pick.overall_pick, total_teams)
-        if pick_owner_slot == user_draft_slot:
+        is_user_pick = bool(
+            (user_team_id and pick.team_id and str(pick.team_id) == str(user_team_id))
+            or (pick.round_pick and pick.round_pick == user_draft_slot)
+            or (pick_owner_slot == user_draft_slot)
+        )
+        if is_user_pick:
             user_picks.append(pick)
 
     user_roster_counts: dict[str, int] = {}
@@ -824,6 +860,7 @@ def build_draft_state(
         current_pick=min(total_teams * total_rounds, overall_pick) if is_complete else overall_pick,
         current_round=current_round,
         user_draft_slot=user_draft_slot,
+        user_team_id=user_team_id,
         picks_until_user_turn=picks_until_turn,
         snake_turn_gap=turn_gap,
         is_user_on_the_clock=on_the_clock,
