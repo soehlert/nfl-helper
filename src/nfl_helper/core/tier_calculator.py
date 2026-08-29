@@ -86,7 +86,17 @@ MACRO_TIER_BOUNDS: dict[str, list[int]] = {
 def assign_global_macro_tiers(all_players: list[Player]) -> None:
     """Assign canonical macro tiers (5 QB/TE, 8 RB/WR, 4 K/DST) based on positional pool rankings."""
     for pos, bounds in MACRO_TIER_BOUNDS.items():
-        pos_all = sorted([p for p in all_players if p.position == pos], key=lambda x: x.projected_points, reverse=True)
+        if pos in ("K", "D/ST"):
+            pos_all = sorted(
+                [p for p in all_players if p.position == pos],
+                key=lambda x: (x.adp if x.adp is not None and x.adp > 0.0 else 999.0, -x.projected_points),
+            )
+        else:
+            pos_all = sorted(
+                [p for p in all_players if p.position == pos],
+                key=lambda x: x.projected_points,
+                reverse=True,
+            )
         for rank_idx, p in enumerate(pos_all, start=1):
             if p.cheatsheet_tier is not None:
                 p.tier = p.cheatsheet_tier
@@ -152,7 +162,13 @@ def cluster_position_tiers(
             tier_grouped.setdefault(p.tier, []).append(p)
         macro_tiers: list[PlayerTier] = []
         for t_num in sorted(tier_grouped.keys()):
-            plist = sorted(tier_grouped[t_num], key=lambda x: x.projected_points, reverse=True)
+            if position in ("K", "D/ST"):
+                plist = sorted(
+                    tier_grouped[t_num],
+                    key=lambda x: (x.adp if x.adp is not None and x.adp > 0.0 else 999.0, -x.projected_points),
+                )
+            else:
+                plist = sorted(tier_grouped[t_num], key=lambda x: x.projected_points, reverse=True)
             avg = sum(p.projected_points for p in plist) / len(plist)
             macro_tiers.append(
                 PlayerTier(
