@@ -2316,15 +2316,12 @@
 
           if (isCapped) {
             tierHtml += `
-              <tr style="opacity: 0.5; background: rgba(0,0,0,0.15);">
-                <td>
-                  <span class="pos-tag ${posClass}" style="text-decoration: line-through; opacity: 0.7;">${pos}</span>
-                  <span class="badge badge-claimed" style="font-size: 0.65rem; margin-left: 0.35rem; padding: 0.1rem 0.35rem; text-decoration: none; border-color: var(--accent-green); color: var(--accent-green);">✓ FILLED</span>
-                </td>
-                <td style="text-decoration: line-through; color: var(--text-muted);">Tier ${topTier.tier_num}</td>
-                <td style="text-decoration: line-through; color: var(--text-muted);">${topTier.count} player${topTier.count === 1 ? '' : 's'}</td>
-                <td style="text-decoration: line-through; color: var(--text-muted);">${topTier.avg_projected ? topTier.avg_projected.toFixed(1) : '—'}</td>
-                <td><span style="color: var(--text-muted); font-size: 0.75rem; text-decoration: none;">✓ Done</span></td>
+              <tr style="opacity: 0.35;">
+                <td><span class="pos-tag ${posClass}">${pos}</span></td>
+                <td>Tier ${topTier.tier_num}</td>
+                <td>${topTier.count} player${topTier.count === 1 ? '' : 's'}</td>
+                <td>${topTier.avg_projected ? topTier.avg_projected.toFixed(1) : '—'}</td>
+                <td><span style="color: var(--text-muted); font-size: 0.78rem;">✓ Done</span></td>
               </tr>`;
           } else {
             tierHtml += `
@@ -2340,19 +2337,18 @@
         tierTbody.innerHTML = tierHtml;
       }
 
-      // Update position filter pills to show crossed out/completed indicators
+      // Update position filter pills to cleanly dim completed positions
       const filterGroup = document.getElementById('draft-pos-filters');
       if (filterGroup) {
         filterGroup.querySelectorAll('.pos-filter-btn').forEach(btn => {
           const btnPos = (btn.getAttribute('data-pos') || '').toUpperCase();
           if (btnPos === 'ALL') return;
           const isBtnCapped = cappedList.includes(btnPos) || (btnPos === 'D/ST' && (cappedList.includes('DEF') || cappedList.includes('DST') || cappedList.includes('D/ST')));
+          btn.innerHTML = btnPos;
           if (isBtnCapped) {
-            btn.innerHTML = `<span style="text-decoration: line-through; opacity: 0.65;">${btnPos}</span> <span style="font-size: 0.68rem; color: var(--accent-green);">✓</span>`;
-            btn.style.opacity = '0.65';
-            btn.title = `${btnPos} target fulfilled - position completed`;
+            btn.style.opacity = '0.35';
+            btn.title = `${btnPos} target fulfilled (done drafting)`;
           } else {
-            btn.innerHTML = btnPos;
             btn.style.opacity = '1.0';
             btn.title = '';
           }
