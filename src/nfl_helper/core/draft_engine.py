@@ -828,6 +828,30 @@ def build_draft_state(
                 )
             )
 
+    # Calculate completed / capped positions
+    capped_pos: set[str] = set()
+    active_rules = cheatsheet_context.strategy_rules if cheatsheet_context else []
+    if cheatsheet_context:
+        for pr in cheatsheet_context.positional_strategy:
+            if pr.position == "QB" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
+                for dp in user_drafted_players or []:
+                    if str(dp.position).upper() == "QB":
+                        capped_pos.add("QB")
+            elif pr.position == "TE" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
+                for dp in user_drafted_players or []:
+                    if str(dp.position).upper() == "TE":
+                        capped_pos.add("TE")
+
+    if any("only one qb" in r.lower() for r in active_rules) and user_roster_counts.get("QB", 0) >= 1:
+        capped_pos.add("QB")
+    if any("no second te" in r.lower() for r in active_rules) and user_roster_counts.get("TE", 0) >= 1:
+        capped_pos.add("TE")
+
+    if user_roster_counts.get("K", 0) >= 1:
+        capped_pos.add("K")
+    if user_roster_counts.get("D/ST", 0) >= 1:
+        capped_pos.add("D/ST")
+
     cliffs = detect_tier_cliffs(
         tiers_by_pos,
         picks_until_turn,
@@ -875,6 +899,7 @@ def build_draft_state(
         picks_until_user_turn=picks_until_turn,
         snake_turn_gap=turn_gap,
         is_user_on_the_clock=on_the_clock,
+        capped_positions=sorted(capped_pos),
         recent_picks=recent_picks[-10:] if len(recent_picks) > 10 else recent_picks,
         available_players_by_pos=avail_by_pos,
         tiers_by_position=tiers_by_pos,
