@@ -422,6 +422,7 @@ def _calculate_required_positions(
     total_rounds: int,
     roster: dict[str, int],
     active_rules: list[str],
+    capped_positions: set[str] | None = None,
 ) -> set[str] | None:
     """Calculate mandatory positions that MUST be drafted now to satisfy roster legality & strategy minimums."""
     rounds_remaining = max(1, total_rounds - current_round + 1)
@@ -441,7 +442,9 @@ def _calculate_required_positions(
     mins: dict[str, int] = {}
     for r in active_rules:
         r_lower = r.lower()
-        if "one from tier 3 and one from tier 4" in r_lower or "two qb" in r_lower or "2 qb" in r_lower:
+        if ("one from tier 3 and one from tier 4" in r_lower or "two qb" in r_lower or "2 qb" in r_lower) and not (
+            capped_positions and "QB" in capped_positions
+        ):
             mins["QB"] = max(mins.get("QB", 0), 2)
         m = re.search(r"(QB|RB|WR|TE|K|D/ST|DEF)\s*[-:]?\s*.*minimum\s+(\d+)", r, re.IGNORECASE)
         if not m:
@@ -504,24 +507,6 @@ def generate_draft_suggestions(
     if roster.get("D/ST", 0) < 1:
         unfilled_mandatory.append("D/ST")
 
-    # Draft deadline & quota enforcement: filter suggestions when remaining rounds equals required slots
-    required_positions = _calculate_required_positions(current_round, total_rounds, roster, active_rules)
-    if required_positions:
-        available_players = [
-            p
-            for p in available_players
-            if str(p.position).upper() in required_positions
-            or (str(p.position).upper() in ("DEF", "DST") and "D/ST" in required_positions)
-        ]
-
-    top_tier_info: dict[str, tuple[int, int, float]] = {}
-    for pos, pos_tiers in tiers_by_pos.items():
-        if pos_tiers:
-            top_t = pos_tiers[0]
-            next_t = pos_tiers[1] if len(pos_tiers) > 1 else None
-            t_drop = calculate_tier_drop(top_t, next_t)
-            top_tier_info[pos] = (top_t.tier_num, len(top_t.players), t_drop)
-
     # Check conditional caps from strategy rules and single-starter roster limits
     capped_positions: set[str] = set()
     if cheatsheet_context:
@@ -553,6 +538,47 @@ def generate_draft_suggestions(
             if str(p.position).upper() not in capped_positions
             and not (str(p.position).upper() in ("DEF", "DST") and "D/ST" in capped_positions)
         ]
+
+    # Draft deadline & quota enforcement: filter suggestions when remaining rounds equals required slots
+    required_positions = _calculate_required_positions(
+        current_round, total_rounds, roster, active_rules, capped_positions=capped_positions
+    )
+    if required_positions:
+        available_players = [
+            p
+            for p in available_players
+            if str(p.position).upper() in required_positions
+            or (str(p.position).upper() in ("DEF", "DST") and "D/ST" in required_positions)
+        ]
+
+    top_tier_info: dict[str, tuple[int, int, float]] = {}
+    for pos, pos_tiers in tiers_by_pos.items():
+        if pos_tiers:
+            top_t = pos_tiers[0]
+            next_t = pos_tiers[1] if len(pos_tiers) > 1 else None
+            t_drop = calculate_tier_drop(top_t, next_t)
+            top_tier_info[pos] = (top_t.tier_num, len(top_t.players), t_drop)
+
+    mins: dict[str, int] = {}
+    deadline_quotas: list[tuple[str, int, int]] = []
+    for r in active_rules:
+        r_lower = r.lower()
+        if (
+            "one from tier 3 and one from tier 4" in r_lower or "two qb" in r_lower or "2 qb" in r_lower
+        ) and "QB" not in capped_positions:
+            mins["QB"] = max(mins.get("QB", 0), 2)
+        m = re.search(r"(QB|RB|WR|TE|K|D/ST|DEF)\s*[-:]?\s*.*minimum\s+(\d+)", r, re.IGNORECASE)
+        if not m:
+            m = re.search(r"(QB|RB|WR|TE|K|D/ST|DEF)\s*[-:]?\s*Get\s+(\d+)", r, re.IGNORECASE)
+        if m:
+            pos = m.group(1).upper()
+            pos = "D/ST" if pos in ("DEF", "DST") else pos
+            count = int(m.group(2))
+            mins[pos] = max(mins.get(pos, 0), count)
+        m_dl = re.search(r"(RB|WR|QB|TE)\s*[-:]?\s*Get\s+(\d+)\s+in\s+the\s+first\s+(\d+)\s+rounds", r, re.IGNORECASE)
+        if m_dl:
+            pos_dl = m_dl.group(1).upper()
+            deadline_quotas.append((pos_dl, int(m_dl.group(2)), int(m_dl.group(3))))
 
     # Pass 1: Compute baseline score without note_delta to establish board density & ranks
     raw_scored: list[tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]] = []
@@ -588,12 +614,42 @@ def generate_draft_suggestions(
         elif pos_str in ("K", "D/ST"):
             if roster.get(pos_str, 0) >= 1:
                 base_score -= 10.0  # Already drafted K/DST, never draft a second one
-            elif rounds_remaining > 2:
-                base_score -= 2.5  # Do not prioritize K/DST with >2 rounds remaining (Rounds 1-13 of 15)
-            elif rounds_remaining <= len(unfilled_mandatory):
-                base_score += 15.0  # Highest priority to fill mandatory starter in final round
-            elif rounds_remaining <= len(unfilled_mandatory) + 1:
+            elif rounds_remaining > 3:
+                base_score -= 2.5  # Do not prioritize K/DST with >3 rounds remaining
+            elif rounds_remaining == 3:
+                base_score += 1.0  # Start considering in Round 13 of 15
+            elif rounds_remaining == 2:
                 base_score += 6.0  # Elevated priority in penultimate round
+            elif rounds_remaining <= 1:
+                base_score += 15.0  # Highest priority to fill mandatory starter in final round
+
+        # Roster quota urgency & round deadline weighting
+        for pos_dl, q_dl, dl_round in deadline_quotas:
+            if pos_str == pos_dl and current_round <= dl_round:
+                curr_dl_cnt = roster.get(pos_str, 0)
+                if curr_dl_cnt < q_dl:
+                    rounds_left = dl_round - current_round + 1
+                    needed_dl = q_dl - curr_dl_cnt
+                    if rounds_left <= needed_dl + 2:
+                        urgency_bonus = min(3.5, 1.5 + (needed_dl / max(1, rounds_left)) * 1.5)
+                        base_score += urgency_bonus
+
+        if pos_str in mins:
+            req_min = mins[pos_str]
+            curr_pos_cnt = roster.get(pos_str, 0)
+            if curr_pos_cnt < req_min:
+                if current_round >= 7:
+                    needed_min = req_min - curr_pos_cnt
+                    urgency_bonus = min(3.5, 1.0 + (needed_min * 0.8) + (current_round - 7) * 0.2)
+                    base_score += urgency_bonus
+            elif curr_pos_cnt >= req_min + 1:
+                has_unmet_mins = (
+                    any(roster.get(p, 0) < m for p, m in mins.items() if p != pos_str)
+                    or (roster.get("D/ST", 0) < 1)
+                    or (roster.get("K", 0) < 1)
+                )
+                if has_unmet_mins and current_round >= 7:
+                    base_score -= 2.5
 
         # Positional Scarcity Weighting: only when ADP is in reachable range for current pick
         scarcity_bonus = 0.0
@@ -663,18 +719,19 @@ def generate_draft_suggestions(
                     note_delta = (base_scores[target_idx] - b_score) - 0.0001
 
         if note_delta == 0.0 and p.cheatsheet_notes:
-            nl = p.cheatsheet_notes.lower()
-            if "breakout" in nl:
+            # Strip bracketed platform prefixes (e.g. [ESPN SLEEPER]) before scanning qualitative tags
+            clean_note = re.sub(r"\[.*?\]", "", p.cheatsheet_notes).strip().lower()
+            if "breakout" in clean_note:
                 shift = _calculate_sliding_note_shift(idx, "breakout")
                 target_idx = max(0, idx - shift)
                 target_score = base_scores[target_idx]
                 note_delta = (target_score - b_score) + 0.0001
-            elif "sleeper" in nl or "pick" in nl or "target" in nl:
+            elif "sleeper" in clean_note:
                 shift = _calculate_sliding_note_shift(idx, "sleeper")
                 target_idx = max(0, idx - shift)
                 target_score = base_scores[target_idx]
                 note_delta = (target_score - b_score) + 0.0001
-            elif "bust" in nl or "fade" in nl:
+            elif "bust" in clean_note or "fade" in clean_note or "avoid" in clean_note:
                 shift = _calculate_sliding_note_shift(idx, "bust")
                 target_idx = min(len(base_scores) - 1, idx + shift)
                 note_delta = (base_scores[target_idx] - b_score) - 0.0001

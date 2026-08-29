@@ -658,3 +658,45 @@ def test_draft_turn_qb_suppression_when_drafted_on_first_turn_pick() -> None:
     for s in state.top_suggestions:
         if s.player.position == Position.QB:
             assert "Strategy Target: Tier 1 QB" not in s.reason
+
+
+def test_quota_urgency_and_surplus_fading() -> None:
+    """Verify unfulfilled minimum quotas and round deadlines elevate RB/DST while fading surplus WRs."""
+    rules_text = """
+    Rounds 1-2 - only RB/WR and at least 1 RB
+    QB - Get a tier 1 in round 4 or one from tier 3 and one from tier 4. If you get a tier 1 only one QB total.
+    RB - Get 4 in the first 10 rounds and minimum 4 for the whole draft
+    WR - Get 4 minimum
+    TE - Target the top 4 in rounds 3-5, no second TE if you have a tier 1 TE
+    """
+    ctx = parse_plain_text_cheatsheet(rules_text)
+
+    # In Round 13 of 15, user has 3 RBs (needs 4), 6 WRs (exceeds 4), 0 D/ST
+    p_rb = Player(id="r1", name="Test RB", position=Position.RB, team="FA", projected_points=10.0)
+    p_wr = Player(id="w1", name="Test WR", position=Position.WR, team="FA", projected_points=10.0, adp=104.0)
+    p_dst = Player(id="d1", name="Test DST", position=Position.DST, team="FA", projected_points=8.0)
+
+    baselines = {"QB": 17.0, "RB": 10.0, "WR": 10.0, "TE": 9.0, "K": 8.0, "D/ST": 8.0}
+    tiers_by_pos = {
+        "RB": cluster_position_tiers([p_rb], "RB"),
+        "WR": cluster_position_tiers([p_wr], "WR"),
+        "D/ST": cluster_position_tiers([p_dst], "D/ST"),
+    }
+
+    suggs = generate_draft_suggestions(
+        available_players=[p_rb, p_wr, p_dst],
+        tiers_by_pos=tiers_by_pos,
+        cliff_warnings=[],
+        baselines=baselines,
+        overall_pick=121,  # Round 13 Pick 1
+        cheatsheet_context=ctx,
+        total_teams=10,
+        user_roster_counts={"QB": 1, "TE": 1, "K": 1, "WR": 6, "RB": 3, "D/ST": 0},
+        total_rounds=15,
+        user_drafted_players=[],
+    )
+
+    # D/ST and RB should outrank surplus WR in late rounds
+    ranks = {s.player.position: s.rank for s in suggs}
+    assert ranks[Position.DST] < ranks[Position.WR]
+    assert ranks[Position.RB] < ranks[Position.WR]
