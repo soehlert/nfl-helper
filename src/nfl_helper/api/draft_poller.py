@@ -5,6 +5,7 @@ import logging
 
 from nfl_helper.adapters.base import BaseLeagueAdapter
 from nfl_helper.api.ws_manager import ConnectionManager, ws_manager
+from nfl_helper.core.cheatsheet import apply_cheatsheet_context
 from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import DraftState
@@ -45,7 +46,10 @@ class DraftPoller:
             if current_pick_count == self.last_pick_count and self.latest_state is not None:
                 return False
 
-            all_players = self.adapter.get_free_agents(limit=250)
+            all_players = self.adapter.get_free_agents(limit=300)
+            if self.cheatsheet_context:
+                all_players = apply_cheatsheet_context(all_players, self.cheatsheet_context)
+
             current_overall = adapter_state.current_pick or (current_pick_count + 1)
 
             draft_state = build_draft_state(
@@ -58,6 +62,7 @@ class DraftPoller:
                 recent_picks=adapter_state.recent_picks,
                 all_players=all_players,
                 cheatsheet_context=self.cheatsheet_context,
+                user_team_id=str(self.adapter.profile.team_id) if self.adapter.profile.team_id else None,
             )
 
             self.latest_state = draft_state

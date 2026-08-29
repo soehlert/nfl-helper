@@ -276,3 +276,62 @@ def test_espn_invalid_position_raises_error(espn_profile: LeagueProfile) -> None
         adapter = ESPNAdapter(espn_profile)
         with pytest.raises(ValueError, match="Unrecognized ESPN position"):
             adapter.get_roster(team_id="1")
+
+
+def test_sleeper_adapter_username_and_display_name_resolution() -> None:
+    """Verify SleeperAdapter resolves username/display_name to canonical roster_id and draft slot."""
+
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if "/users" in path:
+            return httpx.Response(
+                200,
+                json=[{"user_id": "uid_soehlert", "username": "soehlert", "display_name": "soehlert"}],
+            )
+        if "/rosters" in path:
+            return httpx.Response(
+                200,
+                json=[{"roster_id": 10, "owner_id": "uid_soehlert", "starters": []}],
+            )
+        if "/drafts" in path:
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "draft_id": "d_100",
+                        "status": "drafting",
+                        "settings": {"teams": 10, "rounds": 15},
+                        "draft_order": {"uid_soehlert": 10},
+                        "slot_to_roster_id": {"10": 10},
+                    }
+                ],
+            )
+        if "/draft/d_100/picks" in path:
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "round": 5,
+                        "draft_slot": 10,
+                        "pick_no": 50,
+                        "roster_id": "10",
+                        "player_id": "11564",
+                        "metadata": {"first_name": "Drake", "last_name": "Maye", "position": "QB"},
+                    }
+                ],
+            )
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler), base_url="https://api.sleeper.app/v1")
+    profile = LeagueProfile(
+        session_id="sess_test",
+        platform=PlatformType.SLEEPER,
+        league_id="league_100",
+        team_id="soehlert",  # Passed as username
+    )
+    adapter = SleeperAdapter(profile, client=client, player_db={})
+    draft_state = adapter.get_draft_state(include_player_pool=False)
+
+    assert draft_state.user_team_id == "10"
+    assert draft_state.user_draft_slot == 10
+    assert len(draft_state.recent_picks) == 1

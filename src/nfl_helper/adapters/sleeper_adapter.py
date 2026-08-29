@@ -339,21 +339,62 @@ class SleeperAdapter(BaseLeagueAdapter):
         by_pos = self.get_available_players_by_position(limit=300) if include_player_pool else {}
 
         user_slot = self.profile.user_draft_slot
-        if user_slot is None:
-            draft_order = active_draft.get("draft_order")
-            if isinstance(draft_order, dict):
-                if self.profile.team_id and str(self.profile.team_id) in draft_order:
-                    user_slot = int(str(draft_order[str(self.profile.team_id)]))
-                else:
-                    rosters, _ = self._fetch_rosters_and_users()
+        resolved_team_id: str | None = str(self.profile.team_id) if self.profile.team_id else None
+
+        draft_order = active_draft.get("draft_order") or {}
+        slot_to_roster = active_draft.get("slot_to_roster_id") or {}
+        rosters, users_by_id = self._fetch_rosters_and_users()
+
+        target_owner_id: str | None = None
+        target_roster_id: str | None = None
+
+        if self.profile.team_id:
+            raw_input = str(self.profile.team_id).strip().lower()
+
+            # 1. Match by username or display_name (e.g. "soehlert")
+            for uid, u in users_by_id.items():
+                uname = str(u.get("username", "")).lower()
+                dname = str(u.get("display_name", "")).lower()
+                if raw_input in (uname, dname):
+                    target_owner_id = uid
                     for r in rosters:
-                        if str(r.get("roster_id")) == str(self.profile.team_id):
-                            owner_id = str(r.get("owner_id", ""))
-                            if owner_id in draft_order:
-                                user_slot = int(str(draft_order[owner_id]))
-                                break
-                    if user_slot is None and len(draft_order) == 1:
-                        user_slot = int(next(iter(draft_order.values())))
+                        if str(r.get("owner_id", "")) == uid:
+                            target_roster_id = str(r.get("roster_id", ""))
+                            break
+                    break
+
+            # 2. Match by roster_id (e.g. "10")
+            if not target_roster_id:
+                for r in rosters:
+                    if str(r.get("roster_id", "")) == str(self.profile.team_id):
+                        target_roster_id = str(r.get("roster_id", ""))
+                        target_owner_id = str(r.get("owner_id", ""))
+                        break
+
+            # 3. Match by owner_id (e.g. Sleeper user ID in draft_order)
+            if not target_roster_id and str(self.profile.team_id) in draft_order:
+                target_owner_id = str(self.profile.team_id)
+                for r in rosters:
+                    if str(r.get("owner_id", "")) == target_owner_id:
+                        target_roster_id = str(r.get("roster_id", ""))
+                        break
+
+        # Resolve user_slot
+        if user_slot is None and isinstance(draft_order, dict):
+            if target_owner_id and target_owner_id in draft_order:
+                user_slot = int(str(draft_order[target_owner_id]))
+            elif target_roster_id and target_roster_id in draft_order:
+                user_slot = int(str(draft_order[target_roster_id]))
+            elif target_roster_id and slot_to_roster:
+                for slot_str, r_num in slot_to_roster.items():
+                    if str(r_num) == target_roster_id:
+                        user_slot = int(slot_str)
+                        break
+            elif len(draft_order) == 1:
+                user_slot = int(next(iter(draft_order.values())))
+
+        if target_roster_id:
+            resolved_team_id = target_roster_id
 
         return DraftState(
             league_id=self.profile.league_id,
@@ -364,7 +405,7 @@ class SleeperAdapter(BaseLeagueAdapter):
             current_pick=min(total_teams * total_rounds, current_pick) if is_complete else current_pick,
             current_round=current_round,
             user_draft_slot=user_slot or 1,
-            user_team_id=str(self.profile.team_id) if self.profile.team_id else None,
+            user_team_id=resolved_team_id,
             recent_picks=picks_list,
             available_players_by_pos=by_pos,
         )
