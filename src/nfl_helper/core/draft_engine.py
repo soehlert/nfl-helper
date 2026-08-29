@@ -529,11 +529,11 @@ def generate_draft_suggestions(
         for pr in cheatsheet_context.positional_strategy:
             if pr.position == "QB" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
                 for dp in user_drafted_players or []:
-                    if str(dp.position).upper() == "QB" and (dp.cheatsheet_tier or dp.tier or 1) == 1:
+                    if str(dp.position).upper() == "QB":
                         has_qb_cap = True
             elif pr.position == "TE" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
                 for dp in user_drafted_players or []:
-                    if str(dp.position).upper() == "TE" and (dp.cheatsheet_tier or dp.tier or 1) == 1:
+                    if str(dp.position).upper() == "TE":
                         has_te_cap = True
 
     # Pass 1: Compute baseline score without note_delta to establish board density & ranks
@@ -565,16 +565,16 @@ def generate_draft_suggestions(
 
         if pos_str == "QB" and roster.get("QB", 0) >= 1:
             # Suppress backup QBs; apply strict suppression if QB cap is active
-            if has_qb_cap:
-                base_score -= 4.5
+            if has_qb_cap or any("only one qb" in r.lower() for r in active_rules):
+                base_score -= 10.0
             else:
-                base_score -= 2.8 if current_round < 13 else 0.8
+                base_score -= 5.0 if current_round < 12 else 1.5
         elif pos_str == "TE" and roster.get("TE", 0) >= 1:
             # Suppress backup TEs; apply strict suppression if TE cap is active
-            if has_te_cap:
-                base_score -= 4.5
+            if has_te_cap or any("no second te" in r.lower() for r in active_rules):
+                base_score -= 10.0
             else:
-                base_score -= 2.5 if current_round < 10 else 0.8
+                base_score -= 4.5 if current_round < 10 else 1.2
         elif pos_str in ("K", "D/ST"):
             if roster.get(pos_str, 0) >= 1:
                 base_score -= 10.0  # Already drafted K/DST, never draft a second one
