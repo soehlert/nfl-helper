@@ -67,7 +67,7 @@ class SleeperAdapter(BaseLeagueAdapter):
                 return self._proj_db
             season = self.profile.season_year or get_current_nfl_season_year()
             try:
-                res = self._client.get(f"/projections/nfl/regular/{season}/1")
+                res = self._client.get(f"/projections/nfl/regular/{season}")
                 if res.status_code == 200:
                     _GLOBAL_PROJ_DB = res.json()
                     self._proj_db = _GLOBAL_PROJ_DB
@@ -176,14 +176,31 @@ class SleeperAdapter(BaseLeagueAdapter):
         bye_week = get_team_bye_week(team_str)
         is_dome = is_dome_stadium(team_str)
         espn_adps = self._ensure_espn_adp_db()
+        projs = self._ensure_proj_db()
+        p_proj = projs.get(str(player_id), {}) if isinstance(projs, dict) else {}
+        sleeper_adp = (
+            p_proj.get("adp_ppr")
+            or p_proj.get("adp_half_ppr")
+            or p_proj.get("adp_std")
+            or p_proj.get("adp_dd_ppr")
+            or p_proj.get("adp_dd_half_ppr")
+            or p_proj.get("adp_dd_std")
+        )
+        s_val = float(sleeper_adp) if sleeper_adp is not None and float(sleeper_adp) < 900.0 else None
+
         norm_name = normalize_player_name(full_name)
         last_name_key = last_name.strip().lower()
-        adp_val = espn_adps.get(norm_name) or (espn_adps.get(last_name_key) if pos_enum == Position.DST else None)
+        e_val = espn_adps.get(norm_name) or (espn_adps.get(last_name_key) if pos_enum == Position.DST else None)
 
-        if adp_val is None:
-            raw_adp = raw_meta.get("search_rank") or raw_meta.get("years_exp")
-            if raw_adp and str(raw_adp).isdigit():
-                adp_val = float(raw_adp)
+        if s_val is not None and e_val is not None:
+            adp_val = round(0.5 * s_val + 0.5 * e_val, 1)
+        elif s_val is not None:
+            adp_val = round(s_val, 1)
+        elif e_val is not None:
+            adp_val = round(e_val, 1)
+        else:
+            raw_adp = raw_meta.get("search_rank")
+            adp_val = float(raw_adp) if raw_adp and str(raw_adp).isdigit() else None
 
         return Player(
             id=str(player_id),
@@ -428,7 +445,14 @@ class SleeperAdapter(BaseLeagueAdapter):
             pos = str(meta.get("position", "")).upper()
             if pos in ("QB", "RB", "FB", "WR", "TE", "K", "DEF", "DST", "D/ST"):
                 p_proj = projs.get(str(pid), {}) if isinstance(projs, dict) else {}
-                sleeper_adp = p_proj.get("adp_dd_ppr") or p_proj.get("adp_dd_half_ppr") or p_proj.get("adp_dd_std")
+                sleeper_adp = (
+                    p_proj.get("adp_ppr")
+                    or p_proj.get("adp_half_ppr")
+                    or p_proj.get("adp_std")
+                    or p_proj.get("adp_dd_ppr")
+                    or p_proj.get("adp_dd_half_ppr")
+                    or p_proj.get("adp_dd_std")
+                )
                 s_val = float(sleeper_adp) if sleeper_adp is not None and float(sleeper_adp) < 900.0 else None
 
                 first_name = str(meta.get("first_name", ""))
