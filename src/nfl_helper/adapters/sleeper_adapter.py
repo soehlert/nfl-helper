@@ -304,10 +304,16 @@ class SleeperAdapter(BaseLeagueAdapter):
         active_draft = _GLOBAL_ACTIVE_DRAFT.get(self.profile.league_id)
         if not active_draft:
             res_drafts = self._client.get(f"/league/{self.profile.league_id}/drafts")
-            if res_drafts.status_code != 200 or not res_drafts.json():
-                return DraftState(league_id=self.profile.league_id)
-            active_draft = res_drafts.json()[0]
-            _GLOBAL_ACTIVE_DRAFT[self.profile.league_id] = active_draft
+            if res_drafts.status_code == 200 and res_drafts.json():
+                active_draft = res_drafts.json()[0]
+                _GLOBAL_ACTIVE_DRAFT[self.profile.league_id] = active_draft
+            else:
+                res_direct_draft = self._client.get(f"/draft/{self.profile.league_id}")
+                if res_direct_draft.status_code == 200 and res_direct_draft.json():
+                    active_draft = res_direct_draft.json()
+                    _GLOBAL_ACTIVE_DRAFT[self.profile.league_id] = active_draft
+                else:
+                    return DraftState(league_id=self.profile.league_id)
 
         draft_id = str(active_draft.get("draft_id", ""))
 
