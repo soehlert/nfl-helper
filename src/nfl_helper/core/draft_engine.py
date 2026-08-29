@@ -437,18 +437,15 @@ def generate_draft_suggestions(
             pos_str = "D/ST"
 
         if pos_str == "QB" and roster.get("QB", 0) >= 1:
-            has_2qb_rule = any(
-                "one from tier 4" in r.lower() or "two qb" in r.lower() or "2nd qb" in r.lower() for r in active_rules
-            )
-            if has_2qb_rule and p_tier in (3, 4) and current_round >= 8:
-                base_score += 1.2  # Target second QB from designated late tiers
-            else:
-                base_score -= 3.5 if current_round < 12 else 1.0
+            # Starter QB already rostered; suppress backup QBs so skill position depth (RB/WR) takes priority
+            base_score -= 2.8 if current_round < 13 else 0.8
         elif pos_str == "TE" and roster.get("TE", 0) >= 1:
             base_score -= 2.5 if current_round < 10 else 0.8
         elif pos_str in ("K", "D/ST"):
             if roster.get(pos_str, 0) >= 1:
                 base_score -= 10.0  # Already drafted K/DST, never draft a second one
+            elif rounds_remaining > 2:
+                base_score -= 2.5  # Do not prioritize K/DST with >2 rounds remaining (Rounds 1-13 of 15)
             elif rounds_remaining <= len(unfilled_mandatory):
                 base_score += 15.0  # Highest priority to fill mandatory starter in final round
             elif rounds_remaining <= len(unfilled_mandatory) + 1:

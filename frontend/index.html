@@ -2367,10 +2367,11 @@
           if (!tiers || tiers.length === 0) return;
           const topTier = tiers[0];
           const nextTier = tiers.length > 1 ? tiers[1] : null;
-          const drop = nextTier ? (topTier.avg_projected - nextTier.avg_projected).toFixed(1) : '0.0';
+          const rawDrop = nextTier ? Math.max(0, topTier.avg_projected - nextTier.avg_projected) : 0.0;
+          const drop = rawDrop.toFixed(1);
           const cleanPos = pos.replace('/', '-');
           const posClass = `pos-${cleanPos}`;
-          const dropColor = parseFloat(drop) >= 3.0 ? 'var(--accent-red)' : 'var(--accent-amber)';
+          const dropColor = rawDrop >= 3.0 ? 'var(--accent-red)' : (rawDrop > 0.0 ? 'var(--accent-amber)' : 'var(--text-muted)');
           tierHtml += `
             <tr>
               <td><span class="pos-tag ${posClass}">${pos}</span></td>
