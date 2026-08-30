@@ -1,0 +1,141 @@
+/* Live Draft Banner & Clock */
+.draft-clock-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid var(--accent-blue);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.clock-stat {
+  text-align: center;
+}
+
+.clock-stat .value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent-blue);
+}
+
+.clock-stat .label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Alert Banners & Strategy Pills */
+.alert-banner {
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid var(--accent-red);
+  border-left: 5px solid var(--accent-red);
+  padding: 0.85rem 1.1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.alert-banner.warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  border-color: var(--accent-amber);
+  border-left-color: var(--accent-amber);
+}
+
+.alert-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+}
+
+.alert-desc {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.strategy-pill {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid var(--accent-blue);
+  color: var(--text-main);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Position Filter Buttons */
+.pos-filter-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pos-filter-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--text-main);
+}
+
+.pos-filter-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+/* Positional Color Tags */
+.pos-tag {
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  display: inline-block;
+  letter-spacing: 0.02em;
+}
+
+.pos-QB { background: rgba(59, 130, 246, 0.18); border: 1px solid #3b82f6; color: #60a5fa; }
+.pos-RB { background: rgba(16, 185, 129, 0.18); border: 1px solid #10b981; color: #34d399; }
+.pos-WR { background: rgba(168, 85, 247, 0.18); border: 1px solid #a855f7; color: #c084fc; }
+.pos-TE { background: rgba(245, 158, 11, 0.18); border: 1px solid #f59e0b; color: #fbbf24; }
+.pos-DST, .pos-D-ST { background: rgba(100, 116, 139, 0.22); border: 1px solid #94a3b8; color: #cbd5e1; }
+.pos-K { background: rgba(236, 72, 153, 0.18); border: 1px solid #ec4899; color: #f472b6; }
+
+/* Delta Pills & Context Badges */
+.delta-pill {
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+}
+
+.delta-plus { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #4ade80; }
+
+.context-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  padding: 0.14rem 0.45rem;
+  border-radius: 9999px;
+  margin: 0.15rem 0.15rem 0 0;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.badge-boost { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid #22c55e; }
+.badge-penalty { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid #ef4444; }
+.badge-info { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
+.badge-warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid #f59e0b; }
+.reason-text { color: var(--text-muted) !important; font-size: 0.85rem; font-weight: normal; }

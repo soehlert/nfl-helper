@@ -33,6 +33,15 @@ def test_static_logo_served() -> None:
     assert "image/png" in response.headers["content-type"]
 
 
+def test_static_css_files_served() -> None:
+    """Verify static stylesheet files are mounted and served with correct Content-Type."""
+    for css_file in ["theme.css", "components.css", "draft.css"]:
+        response = client.get(f"/static/css/{css_file}")
+        assert response.status_code == 200
+        assert "text/css" in response.headers["content-type"]
+        assert len(response.text) > 0
+
+
 def test_draft_state_endpoint() -> None:
     """Verify draft state endpoint returns expected schema, cliff alerts, and tier rolls."""
     response = client.get("/api/draft/state")

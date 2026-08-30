@@ -185,17 +185,11 @@ class SleeperAdapter(BaseLeagueAdapter):
             or player_proj.get("adp_dd_half_ppr")
             or player_proj.get("adp_dd_std")
         )
-        sleeper_adp = (
-            float(sleeper_adp_raw)
-            if sleeper_adp_raw is not None and float(sleeper_adp_raw) < 900.0
-            else None
-        )
+        sleeper_adp = float(sleeper_adp_raw) if sleeper_adp_raw is not None and float(sleeper_adp_raw) < 900.0 else None
 
         normalized_name = normalize_player_name(full_name)
         defense_key = last_name.strip().lower()
-        espn_adp = espn_adps.get(normalized_name) or (
-            espn_adps.get(defense_key) if pos_enum == Position.DST else None
-        )
+        espn_adp = espn_adps.get(normalized_name) or (espn_adps.get(defense_key) if pos_enum == Position.DST else None)
 
         if sleeper_adp is not None and espn_adp is not None:
             blended_adp = round(0.5 * sleeper_adp + 0.5 * espn_adp, 1)
@@ -451,11 +445,7 @@ class SleeperAdapter(BaseLeagueAdapter):
                 continue
             position_raw = str(player_data.get("position", "")).upper()
             if position_raw in ("QB", "RB", "FB", "WR", "TE", "K", "DEF", "DST", "D/ST"):
-                player_proj = (
-                    projections.get(str(player_id), {})
-                    if isinstance(projections, dict)
-                    else {}
-                )
+                player_proj = projections.get(str(player_id), {}) if isinstance(projections, dict) else {}
                 sleeper_adp_raw = (
                     player_proj.get("adp_ppr")
                     or player_proj.get("adp_half_ppr")
@@ -465,9 +455,7 @@ class SleeperAdapter(BaseLeagueAdapter):
                     or player_proj.get("adp_dd_std")
                 )
                 sleeper_adp = (
-                    float(sleeper_adp_raw)
-                    if sleeper_adp_raw is not None and float(sleeper_adp_raw) < 900.0
-                    else None
+                    float(sleeper_adp_raw) if sleeper_adp_raw is not None and float(sleeper_adp_raw) < 900.0 else None
                 )
 
                 first_name = str(player_data.get("first_name", ""))
@@ -491,7 +479,9 @@ class SleeperAdapter(BaseLeagueAdapter):
         candidates_by_pos: dict[str, list[tuple[float, str, dict[str, object]]]] = {}
         for rank_val, player_id, player_data in valid_candidates:
             position_raw = str(player_data.get("position", "")).upper()
-            position_key = "D/ST" if position_raw in ("DEF", "DST", "D/ST") else ("RB" if position_raw == "FB" else position_raw)
+            position_key = (
+                "D/ST" if position_raw in ("DEF", "DST", "D/ST") else ("RB" if position_raw == "FB" else position_raw)
+            )
             candidates_by_pos.setdefault(position_key, []).append((rank_val, player_id, player_data))
 
         pos_quotas = {"QB": 36, "RB": 90, "WR": 110, "TE": 40, "K": 24, "D/ST": 32}
@@ -500,9 +490,7 @@ class SleeperAdapter(BaseLeagueAdapter):
             candidates.sort(key=lambda item: item[0])
             quota = pos_quotas.get(pos_key, 30)
             for pos_rank, (_, player_id, player_data) in enumerate(candidates[:quota], start=1):
-                mapped_players.append(
-                    self._map_player(player_id, meta_override=player_data, pos_rank=pos_rank)
-                )
+                mapped_players.append(self._map_player(player_id, meta_override=player_data, pos_rank=pos_rank))
 
         mapped_players.sort(key=lambda p: p.adp if p.adp is not None else 999)
         return mapped_players

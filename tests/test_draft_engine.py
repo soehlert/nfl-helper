@@ -725,4 +725,3 @@ def test_tier_cliff_and_quota_urgency_round_7_rb() -> None:
     assert warnings[0].current_tier == 4
     assert warnings[0].players_remaining == 2
     assert warnings[0].next_tier_drop_points == 0.8
-
