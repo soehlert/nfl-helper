@@ -3,22 +3,26 @@
 import time
 
 from nfl_helper.core.cheatsheet import parse_plain_text_cheatsheet
-from nfl_helper.core.draft_engine import (
-    _calculate_required_positions,
-    _evaluate_strategy_rule_adjustments,
-    build_draft_state,
+from nfl_helper.core.draft_engine import build_draft_state
+from nfl_helper.core.draft_rules import (
+    calculate_required_positions,
+    evaluate_strategy_rule_adjustments,
+)
+from nfl_helper.core.draft_scoring import generate_draft_suggestions
+from nfl_helper.core.lookahead import (
     calculate_lookahead,
     calculate_snake_pick_owner,
     calculate_user_draft_schedule,
-    calculate_vorp,
-    calculate_vorp_baselines,
-    generate_draft_suggestions,
 )
 from nfl_helper.core.tier_calculator import (
     _evaluate_on_the_clock_cliff,
     calculate_tier_drop,
     cluster_position_tiers,
     detect_tier_cliffs,
+)
+from nfl_helper.core.vorp import (
+    calculate_vorp,
+    calculate_vorp_baselines,
 )
 from nfl_helper.models.draft import CliffType, DraftPick, PlayerTier
 from nfl_helper.models.player import Player, Position
@@ -297,23 +301,23 @@ def test_strategy_rule_round_deferral_and_activation() -> None:
     p_qb = Player(id="qb1", name="Josh Allen", position=Position.QB, team="BUF", projected_points=23.3, adp=27.4)
 
     # In Round 1 (2 rounds early for TE, 3 rounds early for Allen)
-    d_te_r1, note_te_r1 = _evaluate_strategy_rule_adjustments(p_te, ctx, current_round=1)
-    d_qb_r1, note_qb_r1 = _evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=1)
+    d_te_r1, note_te_r1 = evaluate_strategy_rule_adjustments(p_te, ctx, current_round=1)
+    d_qb_r1, note_qb_r1 = evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=1)
     assert d_te_r1 == -1.8  # 2 * -0.90
     assert d_qb_r1 == -0.6  # 3 * -0.20
     assert "Strategy Hint: TE targeted in Rd 3+" in (note_te_r1 or "")
     assert "Strategy Hint: Target Josh Allen in Rd 4" in (note_qb_r1 or "")
 
     # In Round 3 (Target round for TE, 1 round early for Allen)
-    d_te_r3, note_te_r3 = _evaluate_strategy_rule_adjustments(p_te, ctx, current_round=3)
-    d_qb_r3, note_qb_r3 = _evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=3)
+    d_te_r3, note_te_r3 = evaluate_strategy_rule_adjustments(p_te, ctx, current_round=3)
+    d_qb_r3, note_qb_r3 = evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=3)
     assert d_te_r3 == 1.5  # Target round activation bonus
     assert d_qb_r3 == -0.2  # 1 * -0.20
     assert "Strategy Target: Top TE in Rd 3" in (note_te_r3 or "")
     assert "Strategy Hint: Target Josh Allen in Rd 4" in (note_qb_r3 or "")
 
     # In Round 4 (Target round for Allen)
-    d_qb_r4, note_qb_r4 = _evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=4)
+    d_qb_r4, note_qb_r4 = evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=4)
     assert d_qb_r4 == 1.5  # Target round activation bonus
     assert "Strategy Target: Josh Allen in Rd 4" in (note_qb_r4 or "")
 
@@ -334,9 +338,9 @@ def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
     p_t3_qb = Player(id="q3", name="Matthew Stafford", position=Position.QB, team="LAR", projected_points=18.5, tier=3)
     p_t4_qb = Player(id="q4", name="Baker Mayfield", position=Position.QB, team="TB", projected_points=16.5, tier=4)
 
-    d_t2, note_t2 = _evaluate_strategy_rule_adjustments(p_t2_qb, ctx, current_round=6)
-    d_t3, note_t3 = _evaluate_strategy_rule_adjustments(p_t3_qb, ctx, current_round=6)
-    d_t4, note_t4 = _evaluate_strategy_rule_adjustments(p_t4_qb, ctx, current_round=6)
+    d_t2, note_t2 = evaluate_strategy_rule_adjustments(p_t2_qb, ctx, current_round=6)
+    d_t3, note_t3 = evaluate_strategy_rule_adjustments(p_t3_qb, ctx, current_round=6)
+    d_t4, note_t4 = evaluate_strategy_rule_adjustments(p_t4_qb, ctx, current_round=6)
 
     assert d_t2 == -0.6
     assert "Strategy Hint: Rule prefers Tier 3,4 QB" in (note_t2 or "")
@@ -347,7 +351,7 @@ def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
 
     # 2. Deadline minimums calculation
     # In Round 14 of 15 with 0 K and 0 D/ST (2 picks left): must exclusively lock to K and D/ST
-    req_rd14 = _calculate_required_positions(
+    req_rd14 = calculate_required_positions(
         current_round=14,
         total_rounds=15,
         roster={"QB": 2, "RB": 4, "WR": 6, "TE": 1, "K": 0, "D/ST": 0},
@@ -356,7 +360,7 @@ def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
     assert req_rd14 == {"K", "D/ST"}
 
     # In Round 9 with only 2 RBs (rule requires 4 in first 10 rounds, 2 rounds left to deadline)
-    req_rd9 = _calculate_required_positions(
+    req_rd9 = calculate_required_positions(
         current_round=9,
         total_rounds=15,
         roster={"QB": 1, "RB": 2, "WR": 4, "TE": 1, "K": 0, "D/ST": 0},
@@ -419,13 +423,13 @@ def test_roster_aware_conditional_caps_suppression() -> None:
         adp=90.4,
     )
 
-    d_q, note_q = _evaluate_strategy_rule_adjustments(
+    d_q, note_q = evaluate_strategy_rule_adjustments(
         p_stafford, ctx, current_round=10, user_drafted_players=drafted_players
     )
-    d_t, note_t = _evaluate_strategy_rule_adjustments(
+    d_t, note_t = evaluate_strategy_rule_adjustments(
         p_kelce, ctx, current_round=10, user_drafted_players=drafted_players
     )
-    _d_w, _note_w = _evaluate_strategy_rule_adjustments(
+    _d_w, _note_w = evaluate_strategy_rule_adjustments(
         p_pittman, ctx, current_round=10, user_drafted_players=drafted_players
     )
 
@@ -493,10 +497,10 @@ def test_two_qb_quota_evaluation_when_tier3_drafted() -> None:
         cheatsheet_tier=4,
     )
 
-    d_t3, note_t3 = _evaluate_strategy_rule_adjustments(
+    d_t3, note_t3 = evaluate_strategy_rule_adjustments(
         p_stafford, ctx, current_round=7, user_drafted_players=drafted_players
     )
-    d_t4, note_t4 = _evaluate_strategy_rule_adjustments(
+    d_t4, note_t4 = evaluate_strategy_rule_adjustments(
         p_mayfield, ctx, current_round=7, user_drafted_players=drafted_players
     )
 
