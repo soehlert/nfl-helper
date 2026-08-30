@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from nfl_helper.adapters import get_adapter_for_profile
 from nfl_helper.api.draft_poller import poller_registry
 from nfl_helper.api.ws_manager import ws_manager
-from nfl_helper.core.cheatsheet import apply_cheatsheet_context, parse_cheatsheet_content, parse_pdf_cheatsheet
+from nfl_helper.core.cheatsheet import apply_cheatsheet_context, parse_cheatsheet_content
 from nfl_helper.core.cheatsheet_diff import compute_cheatsheet_diff
 from nfl_helper.core.db import (
     activate_cheatsheet,
@@ -633,13 +633,9 @@ async def upload_cheatsheet_file(
     sheet_name = (name or "").strip() or file.filename or "Uploaded File"
 
     try:
-        if filename.endswith(".pdf"):
-            context = parse_pdf_cheatsheet(content_bytes)
-            raw_preview = "[Binary PDF File]"
-        else:
-            text_str = content_bytes.decode("utf-8", errors="replace")
-            context = parse_cheatsheet_content(text_str, sheet_name=sheet_name)
-            raw_preview = text_str
+        text_str = content_bytes.decode("utf-8", errors="replace")
+        context = parse_cheatsheet_content(text_str, sheet_name=sheet_name)
+        raw_preview = text_str
 
         save_cheatsheet(context, raw_text=raw_preview, name=sheet_name, layer_mode=layer_mode)
         _ACTIVE_CHEATSHEET = get_active_cheatsheet()
@@ -725,16 +721,12 @@ async def preview_cheatsheet_file_diff(
 ) -> CheatsheetDiffReport:
     """Dry-run diff comparing uploaded file rankings against active baseline without DB writes."""
     global _ACTIVE_CHEATSHEET
-    filename = (file.filename or "").lower()
     content_bytes = await file.read()
     sheet_name = (name or "").strip() or file.filename or "Uploaded File"
 
     try:
-        if filename.endswith(".pdf"):
-            candidate_context = parse_pdf_cheatsheet(content_bytes)
-        else:
-            text_str = content_bytes.decode("utf-8", errors="replace")
-            candidate_context = parse_cheatsheet_content(text_str, sheet_name=sheet_name)
+        text_str = content_bytes.decode("utf-8", errors="replace")
+        candidate_context = parse_cheatsheet_content(text_str, sheet_name=sheet_name)
 
         active = _ACTIVE_CHEATSHEET or get_active_cheatsheet()
         pool = get_current_player_pool(

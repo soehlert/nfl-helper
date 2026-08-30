@@ -75,7 +75,7 @@ def generate_draft_suggestions(
 
     # Draft deadline & quota enforcement: filter suggestions when remaining rounds equals required slots
     required_positions = calculate_required_positions(
-        current_round, total_rounds, roster, active_rules, capped_positions=capped_positions
+        current_round, total_rounds, roster, capped_positions=capped_positions, cheatsheet_context=cheatsheet_context
     )
     if required_positions:
         available_players = [
@@ -95,24 +95,20 @@ def generate_draft_suggestions(
 
     mins: dict[str, int] = {}
     deadline_quotas: list[tuple[str, int, int]] = []
-    for r in active_rules:
-        r_lower = r.lower()
-        if (
-            "one from tier 3 and one from tier 4" in r_lower or "two qb" in r_lower or "2 qb" in r_lower
-        ) and "QB" not in capped_positions:
-            mins["QB"] = max(mins.get("QB", 0), 2)
-        m = re.search(r"(QB|RB|WR|TE|K|D/ST|DEF)\s*[-:]?\s*.*minimum\s+(\d+)", r, re.IGNORECASE)
-        if not m:
-            m = re.search(r"(QB|RB|WR|TE|K|D/ST|DEF)\s*[-:]?\s*Get\s+(\d+)", r, re.IGNORECASE)
-        if m:
-            pos = m.group(1).upper()
-            pos = "D/ST" if pos in ("DEF", "DST") else pos
-            count = int(m.group(2))
-            mins[pos] = max(mins.get(pos, 0), count)
-        m_dl = re.search(r"(RB|WR|QB|TE)\s*[-:]?\s*Get\s+(\d+)\s+in\s+the\s+first\s+(\d+)\s+rounds", r, re.IGNORECASE)
-        if m_dl:
-            pos_dl = m_dl.group(1).upper()
-            deadline_quotas.append((pos_dl, int(m_dl.group(2)), int(m_dl.group(3))))
+    if cheatsheet_context:
+        for pr in cheatsheet_context.positional_strategy:
+            if (
+                pr.position == "QB"
+                and "QB" not in capped_positions
+                and any(sum(b.target_tier_quotas.values()) >= 2 for b in pr.branches)
+            ):
+                mins["QB"] = max(mins.get("QB", 0), 2)
+            for rt in cheatsheet_context.round_targets:
+                for p_min, c_min in rt.min_counts.items():
+                    mins[p_min] = max(mins.get(p_min, 0), c_min)
+        for qd in cheatsheet_context.quota_deadlines:
+            mins[qd.position] = max(mins.get(qd.position, 0), qd.required_count)
+            deadline_quotas.append((qd.position, qd.required_count, qd.deadline_round))
 
     # Pass 1: Compute baseline score without note_delta to establish board density & ranks
     raw_scored: list[tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]] = []

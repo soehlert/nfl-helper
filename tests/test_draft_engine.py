@@ -292,34 +292,39 @@ def test_strategy_rule_round_deferral_and_activation() -> None:
             PositionalStrategyRule(
                 position="QB",
                 target_rounds=[4],
-                rule_description="Get Allen in round 4",
+                target_tiers=[1],
+                rule_description="Target Tier 1 QB in round 4",
             ),
         ]
     )
 
-    p_te = Player(id="te1", name="Brock Bowers", position=Position.TE, team="LV", projected_points=16.0, adp=18.1)
-    p_qb = Player(id="qb1", name="Josh Allen", position=Position.QB, team="BUF", projected_points=23.3, adp=27.4)
+    p_te = Player(
+        id="te1", name="Brock Bowers", position=Position.TE, team="LV", projected_points=16.0, adp=18.1, tier=1
+    )
+    p_qb = Player(
+        id="qb1", name="Josh Allen", position=Position.QB, team="BUF", projected_points=23.3, adp=27.4, tier=1
+    )
 
-    # In Round 1 (2 rounds early for TE, 3 rounds early for Allen)
+    # In Round 1 (2 rounds early for TE, 3 rounds early for Tier 1 QB)
     d_te_r1, note_te_r1 = evaluate_strategy_rule_adjustments(p_te, ctx, current_round=1)
     d_qb_r1, note_qb_r1 = evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=1)
     assert d_te_r1 == -1.8  # 2 * -0.90
-    assert d_qb_r1 == -0.6  # 3 * -0.20
+    assert d_qb_r1 == -2.7  # 3 * -0.90
     assert "Strategy Hint: TE targeted in Rd 3+" in (note_te_r1 or "")
-    assert "Strategy Hint: Target Josh Allen in Rd 4" in (note_qb_r1 or "")
+    assert "Strategy Hint: QB targeted in Rd 4+" in (note_qb_r1 or "")
 
-    # In Round 3 (Target round for TE, 1 round early for Allen)
+    # In Round 3 (Target round for TE, 1 round early for QB)
     d_te_r3, note_te_r3 = evaluate_strategy_rule_adjustments(p_te, ctx, current_round=3)
     d_qb_r3, note_qb_r3 = evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=3)
     assert d_te_r3 == 1.5  # Target round activation bonus
-    assert d_qb_r3 == -0.2  # 1 * -0.20
+    assert d_qb_r3 == -0.9  # 1 * -0.90
     assert "Strategy Target: Top TE in Rd 3" in (note_te_r3 or "")
-    assert "Strategy Hint: Target Josh Allen in Rd 4" in (note_qb_r3 or "")
+    assert "Strategy Hint: QB targeted in Rd 4+" in (note_qb_r3 or "")
 
-    # In Round 4 (Target round for Allen)
+    # In Round 4 (Target round for Tier 1 QB)
     d_qb_r4, note_qb_r4 = evaluate_strategy_rule_adjustments(p_qb, ctx, current_round=4)
     assert d_qb_r4 == 1.5  # Target round activation bonus
-    assert "Strategy Target: Josh Allen in Rd 4" in (note_qb_r4 or "")
+    assert "Strategy Target: Top QB in Rd 4" in (note_qb_r4 or "")
 
 
 def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
@@ -327,7 +332,7 @@ def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
     rules_text = """
     Rules:
     TE - Target the top 4 in rounds 3-5, no second TE if you have a tier 1 TE
-    QB - Get one from tier 3 and one from tier 4 or Josh Allen in the fourth round
+    QB - Get one from tier 3 and one from tier 4 or a tier 1 in round 4
     RB - Get 4 in the first 10 rounds and minimum 4 for the whole draft
     WR - Get 4 minimum
     """
@@ -343,7 +348,7 @@ def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
     d_t4, note_t4 = evaluate_strategy_rule_adjustments(p_t4_qb, ctx, current_round=6)
 
     assert d_t2 == -0.6
-    assert "Strategy Hint: Rule prefers Tier 3,4 QB" in (note_t2 or "")
+    assert "Strategy Hint: Rule prefers Tier 1,3,4 QB" in (note_t2 or "")
     assert d_t3 == 1.0
     assert "Strategy Target: Tier 3 QB" in (note_t3 or "")
     assert d_t4 == 1.0
@@ -355,7 +360,7 @@ def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
         current_round=14,
         total_rounds=15,
         roster={"QB": 2, "RB": 4, "WR": 6, "TE": 1, "K": 0, "D/ST": 0},
-        active_rules=ctx.strategy_rules,
+        cheatsheet_context=ctx,
     )
     assert req_rd14 == {"K", "D/ST"}
 
@@ -364,7 +369,7 @@ def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
         current_round=9,
         total_rounds=15,
         roster={"QB": 1, "RB": 2, "WR": 4, "TE": 1, "K": 0, "D/ST": 0},
-        active_rules=ctx.strategy_rules,
+        cheatsheet_context=ctx,
     )
     assert req_rd9 == {"RB"}
 

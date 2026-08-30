@@ -25,24 +25,36 @@ class DraftRoundTarget(BaseModel):
     rule_description: str = ""
 
 
-class PositionalStrategyBranch(BaseModel):
-    """Specific strategy branch within a positional rule."""
+class PositionalQuotaDeadline(BaseModel):
+    """Mid-draft positional minimum acquisition deadlines (e.g. 4 RBs in first 10 rounds)."""
 
+    position: str
+    required_count: int
+    deadline_round: int
+    rule_description: str = ""
+
+
+class PositionalStrategyBranch(BaseModel):
+    """Specific conditional strategy branch within a positional rule."""
+
+    branch_id: str = ""
+    trigger_drafted_tiers: list[int] = Field(default_factory=list)
+    max_position_cap: int | None = None
     target_rounds: list[int] = Field(default_factory=list)
     target_tiers: list[int] = Field(default_factory=list)
     target_tier_quotas: dict[int, int] = Field(default_factory=dict)
     top_n_target: int | None = None
-    target_player_names: list[tuple[str, int]] = Field(default_factory=list)
 
 
 class PositionalStrategyRule(BaseModel):
-    """Position-level draft targets and tier acquisition rules."""
+    """Position-level draft targets, conditional branching, and tier acquisition rules."""
 
     position: str
     target_rounds: list[int] = Field(default_factory=list)
     target_tiers: list[int] = Field(default_factory=list)
     top_n_target: int | None = None
     conditional_max_count: dict[int, int] = Field(default_factory=dict)
+    default_max_cap: int = 2
     branches: list[PositionalStrategyBranch] = Field(default_factory=list)
     no_second_if_top_tier: bool = False
     rule_description: str = ""
@@ -55,4 +67,5 @@ class CheatsheetContext(BaseModel):
     strategy_rules: list[str] = Field(default_factory=list)
     round_targets: list[DraftRoundTarget] = Field(default_factory=list)
     positional_strategy: list[PositionalStrategyRule] = Field(default_factory=list)
+    quota_deadlines: list[PositionalQuotaDeadline] = Field(default_factory=list)
     positional_tiers: dict[str, list[list[str]]] = Field(default_factory=dict)

@@ -1,8 +1,6 @@
 """Cheatsheet strategy rules evaluation and roster quota deadlines."""
 
-import re
-
-from nfl_helper.models.cheatsheet import CheatsheetContext
+from nfl_helper.models.cheatsheet import CheatsheetContext, PositionalQuotaDeadline
 from nfl_helper.models.player import Player
 
 
@@ -38,7 +36,6 @@ def evaluate_strategy_rule_adjustments(
     # 2. Evaluate Positional and Round Target Strategies dynamically
     for pos_rule in cheatsheet_context.positional_strategy:
         if pos_rule.position == str(player.position):
-            rule_desc = pos_rule.rule_description
             p_tier = player.cheatsheet_tier or player.tier or 1
 
             # Check drafted players of this position
@@ -69,22 +66,6 @@ def evaluate_strategy_rule_adjustments(
                 clamped_delta = round(max(-3.0, min(3.0, delta)), 2)
                 return clamped_delta, specific_notes[0]
 
-            # Check dynamic player name targets in rule (e.g. 'or get Allen in round 4', 'target Mahomes in round 3')
-            name_target_match = re.search(
-                r"(?:get|target)\s+([A-Za-z]+)\s+in\s+round\s+(\d+)", rule_desc, re.IGNORECASE
-            )
-            if name_target_match:
-                t_name, t_rnd = name_target_match.group(1).lower(), int(name_target_match.group(2))
-                if t_name in player.name.lower():
-                    if current_round >= t_rnd:
-                        delta += 1.5
-                        specific_notes.append(f"Strategy Target: {player.name} in Rd {t_rnd}")
-                    else:
-                        rounds_early = t_rnd - current_round
-                        delta -= rounds_early * 0.20
-                        specific_notes.append(f"Strategy Hint: Target {player.name} in Rd {t_rnd}")
-                    continue
-
             # Evaluate branches if available
             if pos_rule.branches:
                 active_branches = pos_rule.branches
@@ -107,21 +88,6 @@ def evaluate_strategy_rule_adjustments(
 
                 branch_evaluated = False
                 for branch in active_branches:
-                    # Check player targets in branch
-                    for target_p_name, target_rnd in branch.target_player_names:
-                        if target_p_name.lower() in player.name.lower():
-                            if current_round >= target_rnd:
-                                delta += 1.5
-                                specific_notes.append(f"Strategy Target: {player.name} in Rd {target_rnd}")
-                            else:
-                                rounds_early = target_rnd - current_round
-                                delta -= rounds_early * 0.20
-                                specific_notes.append(f"Strategy Hint: Target {player.name} in Rd {target_rnd}")
-                            branch_evaluated = True
-                            break
-                    if branch_evaluated:
-                        break
-
                     # Check branch target rounds
                     if branch.target_rounds and current_round in branch.target_rounds:
                         if (
@@ -151,7 +117,6 @@ def evaluate_strategy_rule_adjustments(
                             delta += 1.0
                             specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
                         else:
-                            # Quota for this tier already met; do not bump or penalize
                             delta += 0.0
                         branch_evaluated = True
                         break
@@ -212,8 +177,10 @@ def calculate_required_positions(
     current_round: int,
     total_rounds: int,
     roster: dict[str, int],
-    active_rules: list[str],
+    active_rules: list[str] | None = None,
     capped_positions: set[str] | None = None,
+    quota_deadlines: list[PositionalQuotaDeadline] | None = None,
+    cheatsheet_context: CheatsheetContext | None = None,
 ) -> set[str] | None:
     """Calculate mandatory positions that MUST be drafted now to satisfy roster legality & strategy minimums."""
     rounds_remaining = max(1, total_rounds - current_round + 1)
@@ -229,22 +196,19 @@ def calculate_required_positions(
     if roster.get("TE", 0) < 1:
         needed_slots.append("TE")
 
-    # 2. Strategy Rule Minimums
+    # 2. Strategy Rule Minimums from typed positional strategy rules
     mins: dict[str, int] = {}
-    for r in active_rules:
-        r_lower = r.lower()
-        if ("one from tier 3 and one from tier 4" in r_lower or "two qb" in r_lower or "2 qb" in r_lower) and not (
-            capped_positions and "QB" in capped_positions
-        ):
-            mins["QB"] = max(mins.get("QB", 0), 2)
-        m = re.search(r"(QB|RB|WR|TE|K|D/ST|DEF)\s*[-:]?\s*.*minimum\s+(\d+)", r, re.IGNORECASE)
-        if not m:
-            m = re.search(r"(QB|RB|WR|TE|K|D/ST|DEF)\s*[-:]?\s*Get\s+(\d+)", r, re.IGNORECASE)
-        if m:
-            pos = m.group(1).upper()
-            pos = "D/ST" if pos in ("DEF", "DST") else pos
-            count = int(m.group(2))
-            mins[pos] = max(mins.get(pos, 0), count)
+    if cheatsheet_context:
+        for pr in cheatsheet_context.positional_strategy:
+            if (
+                pr.position == "QB"
+                and ("QB" not in (capped_positions or set()))
+                and any(sum(b.target_tier_quotas.values()) >= 2 for b in pr.branches)
+            ):
+                mins["QB"] = max(mins.get("QB", 0), 2)
+            for rt in cheatsheet_context.round_targets:
+                for p_min, c_min in rt.min_counts.items():
+                    mins[p_min] = max(mins.get(p_min, 0), c_min)
 
     for pos, target_min in mins.items():
         curr_count = roster.get(pos, 0)
@@ -254,18 +218,17 @@ def calculate_required_positions(
             additional_needed = max(0, needed - already_counted)
             needed_slots.extend([pos] * additional_needed)
 
-    # 3. Check mid-draft round deadlines (e.g. 4 RBs in the first 10 rounds)
-    for r in active_rules:
-        m = re.search(r"(RB|WR|QB|TE)\s*[-:]?\s*Get\s+(\d+)\s+in\s+the\s+first\s+(\d+)\s+rounds", r, re.IGNORECASE)
-        if m:
-            pos = m.group(1).upper()
-            quota = int(m.group(2))
-            deadline_rnd = int(m.group(3))
-            if current_round <= deadline_rnd:
-                rounds_left_to_deadline = deadline_rnd - current_round + 1
-                curr_count = roster.get(pos, 0)
-                if curr_count < quota and rounds_left_to_deadline <= (quota - curr_count):
-                    return {pos}
+    # 3. Check mid-draft round deadlines from typed quota deadlines
+    deadlines = quota_deadlines or (cheatsheet_context.quota_deadlines if cheatsheet_context else [])
+    for qd in deadlines:
+        pos_dl = qd.position
+        quota = qd.required_count
+        deadline_rnd = qd.deadline_round
+        if current_round <= deadline_rnd:
+            rounds_left_to_deadline = deadline_rnd - current_round + 1
+            curr_count = roster.get(pos_dl, 0)
+            if curr_count < quota and rounds_left_to_deadline <= (quota - curr_count):
+                return {pos_dl}
 
     if rounds_remaining <= len(needed_slots):
         return set(needed_slots)

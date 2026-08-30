@@ -17,11 +17,6 @@ def compute_cheatsheet_diff(
     """Compute dry-run mover analytics and rule deltas without database mutations."""
     # 1. Evaluate baseline board state (pure player board rankings)
     base_pool = apply_cheatsheet_context([p.model_copy() for p in player_pool], active_context)
-    base_ctx_board = (
-        active_context.model_copy(update={"strategy_rules": [], "round_targets": [], "positional_strategy": []})
-        if active_context
-        else None
-    )
     base_state = build_draft_state(
         league_id="dry_run_base",
         draft_id=None,
@@ -31,7 +26,7 @@ def compute_cheatsheet_diff(
         total_rounds=15,
         recent_picks=[],
         all_players=base_pool,
-        cheatsheet_context=base_ctx_board,
+        cheatsheet_context=active_context,
     )
     base_map = {s.player.id: (s.rank, s.player) for s in base_state.top_suggestions}
 
@@ -42,9 +37,6 @@ def compute_cheatsheet_diff(
         else candidate_context
     )
     cand_pool = apply_cheatsheet_context([p.model_copy() for p in player_pool], effective_cand_context)
-    cand_ctx_board = effective_cand_context.model_copy(
-        update={"strategy_rules": [], "round_targets": [], "positional_strategy": []}
-    )
     cand_state = build_draft_state(
         league_id="dry_run_cand",
         draft_id=None,
@@ -54,7 +46,7 @@ def compute_cheatsheet_diff(
         total_rounds=15,
         recent_picks=[],
         all_players=cand_pool,
-        cheatsheet_context=cand_ctx_board,
+        cheatsheet_context=effective_cand_context,
     )
     cand_map = {s.player.id: (s.rank, s.player) for s in cand_state.top_suggestions}
 
