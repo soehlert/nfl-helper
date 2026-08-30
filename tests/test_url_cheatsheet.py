@@ -41,7 +41,7 @@ def test_web_html_parser_tables_and_headings() -> None:
       <h2>Draft Strategy Tips</h2>
       <ul>
         <li>Rounds 1-2: Target RB or WR</li>
-        <li>Round 4: Target Josh Allen</li>
+        <li>Round 4: Target Tier 1 QB</li>
       </ul>
     </body>
     </html>

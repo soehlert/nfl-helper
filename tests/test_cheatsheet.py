@@ -161,48 +161,6 @@ Tyson* NO 123.5
     assert p_lamar.cheatsheet_tier is None
 
 
-def test_parse_multi_column_and_broken_ocr_kerning() -> None:
-    """Verify multi-column horizontal merges and fragmented OCR kerning are disentangled."""
-    sample_text = """
-    Allen BUF 34.8 Gibbs DET 1.1 Price SEA 61.6
-    Robinson ATL 2.1 Corum LAR 82.9
-    Burrow CIN 65.5 Taylor IND 8.9 Hubbard CAR 110.5
-    Cook BUF 9.3 Pollard TEN 83.1
-    Prescott DAL 94.9 Jeanty LV 22.1 Mitchell LAC 127.3
-    Henry BAL 22.4 Marks HOU 133.6
-    Purdy SF 118.7 White TB 114.1
-    """
-
-    context = parse_plain_text_cheatsheet(sample_text)
-
-    # Assert players were disentangled and mapped to canonical records
-    assert "allen" in context.entries
-    assert context.entries["allen"].adp == 34.8
-
-    assert "gibbs" in context.entries
-    assert context.entries["gibbs"].team == "DET"
-    assert context.entries["gibbs"].adp == 1.1
-
-    assert "robinson" in context.entries
-    assert context.entries["robinson"].team == "ATL"
-    assert context.entries["robinson"].adp == 2.1
-
-    assert "prescott" in context.entries
-    assert context.entries["prescott"].team == "DAL"
-    assert context.entries["prescott"].adp == 94.9
-
-    assert "henry" in context.entries
-    assert context.entries["henry"].team == "BAL"
-    assert context.entries["henry"].adp == 22.4
-
-    assert "purdy" in context.entries
-    assert context.entries["purdy"].team == "SF"
-    assert context.entries["purdy"].adp == 118.7
-
-    # Assert header noise was filtered
-    assert "adp adp" not in context.entries
-
-
 def test_merge_cheatsheet_contexts_layering() -> None:
     """Verify merging multiple cheatsheet contexts consolidates notes, tiers, ADP, injury flags, and rules."""
     from nfl_helper.core.cheatsheet import merge_cheatsheet_contexts

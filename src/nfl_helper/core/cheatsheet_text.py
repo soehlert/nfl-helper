@@ -331,34 +331,9 @@ def parse_plain_text_cheatsheet(text: str, sheet_name: str | None = None) -> Che
             i += 1
             continue
 
-        # Multi-column horizontal line detection
-        multi_col_pattern = r"([A-Za-z\s.'-]+?)(?:\s+([A-Z]{2,3}))?\s+(\d+(?:\.\d+)?)(?=\s+[A-Za-z]|$)"
-        col_matches = list(re.finditer(multi_col_pattern, line))
-
-        if len(col_matches) > 1 or (col_matches and len(line[col_matches[-1].end() :].strip()) >= 3):
-            last_end = 0
-            for m in col_matches:
-                chunk_str = m.group(0).strip()
-                last_end = m.end()
-                entry = _parse_player_line(
-                    chunk_str, current_pos, current_tier, legend_notes, default_notes=current_section_note
-                )
-                if entry and entry.normalized_name:
-                    _record_player_entry(entry, entry.position or current_pos, context)
-
-            trailing = line[last_end:].strip()
-            if trailing and len(trailing) >= 3 and not re.match(r"^\d", trailing):
-                entry = _parse_player_line(
-                    trailing, current_pos, current_tier, legend_notes, default_notes=current_section_note
-                )
-                if entry and entry.normalized_name:
-                    _record_player_entry(entry, entry.position or current_pos, context)
-        else:
-            entry = _parse_player_line(
-                line, current_pos, current_tier, legend_notes, default_notes=current_section_note
-            )
-            if entry and entry.normalized_name:
-                _record_player_entry(entry, entry.position or current_pos, context)
+        entry = _parse_player_line(line, current_pos, current_tier, legend_notes, default_notes=current_section_note)
+        if entry and entry.normalized_name:
+            _record_player_entry(entry, entry.position or current_pos, context)
 
         i += 1
 
