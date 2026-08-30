@@ -630,8 +630,8 @@ def generate_draft_suggestions(
                 if curr_dl_cnt < q_dl:
                     rounds_left = dl_round - current_round + 1
                     needed_dl = q_dl - curr_dl_cnt
-                    if rounds_left <= needed_dl + 2:
-                        urgency_bonus = min(3.5, 1.5 + (needed_dl / max(1, rounds_left)) * 1.5)
+                    if rounds_left <= needed_dl + 3:
+                        urgency_bonus = min(4.0, 2.0 + (needed_dl / max(1, rounds_left)) * 2.0)
                         base_score += urgency_bonus
 
         if pos_str in mins:
@@ -657,7 +657,7 @@ def generate_draft_suggestions(
         is_adp_in_range = (p.adp is None) or (p.adp <= overall_pick + 6)
         if pos_info and is_adp_in_range:
             top_num, remaining_in_top, tier_drop = pos_info
-            if p_tier == top_num and remaining_in_top <= 2 and tier_drop >= 1.2:
+            if p_tier == top_num and remaining_in_top <= 2 and tier_drop >= 0.7:
                 scarcity_val = 1.5 if remaining_in_top == 1 else 0.8
                 scarcity_bonus = scarcity_val * demand_weight
                 base_score += scarcity_bonus

@@ -700,3 +700,29 @@ def test_quota_urgency_and_surplus_fading() -> None:
     ranks = {s.player.position: s.rank for s in suggs}
     assert ranks[Position.DST] < ranks[Position.WR]
     assert ranks[Position.RB] < ranks[Position.WR]
+
+
+def test_tier_cliff_and_quota_urgency_round_7_rb() -> None:
+    """Verify that a 0.8 pt drop with 2 players remaining triggers a cliff warning and boosts RB ranking."""
+    p_rb1 = Player(id="r1", name="RB One", position=Position.RB, team="A", projected_points=11.2, adp=65.0)
+    p_rb2 = Player(id="r2", name="RB Two", position=Position.RB, team="B", projected_points=11.2, adp=67.0)
+    p_rb3 = Player(id="r3", name="RB Three", position=Position.RB, team="C", projected_points=10.4, adp=80.0)
+
+    t4 = PlayerTier(tier_num=4, position="RB", players=[p_rb1, p_rb2], avg_projected=11.2, count=4)
+    t5 = PlayerTier(tier_num=5, position="RB", players=[p_rb3], avg_projected=10.4, count=6)
+
+    # 1. On-the-clock cliff warning triggers on 0.8 pt drop
+    warnings = detect_tier_cliffs(
+        tiers_by_pos={"RB": [t4, t5]},
+        picks_until_turn=0,
+        snake_turn_gap=4,
+        is_on_the_clock=True,
+        current_pick=68,
+        user_roster_counts={"RB": 2, "WR": 2, "QB": 1, "TE": 1},
+    )
+    assert len(warnings) == 1
+    assert warnings[0].position == "RB"
+    assert warnings[0].current_tier == 4
+    assert warnings[0].players_remaining == 2
+    assert warnings[0].next_tier_drop_points == 0.8
+

@@ -199,7 +199,7 @@ def _evaluate_on_the_clock_cliff(
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is currently on the clock."""
     drop = calculate_tier_drop(tier, next_tier)
-    min_drop = 1.5 if current_pick <= 40 else (1.2 if current_pick <= 80 else 1.0)
+    min_drop = 0.7 if (len(tier.players) <= 2 and snake_turn_gap >= 2) else (1.0 if current_pick <= 40 else 0.8)
     if drop < min_drop:
         return None
 
@@ -259,7 +259,7 @@ def _evaluate_waiting_cliff(
 ) -> TierCliffWarning | None:
     """Evaluate cliff risk when user is waiting for upcoming pick with dynamic ADP proximity."""
     drop = calculate_tier_drop(tier, next_tier)
-    min_drop = 1.5 if current_pick <= 40 else (1.2 if current_pick <= 80 else 1.0)
+    min_drop = 0.7 if (len(tier.players) <= 3 and snake_turn_gap >= 3) else (1.0 if current_pick <= 40 else 0.8)
     if drop < min_drop:
         return None
 
