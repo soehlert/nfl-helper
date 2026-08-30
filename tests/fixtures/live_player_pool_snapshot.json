@@ -181,7 +181,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 11.2,
+    "adp": 11.1,
     "bye_week": 12
   },
   {
@@ -481,48 +481,11 @@
     "bye_week": 11
   },
   {
-    "id": "8155",
-    "name": "Breece Hall",
-    "position": "RB",
-    "team": "NYJ",
-    "projected_points": 13.06,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "QUESTIONABLE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 34.2,
-    "bye_week": 12
-  },
-  {
     "id": "8150",
     "name": "Kyren Williams",
     "position": "RB",
     "team": "LAR",
-    "projected_points": 12.83,
+    "projected_points": 13.06,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -551,8 +514,45 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 34.4,
+    "adp": 34.3,
     "bye_week": 6
+  },
+  {
+    "id": "8155",
+    "name": "Breece Hall",
+    "position": "RB",
+    "team": "NYJ",
+    "projected_points": 12.83,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "QUESTIONABLE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 34.3,
+    "bye_week": 12
   },
   {
     "id": "7588",
@@ -625,7 +625,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 35.1,
+    "adp": 35.2,
     "bye_week": 10
   },
   {
@@ -810,7 +810,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 56.8,
+    "adp": 56.7,
     "bye_week": 7
   },
   {
@@ -847,7 +847,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 57.9,
+    "adp": 57.8,
     "bye_week": 14
   },
   {
@@ -1032,7 +1032,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 82.9,
+    "adp": 82.8,
     "bye_week": 9
   },
   {
@@ -1069,7 +1069,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 91.4,
+    "adp": 91.3,
     "bye_week": 5
   },
   {
@@ -1106,7 +1106,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 92.4,
+    "adp": 92.3,
     "bye_week": 9
   },
   {
@@ -1143,7 +1143,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 95.9,
+    "adp": 95.8,
     "bye_week": 11
   },
   {
@@ -1254,7 +1254,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 108.5,
+    "adp": 108.4,
     "bye_week": 11
   },
   {
@@ -1291,7 +1291,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 111.1,
+    "adp": 111.0,
     "bye_week": 11
   },
   {
@@ -1402,7 +1402,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 123.9,
+    "adp": 124.0,
     "bye_week": 14
   },
   {
@@ -1439,7 +1439,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 124.1,
+    "adp": 124.0,
     "bye_week": 6
   },
   {
@@ -1513,7 +1513,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 131.3,
+    "adp": 131.2,
     "bye_week": 14
   },
   {
@@ -1624,7 +1624,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 154.3,
+    "adp": 154.2,
     "bye_week": 11
   },
   {
@@ -1698,7 +1698,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 158.9,
+    "adp": 158.8,
     "bye_week": 5
   },
   {
@@ -1809,7 +1809,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 168.3,
+    "adp": 168.2,
     "bye_week": 10
   },
   {
@@ -1887,10 +1887,10 @@
     "bye_week": 14
   },
   {
-    "id": "4988",
-    "name": "Nick Chubb",
+    "id": "11581",
+    "name": "MarShawn Lloyd",
     "position": "RB",
-    "team": "FA",
+    "team": "GB",
     "projected_points": 8.86,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -1920,14 +1920,14 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 169.9,
-    "bye_week": null
+    "adp": 169.8,
+    "bye_week": 10
   },
   {
-    "id": "11581",
-    "name": "MarShawn Lloyd",
+    "id": "4988",
+    "name": "Nick Chubb",
     "position": "RB",
-    "team": "GB",
+    "team": "FA",
     "projected_points": 8.8,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -1958,7 +1958,7 @@
     "ceiling_points": 0.0,
     "assigned_slot": null,
     "adp": 169.9,
-    "bye_week": 10
+    "bye_week": null
   },
   {
     "id": "1379",
@@ -3622,7 +3622,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 21.4,
+    "adp": 21.3,
     "bye_week": 14
   },
   {
@@ -4584,7 +4584,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 81.1,
+    "adp": 81.0,
     "bye_week": 10
   },
   {
@@ -4658,7 +4658,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 90.6,
+    "adp": 90.7,
     "bye_week": 12
   },
   {
@@ -4806,7 +4806,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 110.8,
+    "adp": 110.9,
     "bye_week": 6
   },
   {
@@ -4843,7 +4843,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 112.2,
+    "adp": 112.1,
     "bye_week": 5
   },
   {
@@ -4880,7 +4880,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 113.2,
+    "adp": 113.0,
     "bye_week": 14
   },
   {
@@ -4917,7 +4917,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 114.5,
+    "adp": 114.4,
     "bye_week": 11
   },
   {
@@ -4954,7 +4954,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 115.5,
+    "adp": 115.6,
     "bye_week": 5
   },
   {
@@ -4991,7 +4991,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 116.9,
+    "adp": 117.0,
     "bye_week": 10
   },
   {
@@ -5065,7 +5065,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 121.4,
+    "adp": 121.5,
     "bye_week": 10
   },
   {
@@ -5180,10 +5180,10 @@
     "bye_week": 12
   },
   {
-    "id": "5872",
-    "name": "Deebo Samuel",
+    "id": "13298",
+    "name": "KC Concepcion",
     "position": "WR",
-    "team": "SF",
+    "team": "CLE",
     "projected_points": 9.79,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -5214,13 +5214,13 @@
     "ceiling_points": 0.0,
     "assigned_slot": null,
     "adp": 133.2,
-    "bye_week": 9
+    "bye_week": 10
   },
   {
-    "id": "13298",
-    "name": "KC Concepcion",
+    "id": "5872",
+    "name": "Deebo Samuel",
     "position": "WR",
-    "team": "CLE",
+    "team": "SF",
     "projected_points": 9.74,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -5250,8 +5250,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 133.2,
-    "bye_week": 10
+    "adp": 133.3,
+    "bye_week": 9
   },
   {
     "id": "11624",
@@ -5324,7 +5324,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 137.7,
+    "adp": 137.8,
     "bye_week": 12
   },
   {
@@ -5398,7 +5398,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 142.1,
+    "adp": 142.0,
     "bye_week": 9
   },
   {
@@ -5435,7 +5435,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 143.5,
+    "adp": 143.4,
     "bye_week": 12
   },
   {
@@ -5509,7 +5509,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 152.1,
+    "adp": 152.2,
     "bye_week": 10
   },
   {
@@ -6841,7 +6841,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 179.1,
+    "adp": 179.2,
     "bye_week": 10
   },
   {
@@ -7100,7 +7100,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 188.1,
+    "adp": 188.0,
     "bye_week": 11
   },
   {
@@ -7766,7 +7766,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 90.0,
+    "adp": 89.9,
     "bye_week": 5
   },
   {
@@ -7803,7 +7803,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 91.3,
+    "adp": 91.4,
     "bye_week": 6
   },
   {
@@ -7877,7 +7877,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 106.5,
+    "adp": 106.6,
     "bye_week": 14
   },
   {
@@ -7951,7 +7951,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 113.8,
+    "adp": 113.9,
     "bye_week": 9
   },
   {
@@ -8099,7 +8099,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 153.1,
+    "adp": 153.0,
     "bye_week": 10
   },
   {
@@ -9394,7 +9394,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 152.6,
+    "adp": 152.7,
     "bye_week": 6
   },
   {
@@ -9431,7 +9431,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 154.3,
+    "adp": 154.4,
     "bye_week": 12
   },
   {
@@ -10356,7 +10356,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 130.5,
+    "adp": 130.4,
     "bye_week": 14
   },
   {
@@ -10619,10 +10619,10 @@
     "bye_week": 6
   },
   {
-    "id": "1264",
-    "name": "Justin Tucker",
+    "id": "5189",
+    "name": "Eddy Pineiro",
     "position": "K",
-    "team": "FA",
+    "team": "SF",
     "projected_points": 7.76,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -10652,14 +10652,14 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 169.6,
-    "bye_week": null
+    "adp": 169.5,
+    "bye_week": 9
   },
   {
-    "id": "5189",
-    "name": "Eddy Pineiro",
+    "id": "1264",
+    "name": "Justin Tucker",
     "position": "K",
-    "team": "SF",
+    "team": "FA",
     "projected_points": 7.7,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -10690,7 +10690,7 @@
     "ceiling_points": 0.0,
     "assigned_slot": null,
     "adp": 169.6,
-    "bye_week": 9
+    "bye_week": null
   },
   {
     "id": "5119",
@@ -11392,7 +11392,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 144.8,
+    "adp": 144.9,
     "bye_week": 14
   },
   {
@@ -11429,7 +11429,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 153.7,
+    "adp": 153.8,
     "bye_week": 5
   },
   {
@@ -12095,7 +12095,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 211.5,
+    "adp": 211.6,
     "bye_week": 10
   },
   {
