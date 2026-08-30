@@ -321,46 +321,23 @@ class SleeperAdapter(BaseLeagueAdapter):
         return self._build_team_roster(team_id, target_roster, user_meta)
 
     def get_draft_state(self, include_player_pool: bool = True) -> DraftState:
-        """Fetch draft metadata, order, and live picks from Sleeper with smart active draft detection."""
+        """Fetch draft metadata, order, and live picks from Sleeper for explicit league or draft ID."""
         active_draft = None
-        fallback_draft = None
 
         # 1. Direct Draft ID lookup
         res_direct_draft = self._client.get(f"/draft/{self.profile.league_id}")
         if res_direct_draft.status_code == 200 and res_direct_draft.json():
-            direct_json = res_direct_draft.json()
-            if direct_json.get("status") in ("drafting", "pre_draft"):
-                active_draft = direct_json
-            else:
-                fallback_draft = direct_json
+            active_draft = res_direct_draft.json()
 
         # 2. League Drafts lookup
         if not active_draft:
             res_drafts = self._client.get(f"/league/{self.profile.league_id}/drafts")
             if res_drafts.status_code == 200 and res_drafts.json():
                 drafts = res_drafts.json()
-                active_draft = next((d for d in drafts if d.get("status") in ("drafting", "pre_draft")), None)
-                if not fallback_draft and drafts:
-                    fallback_draft = drafts[0]
-
-        # 3. User in-progress mock draft auto-detection
-        if not active_draft and self.profile.team_id:
-            user_res = self._client.get(f"/user/{self.profile.team_id}")
-            if user_res.status_code == 200 and user_res.json():
-                user_id = user_res.json().get("user_id")
-                season = get_current_nfl_season_year()
-                user_drafts_res = self._client.get(f"/user/{user_id}/drafts/nfl/{season}")
-                if user_drafts_res.status_code == 200 and user_drafts_res.json():
-                    u_drafts = user_drafts_res.json()
-                    user_active = next((d for d in u_drafts if d.get("status") in ("drafting", "pre_draft")), None)
-                    if user_active:
-                        active_draft = user_active
+                active_draft = next((d for d in drafts if d.get("status") in ("drafting", "pre_draft")), drafts[0])
 
         if not active_draft:
-            if fallback_draft:
-                active_draft = fallback_draft
-            else:
-                return DraftState(league_id=self.profile.league_id)
+            return DraftState(league_id=self.profile.league_id)
 
         draft_id = str(active_draft.get("draft_id", ""))
 
@@ -431,14 +408,6 @@ class SleeperAdapter(BaseLeagueAdapter):
                     if str(r.get("owner_id", "")) == target_owner_id:
                         target_roster_id = str(r.get("roster_id", ""))
                         break
-
-            # 4. Match by direct user API lookup (for standalone mock drafts)
-            if not target_owner_id:
-                user_res = self._client.get(f"/user/{self.profile.team_id}")
-                if user_res.status_code == 200 and user_res.json():
-                    direct_uid = str(user_res.json().get("user_id", ""))
-                    if direct_uid and direct_uid in draft_order:
-                        target_owner_id = direct_uid
 
         # Resolve user_slot
         if user_slot is None and isinstance(draft_order, dict):
