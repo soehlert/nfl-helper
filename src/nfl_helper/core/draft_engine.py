@@ -137,6 +137,10 @@ def build_draft_state(
     if any("no second te" in r.lower() for r in active_rules) and user_roster_counts.get("TE", 0) >= 1:
         capped_pos.add("TE")
 
+    if user_roster_counts.get("QB", 0) >= 2:
+        capped_pos.add("QB")
+    if user_roster_counts.get("TE", 0) >= 2:
+        capped_pos.add("TE")
     if user_roster_counts.get("K", 0) >= 1:
         capped_pos.add("K")
     if user_roster_counts.get("D/ST", 0) >= 1:

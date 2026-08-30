@@ -59,7 +59,11 @@ def generate_draft_suggestions(
     if any("no second te" in r.lower() for r in active_rules) and roster.get("TE", 0) >= 1:
         capped_positions.add("TE")
 
-    # Hard single-starter caps once drafted
+    # Hard single-starter and standard maximum position caps once filled (filter completely, no penalties)
+    if roster.get("QB", 0) >= 2:
+        capped_positions.add("QB")
+    if roster.get("TE", 0) >= 2:
+        capped_positions.add("TE")
     if roster.get("K", 0) >= 1:
         capped_positions.add("K")
     if roster.get("D/ST", 0) >= 1:
@@ -106,8 +110,11 @@ def generate_draft_suggestions(
         if pos_tiers:
             top_t = pos_tiers[0]
             next_t = pos_tiers[1] if len(pos_tiers) > 1 else None
-            t_drop = calculate_tier_drop(top_t, next_t)
-            top_tier_info[pos] = (top_t.tier_num, len(top_t.players), t_drop)
+            top_tier_info[pos] = (
+                top_t.tier_num,
+                len(top_t.players),
+                calculate_tier_drop(top_t, next_t),
+            )
 
     mins: dict[str, int] = {}
     deadline_quotas: list[tuple[str, int, int]] = []
@@ -127,7 +134,9 @@ def generate_draft_suggestions(
             deadline_quotas.append((qd.position, qd.required_count, qd.deadline_round))
 
     # Pass 1: Compute baseline score without note_delta to establish board density & ranks
-    raw_scored: list[tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]] = []
+    raw_scored: list[
+        tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None, str | None]
+    ] = []
 
     for p in available_players:
         vorp = vorp_scores.get(p.id, 0.0)
@@ -148,19 +157,13 @@ def generate_draft_suggestions(
             tier_bonus = 0.8 * demand_weight
         base_score += tier_bonus
 
-        # Roster needs demand adjustment (satisfaction penalties for single-starter positions)
+        # Position-specific final round elevation for unfilled mandatory single-starters
         pos_str = str(p.position).upper()
         if pos_str in ("D/ST", "DEF", "DST"):
             pos_str = "D/ST"
 
-        if pos_str == "QB" and roster.get("QB", 0) >= 1:
-            base_score -= 5.0 if current_round < 12 else 1.5
-        elif pos_str == "TE" and roster.get("TE", 0) >= 1:
-            base_score -= 4.5 if current_round < 10 else 1.2
-        elif pos_str in ("K", "D/ST"):
-            if roster.get(pos_str, 0) >= 1:
-                base_score -= 10.0  # Already drafted K/DST, never draft a second one
-            elif rounds_remaining == 2:
+        if pos_str in ("K", "D/ST"):
+            if rounds_remaining == 2:
                 base_score += 3.0  # Elevate top D/ST or K in penultimate round (Round 14 of 15)
             elif rounds_remaining <= 1:
                 base_score += 8.0  # Highest priority to fill mandatory starter in final round (Round 15)
