@@ -614,14 +614,16 @@ def generate_draft_suggestions(
         elif pos_str in ("K", "D/ST"):
             if roster.get(pos_str, 0) >= 1:
                 base_score -= 10.0  # Already drafted K/DST, never draft a second one
-            elif rounds_remaining > 3:
-                base_score -= 2.5  # Do not prioritize K/DST with >3 rounds remaining
+            elif rounds_remaining > 4:
+                base_score -= 2.5  # Do not prioritize K/DST in early/mid rounds (Rounds 1-11 of 15)
+            elif rounds_remaining == 4:
+                base_score += 1.0  # Start considering in Round 12 of 15
             elif rounds_remaining == 3:
-                base_score += 1.0  # Start considering in Round 13 of 15
+                base_score += 4.0  # Amped up in Round 13 of 15
             elif rounds_remaining == 2:
-                base_score += 6.0  # Elevated priority in penultimate round
+                base_score += 8.0  # High priority in penultimate round (Round 14 of 15)
             elif rounds_remaining <= 1:
-                base_score += 15.0  # Highest priority to fill mandatory starter in final round
+                base_score += 15.0  # Highest priority to fill mandatory starter in final round (Round 15)
 
         # Roster quota urgency & round deadline weighting
         for pos_dl, q_dl, dl_round in deadline_quotas:
