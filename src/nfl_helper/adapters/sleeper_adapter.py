@@ -176,31 +176,37 @@ class SleeperAdapter(BaseLeagueAdapter):
         bye_week = get_team_bye_week(team_str)
         is_dome = is_dome_stadium(team_str)
         espn_adps = self._ensure_espn_adp_db()
-        projs = self._ensure_proj_db()
-        p_proj = projs.get(str(player_id), {}) if isinstance(projs, dict) else {}
-        sleeper_adp = (
-            p_proj.get("adp_ppr")
-            or p_proj.get("adp_half_ppr")
-            or p_proj.get("adp_std")
-            or p_proj.get("adp_dd_ppr")
-            or p_proj.get("adp_dd_half_ppr")
-            or p_proj.get("adp_dd_std")
+        projections = self._ensure_proj_db()
+        player_proj = projections.get(str(player_id), {}) if isinstance(projections, dict) else {}
+        sleeper_adp_raw = (
+            player_proj.get("adp_ppr")
+            or player_proj.get("adp_half_ppr")
+            or player_proj.get("adp_std")
+            or player_proj.get("adp_dd_ppr")
+            or player_proj.get("adp_dd_half_ppr")
+            or player_proj.get("adp_dd_std")
         )
-        s_val = float(sleeper_adp) if sleeper_adp is not None and float(sleeper_adp) < 900.0 else None
+        sleeper_adp = (
+            float(sleeper_adp_raw)
+            if sleeper_adp_raw is not None and float(sleeper_adp_raw) < 900.0
+            else None
+        )
 
-        norm_name = normalize_player_name(full_name)
-        last_name_key = last_name.strip().lower()
-        e_val = espn_adps.get(norm_name) or (espn_adps.get(last_name_key) if pos_enum == Position.DST else None)
+        normalized_name = normalize_player_name(full_name)
+        defense_key = last_name.strip().lower()
+        espn_adp = espn_adps.get(normalized_name) or (
+            espn_adps.get(defense_key) if pos_enum == Position.DST else None
+        )
 
-        if s_val is not None and e_val is not None:
-            adp_val = round(0.5 * s_val + 0.5 * e_val, 1)
-        elif s_val is not None:
-            adp_val = round(s_val, 1)
-        elif e_val is not None:
-            adp_val = round(e_val, 1)
+        if sleeper_adp is not None and espn_adp is not None:
+            blended_adp = round(0.5 * sleeper_adp + 0.5 * espn_adp, 1)
+        elif sleeper_adp is not None:
+            blended_adp = round(sleeper_adp, 1)
+        elif espn_adp is not None:
+            blended_adp = round(espn_adp, 1)
         else:
-            raw_adp = raw_meta.get("search_rank")
-            adp_val = float(raw_adp) if raw_adp and str(raw_adp).isdigit() else None
+            search_rank = raw_meta.get("search_rank")
+            blended_adp = float(search_rank) if search_rank and str(search_rank).isdigit() else None
 
         return Player(
             id=str(player_id),
@@ -210,7 +216,7 @@ class SleeperAdapter(BaseLeagueAdapter):
             projected_points=fpts,
             injury_status=injury_status,
             is_starter=is_starter,
-            adp=adp_val,
+            adp=blended_adp,
             bye_week=bye_week,
             game_context=GameEnvironment(
                 is_dome=is_dome,
@@ -435,57 +441,67 @@ class SleeperAdapter(BaseLeagueAdapter):
 
     def get_free_agents(self, limit: int = 330) -> list[Player]:
         """Fetch available free agents from Sleeper sorted by multi-platform consensus ADP with guaranteed positional quotas."""
-        db = self._ensure_player_db()
-        projs = self._ensure_proj_db()
+        players = self._ensure_player_db()
+        projections = self._ensure_proj_db()
         espn_adps = self._ensure_espn_adp_db()
         valid_candidates: list[tuple[float, str, dict[str, object]]] = []
-        for pid, meta in db.items():
-            if not isinstance(meta, dict):
+        for player_id, player_data in players.items():
+            if not isinstance(player_data, dict):
                 continue
-            pos = str(meta.get("position", "")).upper()
-            if pos in ("QB", "RB", "FB", "WR", "TE", "K", "DEF", "DST", "D/ST"):
-                p_proj = projs.get(str(pid), {}) if isinstance(projs, dict) else {}
-                sleeper_adp = (
-                    p_proj.get("adp_ppr")
-                    or p_proj.get("adp_half_ppr")
-                    or p_proj.get("adp_std")
-                    or p_proj.get("adp_dd_ppr")
-                    or p_proj.get("adp_dd_half_ppr")
-                    or p_proj.get("adp_dd_std")
+            position_raw = str(player_data.get("position", "")).upper()
+            if position_raw in ("QB", "RB", "FB", "WR", "TE", "K", "DEF", "DST", "D/ST"):
+                player_proj = (
+                    projections.get(str(player_id), {})
+                    if isinstance(projections, dict)
+                    else {}
                 )
-                s_val = float(sleeper_adp) if sleeper_adp is not None and float(sleeper_adp) < 900.0 else None
+                sleeper_adp_raw = (
+                    player_proj.get("adp_ppr")
+                    or player_proj.get("adp_half_ppr")
+                    or player_proj.get("adp_std")
+                    or player_proj.get("adp_dd_ppr")
+                    or player_proj.get("adp_dd_half_ppr")
+                    or player_proj.get("adp_dd_std")
+                )
+                sleeper_adp = (
+                    float(sleeper_adp_raw)
+                    if sleeper_adp_raw is not None and float(sleeper_adp_raw) < 900.0
+                    else None
+                )
 
-                first_name = str(meta.get("first_name", ""))
-                last_name = str(meta.get("last_name", ""))
-                full_name = f"{first_name} {last_name}".strip() or str(meta.get("full_name", ""))
-                norm_name = normalize_player_name(full_name)
-                e_val = espn_adps.get(norm_name)
+                first_name = str(player_data.get("first_name", ""))
+                last_name = str(player_data.get("last_name", ""))
+                full_name = f"{first_name} {last_name}".strip() or str(player_data.get("full_name", ""))
+                normalized_name = normalize_player_name(full_name)
+                espn_adp = espn_adps.get(normalized_name)
 
-                if s_val is not None and e_val is not None:
-                    comp_adp = round(0.5 * s_val + 0.5 * e_val, 1)
-                elif s_val is not None:
-                    comp_adp = round(s_val, 1)
-                elif e_val is not None:
-                    comp_adp = round(e_val, 1)
+                if sleeper_adp is not None and espn_adp is not None:
+                    blended_adp = round(0.5 * sleeper_adp + 0.5 * espn_adp, 1)
+                elif sleeper_adp is not None:
+                    blended_adp = round(sleeper_adp, 1)
+                elif espn_adp is not None:
+                    blended_adp = round(espn_adp, 1)
                 else:
-                    comp_adp = 999.0
+                    blended_adp = 999.0
 
-                valid_candidates.append((comp_adp, pid, meta))
+                valid_candidates.append((blended_adp, player_id, player_data))
 
         # Group by canonical position to guarantee depth across all positions (including all 32 D/ST teams)
-        by_pos_candidates: dict[str, list[tuple[float, str, dict[str, object]]]] = {}
-        for rank_val, pid, meta in valid_candidates:
-            raw_pos = str(meta.get("position", "")).upper()
-            pos_key = "D/ST" if raw_pos in ("DEF", "DST", "D/ST") else ("RB" if raw_pos == "FB" else raw_pos)
-            by_pos_candidates.setdefault(pos_key, []).append((rank_val, pid, meta))
+        candidates_by_pos: dict[str, list[tuple[float, str, dict[str, object]]]] = {}
+        for rank_val, player_id, player_data in valid_candidates:
+            position_raw = str(player_data.get("position", "")).upper()
+            position_key = "D/ST" if position_raw in ("DEF", "DST", "D/ST") else ("RB" if position_raw == "FB" else position_raw)
+            candidates_by_pos.setdefault(position_key, []).append((rank_val, player_id, player_data))
 
         pos_quotas = {"QB": 36, "RB": 90, "WR": 110, "TE": 40, "K": 24, "D/ST": 32}
         mapped_players: list[Player] = []
-        for pos_key, candidates in by_pos_candidates.items():
-            candidates.sort(key=lambda x: x[0])
+        for pos_key, candidates in candidates_by_pos.items():
+            candidates.sort(key=lambda item: item[0])
             quota = pos_quotas.get(pos_key, 30)
-            for pos_rank, (_, pid, meta) in enumerate(candidates[:quota], start=1):
-                mapped_players.append(self._map_player(pid, meta_override=meta, pos_rank=pos_rank))
+            for pos_rank, (_, player_id, player_data) in enumerate(candidates[:quota], start=1):
+                mapped_players.append(
+                    self._map_player(player_id, meta_override=player_data, pos_rank=pos_rank)
+                )
 
         mapped_players.sort(key=lambda p: p.adp if p.adp is not None else 999)
         return mapped_players
