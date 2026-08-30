@@ -327,7 +327,7 @@ async def get_draft_state(
                 invite_code=f"INV-{league_id[:5]}",
                 platform=plat_type,
                 league_id=league_id,
-                team_id=team_id or "1",
+                team_id=team_id if team_id else None,
                 swid=swid,
                 espn_s2=espn_s2,
             )
@@ -355,7 +355,7 @@ async def get_draft_state(
                 league_id=live_draft.league_id,
                 draft_id=live_draft.draft_id,
                 overall_pick=live_draft.current_pick,
-                user_draft_slot=live_draft.user_draft_slot or 1,
+                user_draft_slot=live_draft.user_draft_slot,
                 total_teams=live_draft.total_teams,
                 total_rounds=live_draft.total_rounds,
                 recent_picks=live_draft.recent_picks,
