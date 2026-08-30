@@ -614,14 +614,16 @@ def generate_draft_suggestions(
         elif pos_str in ("K", "D/ST"):
             if roster.get(pos_str, 0) >= 1:
                 base_score -= 10.0  # Already drafted K/DST, never draft a second one
-            elif rounds_remaining > 3:
-                base_score -= 2.5  # Do not prioritize K/DST with >3 rounds remaining
-            elif rounds_remaining == 3:
-                base_score += 1.0  # Start considering in Round 13 of 15
-            elif rounds_remaining == 2:
-                base_score += 6.0  # Elevated priority in penultimate round
             elif rounds_remaining <= 1:
                 base_score += 15.0  # Highest priority to fill mandatory starter in final round
+            elif rounds_remaining == 2:
+                base_score += 6.0  # Elevated priority in penultimate round
+            elif rounds_remaining == 3:
+                base_score += 2.0  # High consideration in round 13
+            elif rounds_remaining <= 5 and p_tier == 1:
+                base_score += 1.8  # Tier 1 K / DST target bonus in late-middle rounds (e.g. Round 11-12)
+            elif rounds_remaining > 5:
+                base_score -= 2.5  # Do not prioritize K/DST in early/mid rounds
 
         # Roster quota urgency & round deadline weighting
         for pos_dl, q_dl, dl_round in deadline_quotas:
@@ -642,14 +644,11 @@ def generate_draft_suggestions(
                     needed_min = req_min - curr_pos_cnt
                     urgency_bonus = min(3.5, 1.0 + (needed_min * 0.8) + (current_round - 7) * 0.2)
                     base_score += urgency_bonus
-            elif curr_pos_cnt >= req_min + 1:
-                has_unmet_mins = (
-                    any(roster.get(p, 0) < m for p, m in mins.items() if p != pos_str)
-                    or (roster.get("D/ST", 0) < 1)
-                    or (roster.get("K", 0) < 1)
-                )
-                if has_unmet_mins and current_round >= 7:
-                    base_score -= 2.5
+            elif curr_pos_cnt >= req_min:
+                has_unmet_mandatory = (roster.get("D/ST", 0) < 1) or (roster.get("K", 0) < 1)
+                has_unmet_mins = any(roster.get(p, 0) < m for p, m in mins.items() if p != pos_str)
+                if (has_unmet_mandatory or has_unmet_mins) and current_round >= 11:
+                    base_score -= 1.5 if curr_pos_cnt == req_min else 2.5
 
         # Positional Scarcity Weighting: only when ADP is in reachable range for current pick
         scarcity_bonus = 0.0
