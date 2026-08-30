@@ -92,18 +92,27 @@ def save_cheatsheet(
 
 def get_active_cheatsheets(db_path: Path | str | None = None) -> list[CheatsheetContext]:
     """Fetch all active cheatsheet contexts in chronological order from SQLite."""
+    from nfl_helper.core.cheatsheet import parse_cheatsheet_content
+
     init_db(db_path)
     conn = get_db_connection(db_path)
     try:
         rows = conn.execute(
             """
-            SELECT parsed_json FROM cheatsheets
+            SELECT id, name, raw_text, parsed_json FROM cheatsheets
             WHERE is_active = 1
             ORDER BY id ASC;
             """
         ).fetchall()
         contexts: list[CheatsheetContext] = []
         for row in rows:
+            if row["raw_text"]:
+                try:
+                    ctx = parse_cheatsheet_content(row["raw_text"], sheet_name=row["name"])
+                    contexts.append(ctx)
+                    continue
+                except Exception as raw_err:
+                    logger.warning("Failed to re-parse raw_text for sheet %s: %s", row["name"], raw_err)
             if row["parsed_json"]:
                 try:
                     contexts.append(CheatsheetContext.model_validate(json.loads(row["parsed_json"])))

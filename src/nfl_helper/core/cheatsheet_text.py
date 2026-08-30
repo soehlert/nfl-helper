@@ -82,15 +82,10 @@ def _clean_position_header(raw_header: str | None) -> tuple[str, bool] | None:
     first = tokens[0].upper()
     if first in POSITION_HEADERS:
         return POSITION_HEADERS[first], is_continuation
-    if len(tokens) >= 2 and f"{tokens[0]} {tokens[1]}".upper() in (
-        "RUNNING BACKS",
-        "WIDE RECEIVERS",
-        "TIGHT ENDS",
-        "RUNNING BACK",
-        "WIDE RECEIVER",
-        "TIGHT END",
-    ):
-        return POSITION_HEADERS[tokens[0].upper()], is_continuation
+    if len(tokens) >= 2:
+        combo = f"{tokens[0]} {tokens[1]}".upper()
+        if combo in POSITION_HEADERS:
+            return POSITION_HEADERS[combo], is_continuation
 
     return None
 
