@@ -160,14 +160,19 @@ def generate_draft_suggestions(
         elif pos_str in ("K", "D/ST"):
             if roster.get(pos_str, 0) >= 1:
                 base_score -= 10.0  # Already drafted K/DST, never draft a second one
-            elif rounds_remaining > 3:
-                base_score -= 3.5  # Suppress K/DST in early/mid rounds (Rounds 1-12 of 15) to preserve skill depth
-            elif rounds_remaining == 3:
-                base_score += 0.5  # Neutral in Round 13 of 15 for unfilled starter
             elif rounds_remaining == 2:
-                base_score += 5.0  # Elevate top D/ST or K in penultimate round (Round 14 of 15)
+                base_score += 3.0  # Elevate top D/ST or K in penultimate round (Round 14 of 15)
             elif rounds_remaining <= 1:
-                base_score += 15.0  # Highest priority to fill mandatory starter in final round (Round 15)
+                base_score += 8.0  # Highest priority to fill mandatory starter in final round (Round 15)
+
+        # Handcuff synergy bonus for backup / committee RBs on same NFL team as drafted starter
+        handcuff_note: str | None = None
+        if pos_str == "RB" and user_drafted_players and p.team and p.team != "FA":
+            for dp in user_drafted_players:
+                if str(dp.position).upper() == "RB" and dp.team == p.team and dp.id != p.id:
+                    base_score += 0.50  # Small tactical boost for securing backfield handcuff
+                    handcuff_note = f"Handcuff ({dp.name})"
+                    break
 
         # Roster quota urgency & round deadline weighting
         for pos_dl, q_dl, dl_round in deadline_quotas:
@@ -195,7 +200,8 @@ def generate_draft_suggestions(
                     or (roster.get("K", 0) < 1)
                 )
                 if has_unmet_mins and current_round >= 7:
-                    base_score -= 2.5
+                    surplus_penalty = 3.5 if current_round >= 12 else 2.5
+                    base_score -= surplus_penalty
 
         # Positional Scarcity Weighting: only when ADP is in reachable range for current pick
         scarcity_bonus = 0.0
@@ -239,6 +245,7 @@ def generate_draft_suggestions(
                 adp_delta,
                 rule_delta,
                 rule_note,
+                handcuff_note,
             )
         )
 
@@ -248,10 +255,10 @@ def generate_draft_suggestions(
 
     # Pass 2: Apply realistic sliding-window note adjustments
     scored_players: list[
-        tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None]
+        tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None, str | None]
     ] = []
 
-    for idx, (b_score, p, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note) in enumerate(raw_scored):
+    for idx, (b_score, p, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note, h_note) in enumerate(raw_scored):
         note_delta = 0.0
 
         # Check strategy target round anchoring when pick is earlier than designated target round
@@ -294,13 +301,14 @@ def generate_draft_suggestions(
                 adp_delta,
                 r_delta,
                 r_note,
+                h_note,
             )
         )
 
     scored_players.sort(key=lambda item: item[0], reverse=True)
 
     suggestions: list[DraftSuggestion] = []
-    for rank, (score_val, player, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note) in enumerate(
+    for rank, (score_val, player, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note, h_note) in enumerate(
         scored_players[:top_n], start=1
     ):
         reason = build_suggestion_rationale(
@@ -314,6 +322,7 @@ def generate_draft_suggestions(
             top_tier_info,
             r_delta,
             r_note,
+            handcuff_note=h_note,
             total_teams=total_teams,
         )
 

@@ -15,6 +15,7 @@ def build_suggestion_rationale(
     top_tier_info: dict[str, tuple[int, int, float]],
     rule_delta: float = 0.0,
     rule_note: str | None = None,
+    handcuff_note: str | None = None,
     total_teams: int = 12,
 ) -> str:
     """Generate concise, factual 4-row structured justification showing exact points made/lost."""
@@ -66,6 +67,8 @@ def build_suggestion_rationale(
     is_dome = player.game_context and player.game_context.is_dome
     env_label = "Dome Stadium" if is_dome else f"Outdoor ({player.team})"
     note_parts = []
+    if handcuff_note:
+        note_parts.append(handcuff_note)
     if player.cheatsheet_notes:
         note_parts.append(player.cheatsheet_notes)
     if rule_note and rule_delta != 0.0:

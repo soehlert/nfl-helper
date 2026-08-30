@@ -795,3 +795,34 @@ def test_tier_cliff_and_quota_urgency_round_7_rb() -> None:
     assert warnings[0].current_tier == 4
     assert warnings[0].players_remaining == 2
     assert warnings[0].next_tier_drop_points == 0.8
+
+
+def test_rb_handcuff_synergy_boost() -> None:
+    """Verify that backup RBs on the same NFL team as a drafted RB receive a handcuff synergy boost."""
+    p_swift = Player(id="swift", name="D'Andre Swift", position=Position.RB, team="CHI", projected_points=12.0)
+    p_monangai = Player(
+        id="monangai", name="Kyle Monangai", position=Position.RB, team="CHI", projected_points=10.0, adp=110.0
+    )
+    p_other_rb = Player(id="other", name="Other RB", position=Position.RB, team="DEN", projected_points=10.0, adp=110.0)
+
+    tiers_by_pos = {
+        "RB": cluster_position_tiers([p_monangai, p_other_rb], "RB"),
+    }
+    baselines = {"RB": 10.0, "WR": 10.0, "QB": 15.0, "TE": 9.0, "K": 8.0, "D/ST": 8.0}
+
+    suggs = generate_draft_suggestions(
+        available_players=[p_other_rb, p_monangai],
+        tiers_by_pos=tiers_by_pos,
+        cliff_warnings=[],
+        baselines=baselines,
+        overall_pick=105,
+        user_drafted_players=[p_swift],
+        user_roster_counts={"RB": 1},
+        total_teams=10,
+        total_rounds=15,
+    )
+
+    assert len(suggs) == 2
+    assert suggs[0].player.name == "Kyle Monangai"
+    assert suggs[0].score > suggs[1].score
+    assert "Handcuff (D'Andre Swift)" in suggs[0].reason
