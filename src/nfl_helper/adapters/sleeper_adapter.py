@@ -22,7 +22,6 @@ SLEEPER_API_BASE = "https://api.sleeper.app/v1"
 _GLOBAL_PLAYER_DB: dict[str, dict[str, object]] = {}
 _GLOBAL_PROJ_DB: dict[str, dict[str, object]] = {}
 _GLOBAL_ESPN_ADP_DB: dict[str, float] = {}
-_GLOBAL_ACTIVE_DRAFT: dict[str, dict[str, object]] = {}
 
 
 class SleeperAdapter(BaseLeagueAdapter):
@@ -322,21 +321,18 @@ class SleeperAdapter(BaseLeagueAdapter):
         return self._build_team_roster(team_id, target_roster, user_meta)
 
     def get_draft_state(self, include_player_pool: bool = True) -> DraftState:
-        """Fetch draft metadata, order, and live picks from Sleeper with smart caching."""
-        global _GLOBAL_ACTIVE_DRAFT
-        active_draft = _GLOBAL_ACTIVE_DRAFT.get(self.profile.league_id)
-        if not active_draft:
-            res_drafts = self._client.get(f"/league/{self.profile.league_id}/drafts")
-            if res_drafts.status_code == 200 and res_drafts.json():
-                active_draft = res_drafts.json()[0]
-                _GLOBAL_ACTIVE_DRAFT[self.profile.league_id] = active_draft
+        """Fetch draft metadata, order, and live picks from Sleeper with smart active draft detection."""
+        res_drafts = self._client.get(f"/league/{self.profile.league_id}/drafts")
+        active_draft = None
+        if res_drafts.status_code == 200 and res_drafts.json():
+            drafts = res_drafts.json()
+            active_draft = next((d for d in drafts if d.get("status") in ("drafting", "pre_draft")), drafts[0])
+        else:
+            res_direct_draft = self._client.get(f"/draft/{self.profile.league_id}")
+            if res_direct_draft.status_code == 200 and res_direct_draft.json():
+                active_draft = res_direct_draft.json()
             else:
-                res_direct_draft = self._client.get(f"/draft/{self.profile.league_id}")
-                if res_direct_draft.status_code == 200 and res_direct_draft.json():
-                    active_draft = res_direct_draft.json()
-                    _GLOBAL_ACTIVE_DRAFT[self.profile.league_id] = active_draft
-                else:
-                    return DraftState(league_id=self.profile.league_id)
+                return DraftState(league_id=self.profile.league_id)
 
         draft_id = str(active_draft.get("draft_id", ""))
 

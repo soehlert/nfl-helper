@@ -827,12 +827,13 @@ def build_draft_state(
     user_picks: list[DraftPick] = []
     for pick in recent_picks:
         pick_owner_slot = calculate_snake_pick_owner(pick.overall_pick, total_teams)
-        is_user_pick = bool(
-            (user_team_id and pick.team_id and str(pick.team_id) == str(user_team_id))
-            or (user_team_id and pick.team_name and str(user_team_id).lower() in pick.team_name.lower())
-            or (user_draft_slot and pick.round_pick and pick.round_pick == user_draft_slot)
-            or (user_draft_slot and pick_owner_slot == user_draft_slot)
-        )
+        if user_draft_slot:
+            is_user_pick = pick_owner_slot == user_draft_slot
+        else:
+            is_user_pick = bool(
+                (user_team_id and pick.team_id and str(pick.team_id) == str(user_team_id))
+                or (user_team_id and pick.team_name and str(user_team_id).lower() in pick.team_name.lower())
+            )
         if is_user_pick:
             user_picks.append(pick)
 
