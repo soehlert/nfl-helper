@@ -472,6 +472,67 @@ def test_roster_aware_conditional_caps_suppression() -> None:
     assert "t_kelce" not in suggested_ids
 
 
+def test_round_target_window_quota_and_exclusivity() -> None:
+    """Verify under 'Rounds 1-2 - only RB/WR and at least 1 RB', drafting WR in Round 1 strictly locks Round 2 to RB."""
+    rules_text = """
+    Rounds 1-2 - only RB/WR and at least 1 RB
+    QB - Get a tier 1 in round 4 or one from tier 3 and one from tier 4. If you get a tier 1 only one QB total.
+    RB - Get 4 in the first 10 rounds and minimum 4 for the whole draft
+    WR - Get 4 minimum
+    TE - Target the top 4 in rounds 3-5, no second TE if you have a tier 1 TE
+    """
+    ctx = parse_plain_text_cheatsheet(rules_text)
+
+    p_wr1 = Player(id="w1", name="CeeDee Lamb", position=Position.WR, team="DAL", projected_points=18.0, adp=2.0)
+    p_wr2 = Player(id="w2", name="Justin Jefferson", position=Position.WR, team="MIN", projected_points=17.5, adp=4.0)
+    p_rb1 = Player(id="r1", name="Bijan Robinson", position=Position.RB, team="ATL", projected_points=17.0, adp=3.0)
+    p_qb1 = Player(id="q1", name="Josh Allen", position=Position.QB, team="BUF", projected_points=24.0, adp=15.0)
+
+    avail = [p_wr1, p_wr2, p_rb1, p_qb1]
+    baselines = {"QB": 17.0, "RB": 10.0, "WR": 10.0, "TE": 9.0, "K": 8.0, "D/ST": 8.0}
+    tiers_by_pos = {
+        "WR": cluster_position_tiers([p_wr1, p_wr2], "WR"),
+        "RB": cluster_position_tiers([p_rb1], "RB"),
+        "QB": cluster_position_tiers([p_qb1], "QB"),
+    }
+
+    # 1. In Round 1 (0 players drafted): Suggestions include RB and WR, but exclude QB
+    suggs_r1 = generate_draft_suggestions(
+        available_players=avail,
+        tiers_by_pos=tiers_by_pos,
+        cliff_warnings=[],
+        baselines=baselines,
+        overall_pick=1,
+        cheatsheet_context=ctx,
+        total_teams=10,
+        user_roster_counts={},
+        total_rounds=15,
+        user_drafted_players=[],
+    )
+    r1_pos = {s.player.position for s in suggs_r1}
+    assert Position.WR in r1_pos
+    assert Position.RB in r1_pos
+    assert Position.QB not in r1_pos
+
+    # 2. In Round 2 after drafting WR in Round 1: Suggestions MUST exclusively be RB (no WRs)
+    suggs_r2 = generate_draft_suggestions(
+        available_players=[p_wr2, p_rb1, p_qb1],
+        tiers_by_pos=tiers_by_pos,
+        cliff_warnings=[],
+        baselines=baselines,
+        overall_pick=11,  # Round 2
+        cheatsheet_context=ctx,
+        total_teams=10,
+        user_roster_counts={"WR": 1},
+        total_rounds=15,
+        user_drafted_players=[p_wr1],
+    )
+    r2_pos = {s.player.position for s in suggs_r2}
+    assert r2_pos == {Position.RB}
+    assert all(s.player.position == Position.RB for s in suggs_r2)
+    assert suggs_r2[0].player.id == "r1"
+
+
 def test_two_qb_quota_evaluation_when_tier3_drafted() -> None:
     """Verify when user drafts Tier 3 QB, remaining Tier 3 QBs are not boosted while Tier 4 QBs are boosted."""
     rules_text = """

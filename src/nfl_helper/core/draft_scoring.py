@@ -73,6 +73,22 @@ def generate_draft_suggestions(
             and not (str(p.position).upper() in ("DEF", "DST") and "D/ST" in capped_positions)
         ]
 
+    # Exclusivity: filter to allowed positions for active round target windows (e.g. Rounds 1-2 only RB/WR)
+    if cheatsheet_context:
+        active_rt = next(
+            (
+                rt
+                for rt in reversed(cheatsheet_context.round_targets)
+                if current_round in rt.target_rounds and rt.allowed_positions
+            ),
+            None,
+        )
+        if active_rt and active_rt.allowed_positions:
+            allowed = set(active_rt.allowed_positions)
+            if "D/ST" in allowed:
+                allowed.update(["DEF", "DST"])
+            available_players = [p for p in available_players if str(p.position).upper() in allowed]
+
     # Draft deadline & quota enforcement: filter suggestions when remaining rounds equals required slots
     required_positions = calculate_required_positions(
         current_round, total_rounds, roster, capped_positions=capped_positions, cheatsheet_context=cheatsheet_context

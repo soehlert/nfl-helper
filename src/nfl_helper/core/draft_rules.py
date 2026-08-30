@@ -196,7 +196,18 @@ def calculate_required_positions(
     if roster.get("TE", 0) < 1:
         needed_slots.append("TE")
 
-    # 2. Strategy Rule Minimums from typed positional strategy rules
+    # 2. Check round target minimums within their specific round window (e.g. Rounds 1-2: at least 1 RB)
+    if cheatsheet_context:
+        for rt in cheatsheet_context.round_targets:
+            if current_round in rt.target_rounds:
+                window_end = max(rt.target_rounds)
+                rounds_left_in_window = window_end - current_round + 1
+                for pos_req, min_cnt in rt.min_counts.items():
+                    curr_count = roster.get(pos_req, 0)
+                    if curr_count < min_cnt and rounds_left_in_window <= (min_cnt - curr_count):
+                        return {pos_req}
+
+    # 3. Strategy Rule Minimums from typed positional strategy rules
     mins: dict[str, int] = {}
     if cheatsheet_context:
         for pr in cheatsheet_context.positional_strategy:

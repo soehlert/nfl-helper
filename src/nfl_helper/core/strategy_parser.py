@@ -23,8 +23,21 @@ def parse_round_target_rule(norm_line: str) -> DraftRoundTarget | None:
     start_rnd = int(rounds_match.group(1))
     end_rnd = int(rounds_match.group(2)) if rounds_match.group(2) else start_rnd
     target_rounds = list(range(start_rnd, end_rnd + 1))
-    allowed = [pos for pos in ("RB", "WR", "QB", "TE", "K", "D/ST") if pos in norm_line.upper()]
-    min_counts = {"RB": 1} if "at least 1 rb" in line_lower else {}
+
+    allowed: list[str] = []
+    for pos in ("RB", "WR", "QB", "TE", "K", "D/ST"):
+        pos_pat = r"(?:D/?ST|DEF)" if pos == "D/ST" else pos
+        if re.search(rf"\b{pos_pat}\b", norm_line, re.IGNORECASE):
+            allowed.append(pos)
+
+    min_counts: dict[str, int] = {}
+    for pos in ("RB", "WR", "QB", "TE", "K", "D/ST"):
+        pos_pat = r"(?:D/?ST|DEF)" if pos == "D/ST" else pos
+        cnt_m = re.search(rf"(?:at\s+least|minimum)\s+(\d+)\s+{pos_pat}", norm_line, re.IGNORECASE)
+        if cnt_m:
+            min_counts[pos] = int(cnt_m.group(1))
+        elif re.search(rf"(?:at\s+least|minimum)\s+(?:one|a|1)\s+{pos_pat}", norm_line, re.IGNORECASE):
+            min_counts[pos] = 1
 
     return DraftRoundTarget(
         target_rounds=target_rounds,
