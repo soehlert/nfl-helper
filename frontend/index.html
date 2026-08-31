@@ -116,16 +116,6 @@
         </div>
       </div>
 
-      <!-- Strategy Quota & Deadline Alerts Banner -->
-      <div id="strategy-alerts-wrapper" style="display: none; margin-bottom: 1rem;">
-        <div id="strategy-alerts-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
-      </div>
-
-      <!-- Top Tier Cliff Alerts Banner (Only shown when active cliffs exist) -->
-      <div id="top-cliff-alerts-wrapper" style="display: none; margin-bottom: 1rem;">
-        <div id="top-cliff-alerts-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
-      </div>
-
       <!-- Row 2: Full-Width Suggestions Table -->
       <div class="card">
         <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between;">
@@ -152,6 +142,16 @@
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 7px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </div>
           </div>
+        </div>
+
+        <!-- Strategy Quota & Deadline Alerts Banner (Embedded directly inside card) -->
+        <div id="strategy-alerts-wrapper" style="display: none; margin: 0.5rem 0.85rem 0.75rem 0.85rem;">
+          <div id="strategy-alerts-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+        </div>
+
+        <!-- Top Tier Cliff Alerts Banner (Embedded directly inside card) -->
+        <div id="top-cliff-alerts-wrapper" style="display: none; margin: 0.5rem 0.85rem 0.75rem 0.85rem;">
+          <div id="top-cliff-alerts-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
         </div>
 
         <div style="border: 1px solid var(--border-color); border-radius: 6px; overflow: visible;">
@@ -1743,8 +1743,8 @@
           let alertsHtml = '';
           alerts.forEach(msg => {
             alertsHtml += `
-              <div class="alert-banner warning" style="padding: 0.6rem 0.9rem; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.2); border-left: 4px solid var(--accent-amber);">
-                <div style="font-size: 0.85rem; font-weight: 600; color: #fbbf24;">${msg}</div>
+              <div class="alert-banner warning" style="padding: 0.75rem 1rem; border-radius: 8px; box-shadow: 0 3px 12px rgba(0,0,0,0.3); border: 1px solid rgba(245, 158, 11, 0.4); border-left: 5px solid #f59e0b; background: rgba(245, 158, 11, 0.12);">
+                <div style="font-size: 0.88rem; font-weight: 600; color: #fef08a; line-height: 1.4;">${msg}</div>
               </div>`;
           });
           stratAlertsContainer.innerHTML = alertsHtml;
