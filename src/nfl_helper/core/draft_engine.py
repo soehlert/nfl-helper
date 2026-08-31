@@ -170,7 +170,7 @@ def build_draft_state(
                 needed = qd.required_count - curr_cnt
                 if rounds_left <= needed + 2:
                     strategy_alerts.append(
-                        f"⚠️ Quota Deadline Alert: Need {needed} more {qd.position}s across next {rounds_left} rounds to meet Round {qd.deadline_round} deadline ({curr_cnt}/{qd.required_count} drafted)."
+                        f"Quota Deadline Alert: Need {needed} more {qd.position}s across next {rounds_left} rounds to meet Round {qd.deadline_round} deadline ({curr_cnt}/{qd.required_count} drafted)."
                     )
 
         # 2. Round Target Windows (e.g. Rounds 1-2 only RB/WR and at least 1 RB)
@@ -186,7 +186,7 @@ def build_draft_state(
                         ]
                         other_text = f" (Drafted {', '.join(drafted_other)})" if drafted_other else ""
                         strategy_alerts.append(
-                            f"⚠️ Strategy Rule Focus: Rule 'Rounds {min(rt.target_rounds)}-{window_end}' prioritizes {pos_req} in Round {current_round}{other_text} ({curr_cnt}/{min_cnt} drafted)."
+                            f"Strategy Rule Focus: Rule 'Rounds {min(rt.target_rounds)}-{window_end}' prioritizes {pos_req} in Round {current_round}{other_text} ({curr_cnt}/{min_cnt} drafted)."
                         )
 
         # 3. Positional Strategy Target Windows & Tiers (e.g. Top 4 TE in Rds 3-5, Tier 1 QB in Rd 4)
@@ -195,11 +195,11 @@ def build_draft_state(
             if pr.target_rounds and current_round in pr.target_rounds and curr_pos_cnt == 0:
                 if pr.top_n_target:
                     strategy_alerts.append(
-                        f"🎯 Strategy Target Window: Rule targets Top {pr.top_n_target} {pr.position} in Rounds {min(pr.target_rounds)}-{max(pr.target_rounds)}."
+                        f"Strategy Target Window: Rule targets Top {pr.top_n_target} {pr.position} in Rounds {min(pr.target_rounds)}-{max(pr.target_rounds)}."
                     )
                 elif pr.target_tiers:
                     strategy_alerts.append(
-                        f"🎯 Strategy Target Window: Rule targets Tier {','.join(map(str, pr.target_tiers))} {pr.position} in Round {current_round}."
+                        f"Strategy Target Window: Rule targets Tier {','.join(map(str, pr.target_tiers))} {pr.position} in Round {current_round}."
                     )
 
         # 4. Conditional Tier Caps (e.g. Drafted Tier 1 Burrow -> Max 1 QB)
@@ -218,7 +218,7 @@ def build_draft_state(
                         else ("TEs" if pr.position.upper() == "TE" else f"{pr.position}s")
                     )
                     strategy_alerts.append(
-                        f"🔔 Strategy Notice: Drafted Tier 1 {tier1_drafted[0].name}. You don't need any more {pos_label}."
+                        f"Strategy Notice: Drafted Tier 1 {tier1_drafted[0].name}. You don't need any more {pos_label}."
                     )
 
     baselines = calculate_vorp_baselines(all_players, total_teams)

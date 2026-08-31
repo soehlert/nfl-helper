@@ -2050,7 +2050,6 @@
             antiCorrContainer.style.display = 'block';
             antiCorrContainer.innerHTML = warnings.map(w => `
               <div class="alert-banner warning" style="margin-bottom: 0.5rem;">
-                <div style="font-size: 1.1rem;">⚠️</div>
                 <div>
                   <div class="alert-title">MATCHUP CORRELATION WARNING</div>
                   <div class="alert-desc">${w}</div>
@@ -2070,7 +2069,6 @@
             irContainer.style.display = 'block';
             irContainer.innerHTML = irs.map(adj => `
               <div class="alert-banner warning" style="margin-bottom: 0.5rem;">
-                <div style="font-size: 1.1rem;">⚠️</div>
                 <div>
                   <div class="alert-title">ROSTER ADJUSTMENT: ${adj.player_name} (${adj.injury_status})</div>
                   <div class="alert-desc">${adj.reason}</div>
