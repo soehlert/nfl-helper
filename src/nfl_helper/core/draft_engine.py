@@ -157,6 +157,31 @@ def build_draft_state(
         user_drafted_players=user_drafted_players,
     )
 
+    next_user_pick = overall_pick + turn_gap + 1 if on_the_clock else overall_pick + picks_until_turn + turn_gap + 1
+
+    current_round = min(total_rounds, (overall_pick - 1) // total_teams + 1)
+    strategy_alerts: list[str] = []
+    if cheatsheet_context:
+        for qd in cheatsheet_context.quota_deadlines:
+            curr_cnt = user_roster_counts.get(qd.position, 0)
+            if curr_cnt < qd.required_count and current_round <= qd.deadline_round:
+                rounds_left = qd.deadline_round - current_round + 1
+                needed = qd.required_count - curr_cnt
+                if rounds_left <= needed + 2:
+                    strategy_alerts.append(
+                        f"⚠️ Quota Deadline Alert: Need {needed} more {qd.position}s across next {rounds_left} rounds to meet Round {qd.deadline_round} deadline ({curr_cnt}/{qd.required_count} drafted)."
+                    )
+        for rt in cheatsheet_context.round_targets:
+            if current_round in rt.target_rounds:
+                window_end = max(rt.target_rounds)
+                rounds_left_window = window_end - current_round + 1
+                for pos_req, min_cnt in rt.min_counts.items():
+                    curr_cnt = user_roster_counts.get(pos_req, 0)
+                    if curr_cnt < min_cnt and rounds_left_window <= (min_cnt - curr_cnt):
+                        strategy_alerts.append(
+                            f"⚠️ Strategy Alert: Rule requires at least {min_cnt} {pos_req} in Rounds {min(rt.target_rounds)}-{window_end} ({curr_cnt}/{min_cnt} drafted)."
+                        )
+
     baselines = calculate_vorp_baselines(all_players, total_teams)
     suggestions = generate_draft_suggestions(
         available_players,
@@ -170,10 +195,10 @@ def build_draft_state(
         user_roster_counts=user_roster_counts,
         total_rounds=total_rounds,
         user_drafted_players=user_drafted_players,
+        next_user_pick=next_user_pick,
     )
 
     is_complete = overall_pick > (total_teams * total_rounds)
-    current_round = min(total_rounds, (overall_pick - 1) // total_teams + 1)
     if is_complete:
         picks_until_turn = 0
         turn_gap = 0
@@ -188,6 +213,7 @@ def build_draft_state(
         total_teams=total_teams,
         current_pick=min(total_teams * total_rounds, overall_pick) if is_complete else overall_pick,
         current_round=current_round,
+        user_drafted_roster_counts=user_roster_counts,
         user_draft_slot=user_draft_slot,
         user_team_id=user_team_id,
         picks_until_user_turn=picks_until_turn,
@@ -199,4 +225,5 @@ def build_draft_state(
         tiers_by_position=tiers_by_pos,
         cliff_warnings=cliffs,
         top_suggestions=suggestions,
+        strategy_alerts=strategy_alerts,
     )

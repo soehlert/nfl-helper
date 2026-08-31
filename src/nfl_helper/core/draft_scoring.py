@@ -8,13 +8,11 @@ from nfl_helper.core.draft_rationale import (
 )
 from nfl_helper.core.draft_rules import (
     calculate_required_positions,
+    calculate_urgent_quota_positions,
     evaluate_strategy_rule_adjustments,
 )
 from nfl_helper.core.tier_calculator import calculate_tier_drop
-from nfl_helper.core.vorp import (
-    POSITION_DEMAND_WEIGHTS,
-    calculate_vorp,
-)
+from nfl_helper.core.vorp import POSITION_DEMAND_WEIGHTS, calculate_vorp
 from nfl_helper.models.cheatsheet import CheatsheetContext
 from nfl_helper.models.draft import DraftSuggestion, PlayerTier, TierCliffWarning
 from nfl_helper.models.player import Player
@@ -32,6 +30,7 @@ def generate_draft_suggestions(
     user_roster_counts: dict[str, int] | None = None,
     total_rounds: int = 16,
     user_drafted_players: list[Player] | None = None,
+    next_user_pick: int | None = None,
 ) -> list[DraftSuggestion]:
     """Generate ranked tactical draft suggestions balancing VORP, cliffs, rules, roster needs, and ADP value."""
     vorp_scores = calculate_vorp(available_players, baselines)
@@ -69,6 +68,7 @@ def generate_draft_suggestions(
     if roster.get("D/ST", 0) >= 1:
         capped_positions.add("D/ST")
 
+    # Hard-filter capped positions upfront so completed positions never show
     if capped_positions:
         available_players = [
             p
@@ -93,17 +93,22 @@ def generate_draft_suggestions(
                 allowed.update(["DEF", "DST"])
             available_players = [p for p in available_players if str(p.position).upper() in allowed]
 
-    # Draft deadline & quota enforcement: filter suggestions when remaining rounds equals required slots
-    required_positions = calculate_required_positions(
+    # End-of-draft roster legality enforcement: hard filter ONLY when remaining rounds equals mandatory unfilled starter slots
+    mandatory_starter_reqs = calculate_required_positions(
         current_round, total_rounds, roster, capped_positions=capped_positions, cheatsheet_context=cheatsheet_context
     )
-    if required_positions:
+    if mandatory_starter_reqs:
         available_players = [
             p
             for p in available_players
-            if str(p.position).upper() in required_positions
-            or (str(p.position).upper() in ("DEF", "DST") and "D/ST" in required_positions)
+            if str(p.position).upper() in mandatory_starter_reqs
+            or (str(p.position).upper() in ("DEF", "DST") and "D/ST" in mandatory_starter_reqs)
         ]
+
+    # Mid-draft strategy quota deadlines: soft urgency boost (+2.50) without deleting falling value steals
+    urgent_quota_positions = calculate_urgent_quota_positions(
+        current_round, roster, cheatsheet_context=cheatsheet_context
+    )
 
     top_tier_info: dict[str, tuple[int, int, float]] = {}
     for pos, pos_tiers in tiers_by_pos.items():
@@ -178,6 +183,9 @@ def generate_draft_suggestions(
                     break
 
         # Roster quota urgency & round deadline weighting
+        if pos_str in urgent_quota_positions or (pos_str in ("DEF", "DST") and "D/ST" in urgent_quota_positions):
+            base_score += 2.50  # Strong urgency bonus while allowing extreme falling value steals to surface
+
         for pos_dl, q_dl, dl_round in deadline_quotas:
             if pos_str == pos_dl and current_round <= dl_round:
                 curr_dl_cnt = roster.get(pos_str, 0)
@@ -225,9 +233,22 @@ def generate_draft_suggestions(
             steal_bonus = min(1.5, (overall_pick - p.adp) * 0.08)
             base_score += steal_bonus
 
-        # Strategy Rules Adjustment
+        # Count remaining players in this player's tier
+        remaining_in_tier = 1
+        pos_tiers = tiers_by_pos.get(str(p.position), [])
+        for pt in pos_tiers:
+            if pt.tier_num == p_tier:
+                remaining_in_tier = len(pt.players)
+                break
+
+        # Strategy Rules Adjustment with next_user_pick lookahead
         rule_delta, rule_note = evaluate_strategy_rule_adjustments(
-            p, cheatsheet_context, current_round, user_drafted_players=user_drafted_players
+            p,
+            cheatsheet_context,
+            current_round,
+            user_drafted_players=user_drafted_players,
+            next_user_pick=next_user_pick,
+            remaining_tier_count=remaining_in_tier,
         )
         base_score += rule_delta
 

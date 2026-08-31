@@ -6,6 +6,7 @@ from nfl_helper.core.cheatsheet import parse_plain_text_cheatsheet
 from nfl_helper.core.draft_engine import build_draft_state
 from nfl_helper.core.draft_rules import (
     calculate_required_positions,
+    calculate_urgent_quota_positions,
     evaluate_strategy_rule_adjustments,
 )
 from nfl_helper.core.draft_scoring import generate_draft_suggestions
@@ -365,13 +366,12 @@ def test_strategy_rule_target_tier_fading_and_deadline_minimums() -> None:
     assert req_rd14 == {"K", "D/ST"}
 
     # In Round 9 with only 2 RBs (rule requires 4 in first 10 rounds, 2 rounds left to deadline)
-    req_rd9 = calculate_required_positions(
+    urgent_rd9 = calculate_urgent_quota_positions(
         current_round=9,
-        total_rounds=15,
         roster={"QB": 1, "RB": 2, "WR": 4, "TE": 1, "K": 0, "D/ST": 0},
         cheatsheet_context=ctx,
     )
-    assert req_rd9 == {"RB"}
+    assert urgent_rd9 == {"RB"}
 
 
 def test_roster_aware_conditional_caps_suppression() -> None:
@@ -826,3 +826,63 @@ def test_rb_handcuff_synergy_boost() -> None:
     assert suggs[0].player.name == "Kyle Monangai"
     assert suggs[0].score > suggs[1].score
     assert "Handcuff (D'Andre Swift)" in suggs[0].reason
+
+
+def test_turn_lookahead_and_soft_quota_urgency() -> None:
+    """Verify dynamic turn lookahead moderates boosts when safe, and soft quota urgency preserves falling value."""
+    rules_text = """
+    QB - Target Tier 1 in round 4
+    RB - Get 4 in the first 10 rounds
+    WR - Get 4 minimum
+    """
+    ctx = parse_plain_text_cheatsheet(rules_text)
+
+    # 1. Turn lookahead test: Burrow (ADP 54) with next pick at 47 vs Maye (ADP 40) with next pick at 47
+    p_burrow = Player(
+        id="burrow", name="Joe Burrow", position=Position.QB, team="CIN", projected_points=20.0, adp=54.0, tier=1
+    )
+    p_maye = Player(
+        id="maye", name="Drake Maye", position=Position.QB, team="NE", projected_points=21.0, adp=40.0, tier=1
+    )
+
+    d_safe, note_safe = evaluate_strategy_rule_adjustments(
+        p_burrow, ctx, current_round=4, next_user_pick=47, remaining_tier_count=2
+    )
+    d_urgent, note_urgent = evaluate_strategy_rule_adjustments(
+        p_maye, ctx, current_round=4, next_user_pick=47, remaining_tier_count=2
+    )
+
+    assert d_safe == 0.70
+    assert "Safe across turn" in (note_safe or "")
+    assert d_urgent == 1.50
+    assert "Top QB in Rd 4" in (note_urgent or "")
+
+    # 2. Soft quota urgency test: Falling star WR (Mike Evans) remains visible alongside boosted RB
+    p_evans = Player(id="evans", name="Mike Evans", position=Position.WR, team="TB", projected_points=14.5, adp=58.0)
+    p_stevenson = Player(
+        id="stevenson", name="Rhamondre Stevenson", position=Position.RB, team="NE", projected_points=11.0, adp=83.0
+    )
+
+    tiers_by_pos = {
+        "WR": cluster_position_tiers([p_evans], "WR"),
+        "RB": cluster_position_tiers([p_stevenson], "RB"),
+    }
+    baselines = {"RB": 10.0, "WR": 10.0, "QB": 15.0, "TE": 9.0, "K": 8.0, "D/ST": 8.0}
+
+    suggs = generate_draft_suggestions(
+        available_players=[p_evans, p_stevenson],
+        tiers_by_pos=tiers_by_pos,
+        cliff_warnings=[],
+        baselines=baselines,
+        overall_pick=67,
+        cheatsheet_context=ctx,
+        user_roster_counts={"QB": 1, "TE": 1, "WR": 2, "RB": 2},
+        total_teams=10,
+        total_rounds=15,
+        next_user_pick=74,
+    )
+
+    # Both players are present and ranked (Mike Evans is not deleted)
+    suggested_names = [s.player.name for s in suggs]
+    assert "Mike Evans" in suggested_names
+    assert "Rhamondre Stevenson" in suggested_names

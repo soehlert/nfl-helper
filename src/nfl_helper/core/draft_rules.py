@@ -9,6 +9,8 @@ def evaluate_strategy_rule_adjustments(
     cheatsheet_context: CheatsheetContext | None,
     current_round: int,
     user_drafted_players: list[Player] | None = None,
+    next_user_pick: int | None = None,
+    remaining_tier_count: int = 1,
 ) -> tuple[float, str | None]:
     """Calculate deterministic score delta and reason note from active strategy rules dynamically."""
     if not cheatsheet_context:
@@ -95,8 +97,19 @@ def evaluate_strategy_rule_adjustments(
                             or (branch.target_tiers and p_tier in branch.target_tiers)
                             or p_tier == 1
                         ):
-                            delta += 1.5
-                            specific_notes.append(f"Strategy Target: Top {pos_rule.position} in Rd {current_round}")
+                            if (
+                                next_user_pick
+                                and player.adp
+                                and player.adp >= next_user_pick
+                                and remaining_tier_count > 1
+                            ):
+                                delta += 0.70
+                                specific_notes.append(
+                                    f"Strategy Target: {pos_rule.position} in Rd {current_round} (Safe across turn)"
+                                )
+                            else:
+                                delta += 1.50
+                                specific_notes.append(f"Strategy Target: Top {pos_rule.position} in Rd {current_round}")
                             branch_evaluated = True
                             break
                     elif branch.target_rounds and current_round < min(branch.target_rounds):
@@ -140,8 +153,14 @@ def evaluate_strategy_rule_adjustments(
                     if (
                         pos_rule.top_n_target and (player.cheatsheet_rank or 99) <= pos_rule.top_n_target
                     ) or p_tier == 1:
-                        delta += 1.5
-                        specific_notes.append(f"Strategy Target: Top {pos_rule.position} in Rd {current_round}")
+                        if next_user_pick and player.adp and player.adp >= next_user_pick and remaining_tier_count > 1:
+                            delta += 0.70
+                            specific_notes.append(
+                                f"Strategy Target: {pos_rule.position} in Rd {current_round} (Safe across turn)"
+                            )
+                        else:
+                            delta += 1.50
+                            specific_notes.append(f"Strategy Target: Top {pos_rule.position} in Rd {current_round}")
                     elif pos_rule.target_tiers and p_tier in pos_rule.target_tiers:
                         delta += 0.8
                         specific_notes.append(f"Strategy Target: Tier {p_tier} {pos_rule.position}")
@@ -229,7 +248,29 @@ def calculate_required_positions(
             additional_needed = max(0, needed - already_counted)
             needed_slots.extend([pos] * additional_needed)
 
-    # 3. Check mid-draft round deadlines from typed quota deadlines
+    if rounds_remaining <= len(needed_slots):
+        return set(needed_slots)
+    return None
+
+
+def calculate_urgent_quota_positions(
+    current_round: int,
+    roster: dict[str, int],
+    quota_deadlines: list[PositionalQuotaDeadline] | None = None,
+    cheatsheet_context: CheatsheetContext | None = None,
+) -> set[str]:
+    """Calculate positions with urgent strategy quota deadlines (e.g. RB - 4 by Round 10)."""
+    urgent: set[str] = set()
+    if cheatsheet_context:
+        for rt in cheatsheet_context.round_targets:
+            if current_round in rt.target_rounds:
+                window_end = max(rt.target_rounds)
+                rounds_left_in_window = window_end - current_round + 1
+                for pos_req, min_cnt in rt.min_counts.items():
+                    curr_count = roster.get(pos_req, 0)
+                    if curr_count < min_cnt and rounds_left_in_window <= (min_cnt - curr_count):
+                        urgent.add(pos_req)
+
     deadlines = quota_deadlines or (cheatsheet_context.quota_deadlines if cheatsheet_context else [])
     for qd in deadlines:
         pos_dl = qd.position
@@ -239,8 +280,5 @@ def calculate_required_positions(
             rounds_left_to_deadline = deadline_rnd - current_round + 1
             curr_count = roster.get(pos_dl, 0)
             if curr_count < quota and rounds_left_to_deadline <= (quota - curr_count):
-                return {pos_dl}
-
-    if rounds_remaining <= len(needed_slots):
-        return set(needed_slots)
-    return None
+                urgent.add(pos_dl)
+    return urgent

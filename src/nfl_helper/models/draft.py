@@ -79,8 +79,10 @@ class DraftState(BaseModel):
     snake_turn_gap: int = 0
     is_user_on_the_clock: bool = False
     capped_positions: list[str] = Field(default_factory=list)
+    user_drafted_roster_counts: dict[str, int] = Field(default_factory=dict)
     recent_picks: list[DraftPick] = Field(default_factory=list)
     available_players_by_pos: dict[str, list[Player]] = Field(default_factory=dict)
     tiers_by_position: dict[str, list[PlayerTier]] = Field(default_factory=dict)
     cliff_warnings: list[TierCliffWarning] = Field(default_factory=list)
     top_suggestions: list[DraftSuggestion] = Field(default_factory=list)
+    strategy_alerts: list[str] = Field(default_factory=list)

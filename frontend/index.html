@@ -42,6 +42,11 @@
         <div id="top-cliff-alerts-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
       </div>
 
+      <!-- Strategy Quota & Deadline Alerts Banner -->
+      <div id="strategy-alerts-wrapper" style="display: none; margin-bottom: 1rem;">
+        <div id="strategy-alerts-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+      </div>
+
       <div class="draft-clock-banner">
         <div class="clock-stat">
           <div class="value" id="overall-pick-num">#1</div>
@@ -1723,6 +1728,27 @@
               </div>`;
           }
           topCliffContainer.innerHTML = cliffHtml;
+        }
+      }
+
+      // Render Strategy Quota & Deadline Alerts Banner
+      const stratAlertsWrapper = document.getElementById('strategy-alerts-wrapper');
+      const stratAlertsContainer = document.getElementById('strategy-alerts-container');
+      if (stratAlertsWrapper && stratAlertsContainer) {
+        const alerts = data.strategy_alerts || [];
+        if (alerts.length === 0) {
+          stratAlertsWrapper.style.display = 'none';
+          stratAlertsContainer.innerHTML = '';
+        } else {
+          stratAlertsWrapper.style.display = 'block';
+          let alertsHtml = '';
+          alerts.forEach(msg => {
+            alertsHtml += `
+              <div class="alert-banner warning" style="padding: 0.6rem 0.9rem; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.2); border-left: 4px solid var(--accent-amber);">
+                <div style="font-size: 0.85rem; font-weight: 600; color: #fbbf24;">${msg}</div>
+              </div>`;
+          });
+          stratAlertsContainer.innerHTML = alertsHtml;
         }
       }
 

@@ -33,7 +33,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 1.6,
+    "adp": 1.4,
     "bye_week": 5
   },
   {
@@ -70,7 +70,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 2.5,
+    "adp": 2.2,
     "bye_week": 12
   },
   {
@@ -107,7 +107,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 6.6,
+    "adp": 6.4,
     "bye_week": 9
   },
   {
@@ -144,7 +144,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 6.9,
+    "adp": 7.0,
     "bye_week": 14
   },
   {
@@ -181,7 +181,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 11.1,
+    "adp": 10.6,
     "bye_week": 12
   },
   {
@@ -218,7 +218,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 12.2,
+    "adp": 12.3,
     "bye_week": 6
   },
   {
@@ -255,15 +255,52 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 14.3,
+    "adp": 14.0,
     "bye_week": 5
+  },
+  {
+    "id": "9224",
+    "name": "Chase Brown",
+    "position": "RB",
+    "team": "CIN",
+    "projected_points": 14.85,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 16.7,
+    "bye_week": 12
   },
   {
     "id": "12527",
     "name": "Ashton Jeanty",
     "position": "RB",
     "team": "LV",
-    "projected_points": 14.85,
+    "projected_points": 14.47,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -292,89 +329,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 16.5,
-    "bye_week": 10
-  },
-  {
-    "id": "9224",
-    "name": "Chase Brown",
-    "position": "RB",
-    "team": "CIN",
-    "projected_points": 14.47,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
     "adp": 17.9,
-    "bye_week": 12
-  },
-  {
-    "id": "3198",
-    "name": "Derrick Henry",
-    "position": "RB",
-    "team": "BAL",
-    "projected_points": 14.13,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 19.0,
-    "bye_week": 14
+    "bye_week": 10
   },
   {
     "id": "12507",
     "name": "Omarion Hampton",
     "position": "RB",
     "team": "LAC",
-    "projected_points": 13.83,
+    "projected_points": 14.13,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -403,8 +366,45 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 19.1,
+    "adp": 18.2,
     "bye_week": 5
+  },
+  {
+    "id": "3198",
+    "name": "Derrick Henry",
+    "position": "RB",
+    "team": "BAL",
+    "projected_points": 13.83,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 18.7,
+    "bye_week": 14
   },
   {
     "id": "8151",
@@ -440,7 +440,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 21.3,
+    "adp": 21.9,
     "bye_week": 6
   },
   {
@@ -477,7 +477,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 25.3,
+    "adp": 25.8,
     "bye_week": 11
   },
   {
@@ -514,7 +514,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 34.3,
+    "adp": 33.6,
     "bye_week": 6
   },
   {
@@ -551,7 +551,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 34.3,
+    "adp": 34.6,
     "bye_week": 12
   },
   {
@@ -588,7 +588,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 34.4,
+    "adp": 34.9,
     "bye_week": 7
   },
   {
@@ -600,7 +600,7 @@
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
-    "injury_status": "QUESTIONABLE",
+    "injury_status": "ACTIVE",
     "eligible_slots": [],
     "opponent": null,
     "opponent_rank": null,
@@ -625,7 +625,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 35.2,
+    "adp": 39.9,
     "bye_week": 10
   },
   {
@@ -662,7 +662,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 43.9,
+    "adp": 43.7,
     "bye_week": 12
   },
   {
@@ -699,7 +699,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 44.5,
+    "adp": 44.3,
     "bye_week": 11
   },
   {
@@ -736,7 +736,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 48.6,
+    "adp": 49.3,
     "bye_week": 11
   },
   {
@@ -773,7 +773,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 53.0,
+    "adp": 52.1,
     "bye_week": 10
   },
   {
@@ -810,7 +810,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 56.7,
+    "adp": 54.1,
     "bye_week": 7
   },
   {
@@ -847,7 +847,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 57.8,
+    "adp": 57.0,
     "bye_week": 14
   },
   {
@@ -884,7 +884,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 65.0,
+    "adp": 64.0,
     "bye_week": 12
   },
   {
@@ -921,7 +921,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 67.3,
+    "adp": 67.4,
     "bye_week": 14
   },
   {
@@ -958,7 +958,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 70.1,
+    "adp": 69.3,
     "bye_week": 10
   },
   {
@@ -995,7 +995,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 81.9,
+    "adp": 81.5,
     "bye_week": 14
   },
   {
@@ -1032,7 +1032,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 82.8,
+    "adp": 81.6,
     "bye_week": 9
   },
   {
@@ -1069,7 +1069,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 91.3,
+    "adp": 89.8,
     "bye_week": 5
   },
   {
@@ -1106,7 +1106,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 92.3,
+    "adp": 91.3,
     "bye_week": 9
   },
   {
@@ -1143,12 +1143,12 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 95.8,
+    "adp": 94.9,
     "bye_week": 11
   },
   {
-    "id": "6806",
-    "name": "J.K. Dobbins",
+    "id": "12489",
+    "name": "RJ Harvey",
     "position": "RB",
     "team": "DEN",
     "projected_points": 10.41,
@@ -1184,8 +1184,8 @@
     "bye_week": 14
   },
   {
-    "id": "12489",
-    "name": "RJ Harvey",
+    "id": "6806",
+    "name": "J.K. Dobbins",
     "position": "RB",
     "team": "DEN",
     "projected_points": 10.31,
@@ -1217,7 +1217,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 105.8,
+    "adp": 104.2,
     "bye_week": 14
   },
   {
@@ -1254,7 +1254,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 108.4,
+    "adp": 107.4,
     "bye_week": 11
   },
   {
@@ -1291,7 +1291,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 111.0,
+    "adp": 108.9,
     "bye_week": 11
   },
   {
@@ -1328,7 +1328,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 112.6,
+    "adp": 112.8,
     "bye_week": 7
   },
   {
@@ -1365,52 +1365,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 117.5,
+    "adp": 115.8,
     "bye_week": 6
-  },
-  {
-    "id": "12533",
-    "name": "Jacory Croskey-Merritt",
-    "position": "RB",
-    "team": "WAS",
-    "projected_points": 9.86,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "QUESTIONABLE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 124.0,
-    "bye_week": 14
   },
   {
     "id": "4199",
     "name": "Aaron Jones",
     "position": "RB",
     "team": "MIN",
-    "projected_points": 9.78,
+    "projected_points": 9.86,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -1439,8 +1402,45 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 124.0,
+    "adp": 122.2,
     "bye_week": 6
+  },
+  {
+    "id": "12533",
+    "name": "Jacory Croskey-Merritt",
+    "position": "RB",
+    "team": "WAS",
+    "projected_points": 9.78,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "QUESTIONABLE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 125.6,
+    "bye_week": 14
   },
   {
     "id": "8408",
@@ -1476,7 +1476,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 127.1,
+    "adp": 126.7,
     "bye_week": 6
   },
   {
@@ -1513,7 +1513,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 131.2,
+    "adp": 129.9,
     "bye_week": 14
   },
   {
@@ -1550,7 +1550,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 151.1,
+    "adp": 151.2,
     "bye_week": 10
   },
   {
@@ -1587,7 +1587,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 152.3,
+    "adp": 153.4,
     "bye_week": 12
   },
   {
@@ -1624,7 +1624,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 154.2,
+    "adp": 154.1,
     "bye_week": 11
   },
   {
@@ -1661,7 +1661,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 155.0,
+    "adp": 155.1,
     "bye_week": 14
   },
   {
@@ -1698,14 +1698,14 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 158.8,
+    "adp": 155.5,
     "bye_week": 5
   },
   {
-    "id": "8154",
-    "name": "Brian Robinson",
+    "id": "13305",
+    "name": "Mike Washington",
     "position": "RB",
-    "team": "ATL",
+    "team": "LV",
     "projected_points": 9.18,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -1735,8 +1735,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 160.8,
-    "bye_week": 12
+    "adp": 159.6,
+    "bye_week": 10
   },
   {
     "id": "4035",
@@ -1772,15 +1772,52 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 161.6,
+    "adp": 160.6,
     "bye_week": 12
   },
   {
-    "id": "13305",
-    "name": "Mike Washington",
+    "id": "11581",
+    "name": "MarShawn Lloyd",
     "position": "RB",
-    "team": "LV",
+    "team": "GB",
     "projected_points": 9.05,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 160.8,
+    "bye_week": 10
+  },
+  {
+    "id": "8154",
+    "name": "Brian Robinson",
+    "position": "RB",
+    "team": "ATL",
+    "projected_points": 8.98,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -1809,45 +1846,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 168.2,
-    "bye_week": 10
-  },
-  {
-    "id": "11655",
-    "name": "Tyrone Tracy",
-    "position": "RB",
-    "team": "NYG",
-    "projected_points": 8.98,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "QUESTIONABLE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 168.5,
-    "bye_week": 11
+    "adp": 166.3,
+    "bye_week": 12
   },
   {
     "id": "5995",
@@ -1883,19 +1883,19 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 169.6,
+    "adp": 168.9,
     "bye_week": 14
   },
   {
-    "id": "11581",
-    "name": "MarShawn Lloyd",
+    "id": "11655",
+    "name": "Tyrone Tracy",
     "position": "RB",
-    "team": "GB",
+    "team": "NYG",
     "projected_points": 8.86,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
-    "injury_status": "ACTIVE",
+    "injury_status": "QUESTIONABLE",
     "eligible_slots": [],
     "opponent": null,
     "opponent_rank": null,
@@ -1920,8 +1920,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 169.8,
-    "bye_week": 10
+    "adp": 169.1,
+    "bye_week": 11
   },
   {
     "id": "4988",
@@ -1961,48 +1961,11 @@
     "bye_week": null
   },
   {
-    "id": "1379",
-    "name": "Kyle Juszczyk",
-    "position": "RB",
-    "team": "SF",
-    "projected_points": 8.74,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "QUESTIONABLE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 169.9,
-    "bye_week": 9
-  },
-  {
     "id": "6130",
     "name": "Devin Singletary",
     "position": "RB",
     "team": "NYG",
-    "projected_points": 8.68,
+    "projected_points": 8.74,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -2039,11 +2002,11 @@
     "name": "Trevor Etienne",
     "position": "RB",
     "team": "CAR",
-    "projected_points": 8.62,
+    "projected_points": 8.68,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
-    "injury_status": "QUESTIONABLE",
+    "injury_status": "IR",
     "eligible_slots": [],
     "opponent": null,
     "opponent_rank": null,
@@ -2076,7 +2039,7 @@
     "name": "Jonah Coleman",
     "position": "RB",
     "team": "DEN",
-    "projected_points": 8.56,
+    "projected_points": 8.62,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -2107,6 +2070,43 @@
     "assigned_slot": null,
     "adp": 170.0,
     "bye_week": 14
+  },
+  {
+    "id": "1379",
+    "name": "Kyle Juszczyk",
+    "position": "RB",
+    "team": "SF",
+    "projected_points": 8.56,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "QUESTIONABLE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 170.0,
+    "bye_week": 9
   },
   {
     "id": "4098",
@@ -2146,48 +2146,11 @@
     "bye_week": null
   },
   {
-    "id": "8800",
-    "name": "Malik Davis",
-    "position": "RB",
-    "team": "DAL",
-    "projected_points": 8.45,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": true,
-      "stadium_type": "DOME",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 170.0,
-    "bye_week": 7
-  },
-  {
     "id": "11574",
     "name": "Dylan Laube",
     "position": "RB",
     "team": "LV",
-    "projected_points": 8.4,
+    "projected_points": 8.45,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -2224,7 +2187,7 @@
     "name": "Isaac Guerendo",
     "position": "RB",
     "team": "SF",
-    "projected_points": 8.35,
+    "projected_points": 8.4,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -2255,6 +2218,43 @@
     "assigned_slot": null,
     "adp": 170.1,
     "bye_week": 9
+  },
+  {
+    "id": "12543",
+    "name": "Tahj Brooks",
+    "position": "RB",
+    "team": "CIN",
+    "projected_points": 8.35,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 170.1,
+    "bye_week": 12
   },
   {
     "id": "8208",
@@ -2331,11 +2331,85 @@
     "bye_week": 5
   },
   {
+    "id": "8800",
+    "name": "Malik Davis",
+    "position": "RB",
+    "team": "DAL",
+    "projected_points": 8.19,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": true,
+      "stadium_type": "DOME",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 170.1,
+    "bye_week": 7
+  },
+  {
+    "id": "11588",
+    "name": "Jawhar Jordan",
+    "position": "RB",
+    "team": "HOU",
+    "projected_points": 8.14,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "QUESTIONABLE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": true,
+      "stadium_type": "DOME",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 170.1,
+    "bye_week": 14
+  },
+  {
     "id": "11370",
     "name": "Chris Brooks",
     "position": "RB",
     "team": "GB",
-    "projected_points": 8.19,
+    "projected_points": 8.09,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -2368,48 +2442,11 @@
     "bye_week": 10
   },
   {
-    "id": "12543",
-    "name": "Tahj Brooks",
-    "position": "RB",
-    "team": "CIN",
-    "projected_points": 8.14,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 170.2,
-    "bye_week": 12
-  },
-  {
     "id": "13424",
     "name": "Seth McGowan",
     "position": "RB",
     "team": "IND",
-    "projected_points": 8.09,
+    "projected_points": 8.04,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -2446,7 +2483,7 @@
     "name": "DJ Giddens",
     "position": "RB",
     "team": "IND",
-    "projected_points": 8.04,
+    "projected_points": 8.0,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -2479,15 +2516,15 @@
     "bye_week": 14
   },
   {
-    "id": "11588",
-    "name": "Jawhar Jordan",
+    "id": "13302",
+    "name": "Adam Randall",
     "position": "RB",
-    "team": "HOU",
-    "projected_points": 8.0,
+    "team": "BAL",
+    "projected_points": 7.95,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
-    "injury_status": "QUESTIONABLE",
+    "injury_status": "ACTIVE",
     "eligible_slots": [],
     "opponent": null,
     "opponent_rank": null,
@@ -2501,8 +2538,8 @@
       "opponent": "",
       "over_under": null,
       "spread": null,
-      "is_dome": true,
-      "stadium_type": "DOME",
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
       "wind_mph": 0.0,
       "weather_condition": "CLEAR"
     },
@@ -2512,7 +2549,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 170.2,
+    "adp": 170.3,
     "bye_week": 14
   },
   {
@@ -2520,7 +2557,7 @@
     "name": "George Holani",
     "position": "RB",
     "team": "SEA",
-    "projected_points": 7.95,
+    "projected_points": 7.9,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -2553,15 +2590,15 @@
     "bye_week": 10
   },
   {
-    "id": "13302",
-    "name": "Adam Randall",
+    "id": "12544",
+    "name": "LeQuint Allen",
     "position": "RB",
-    "team": "BAL",
-    "projected_points": 7.9,
+    "team": "JAX",
+    "projected_points": 7.86,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
-    "injury_status": "ACTIVE",
+    "injury_status": "QUESTIONABLE",
     "eligible_slots": [],
     "opponent": null,
     "opponent_rank": null,
@@ -2586,15 +2623,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 170.4,
-    "bye_week": 14
+    "adp": 170.3,
+    "bye_week": 12
   },
   {
     "id": "11199",
     "name": "Emari Demercado",
     "position": "RB",
     "team": "KC",
-    "projected_points": 7.86,
+    "projected_points": 7.81,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -2625,43 +2662,6 @@
     "assigned_slot": null,
     "adp": 170.4,
     "bye_week": 6
-  },
-  {
-    "id": "12544",
-    "name": "LeQuint Allen",
-    "position": "RB",
-    "team": "JAX",
-    "projected_points": 7.81,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "QUESTIONABLE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 170.4,
-    "bye_week": 12
   },
   {
     "id": "11571",
@@ -2845,7 +2845,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 170.9,
+    "adp": 171.0,
     "bye_week": 9
   },
   {
@@ -2919,7 +2919,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 173.4,
+    "adp": 172.8,
     "bye_week": 5
   },
   {
@@ -2956,7 +2956,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 173.8,
+    "adp": 174.1,
     "bye_week": 5
   },
   {
@@ -2993,7 +2993,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 176.7,
+    "adp": 177.3,
     "bye_week": 5
   },
   {
@@ -3030,7 +3030,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 180.2,
+    "adp": 180.1,
     "bye_week": 10
   },
   {
@@ -3067,7 +3067,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 187.7,
+    "adp": 187.9,
     "bye_week": 12
   },
   {
@@ -3104,7 +3104,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 189.3,
+    "adp": 189.7,
     "bye_week": 6
   },
   {
@@ -3141,7 +3141,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 189.9,
+    "adp": 190.4,
     "bye_week": 5
   },
   {
@@ -3178,14 +3178,14 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 192.2,
+    "adp": 192.4,
     "bye_week": 9
   },
   {
-    "id": "7528",
-    "name": "Najee Harris",
+    "id": "12504",
+    "name": "Kaleb Johnson",
     "position": "RB",
-    "team": "NYG",
+    "team": "GB",
     "projected_points": 7.21,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -3215,14 +3215,14 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 193.2,
-    "bye_week": 11
+    "adp": 193.7,
+    "bye_week": 10
   },
   {
-    "id": "12504",
-    "name": "Kaleb Johnson",
+    "id": "7528",
+    "name": "Najee Harris",
     "position": "RB",
-    "team": "PIT",
+    "team": "NYG",
     "projected_points": 7.17,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -3252,8 +3252,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 193.8,
-    "bye_week": 9
+    "adp": 194.3,
+    "bye_week": 11
   },
   {
     "id": "11575",
@@ -3289,7 +3289,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 197.2,
+    "adp": 197.4,
     "bye_week": 12
   },
   {
@@ -3363,7 +3363,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 3.9,
+    "adp": 4.1,
     "bye_week": 12
   },
   {
@@ -3437,7 +3437,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 6.4,
+    "adp": 6.3,
     "bye_week": 10
   },
   {
@@ -3474,7 +3474,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 8.6,
+    "adp": 8.1,
     "bye_week": 5
   },
   {
@@ -3511,7 +3511,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 10.1,
+    "adp": 10.6,
     "bye_week": 7
   },
   {
@@ -3548,7 +3548,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 12.1,
+    "adp": 11.9,
     "bye_week": 6
   },
   {
@@ -3585,7 +3585,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 18.5,
+    "adp": 18.7,
     "bye_week": 12
   },
   {
@@ -3622,7 +3622,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 21.3,
+    "adp": 20.4,
     "bye_week": 14
   },
   {
@@ -3659,7 +3659,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 23.6,
+    "adp": 24.3,
     "bye_week": null
   },
   {
@@ -3696,52 +3696,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 26.1,
+    "adp": 25.6,
     "bye_week": 14
-  },
-  {
-    "id": "10229",
-    "name": "Rashee Rice",
-    "position": "WR",
-    "team": "KC",
-    "projected_points": 14.09,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 26.6,
-    "bye_week": 6
   },
   {
     "id": "8137",
     "name": "George Pickens",
     "position": "WR",
     "team": "DAL",
-    "projected_points": 13.84,
+    "projected_points": 14.09,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -3770,8 +3733,45 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 27.1,
+    "adp": 26.2,
     "bye_week": 7
+  },
+  {
+    "id": "10229",
+    "name": "Rashee Rice",
+    "position": "WR",
+    "team": "KC",
+    "projected_points": 13.84,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 27.6,
+    "bye_week": 6
   },
   {
     "id": "8144",
@@ -3807,7 +3807,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 30.6,
+    "adp": 30.0,
     "bye_week": 12
   },
   {
@@ -3844,7 +3844,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 30.9,
+    "adp": 30.8,
     "bye_week": 11
   },
   {
@@ -3881,7 +3881,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 37.7,
+    "adp": 37.2,
     "bye_week": 5
   },
   {
@@ -3918,7 +3918,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 39.4,
+    "adp": 39.8,
     "bye_week": 11
   },
   {
@@ -3955,7 +3955,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 41.3,
+    "adp": 41.5,
     "bye_week": 12
   },
   {
@@ -3992,7 +3992,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 42.0,
+    "adp": 42.3,
     "bye_week": 14
   },
   {
@@ -4029,7 +4029,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 43.0,
+    "adp": 42.6,
     "bye_week": 11
   },
   {
@@ -4066,7 +4066,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 43.3,
+    "adp": 42.7,
     "bye_week": 5
   },
   {
@@ -4103,7 +4103,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 43.9,
+    "adp": 43.1,
     "bye_week": 12
   },
   {
@@ -4140,7 +4140,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 48.2,
+    "adp": 48.4,
     "bye_week": 6
   },
   {
@@ -4177,7 +4177,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 50.2,
+    "adp": 49.7,
     "bye_week": 14
   },
   {
@@ -4251,7 +4251,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 59.8,
+    "adp": 60.1,
     "bye_week": 12
   },
   {
@@ -4288,52 +4288,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 62.2,
+    "adp": 61.6,
     "bye_week": 5
-  },
-  {
-    "id": "12519",
-    "name": "Luther Burden",
-    "position": "WR",
-    "team": "CHI",
-    "projected_points": 11.57,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "QUESTIONABLE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 64.4,
-    "bye_week": 7
   },
   {
     "id": "11620",
     "name": "Rome Odunze",
     "position": "WR",
     "team": "CHI",
-    "projected_points": 11.47,
+    "projected_points": 11.57,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -4362,7 +4325,44 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 64.9,
+    "adp": 64.1,
+    "bye_week": 7
+  },
+  {
+    "id": "12519",
+    "name": "Luther Burden",
+    "position": "WR",
+    "team": "CHI",
+    "projected_points": 11.47,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "QUESTIONABLE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 65.5,
     "bye_week": 7
   },
   {
@@ -4399,7 +4399,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 71.9,
+    "adp": 71.7,
     "bye_week": 5
   },
   {
@@ -4436,7 +4436,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 75.9,
+    "adp": 74.6,
     "bye_week": 9
   },
   {
@@ -4473,15 +4473,52 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 78.8,
+    "adp": 78.7,
     "bye_week": 11
+  },
+  {
+    "id": "5045",
+    "name": "Courtland Sutton",
+    "position": "WR",
+    "team": "DEN",
+    "projected_points": 11.1,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 80.0,
+    "bye_week": 14
   },
   {
     "id": "5846",
     "name": "DK Metcalf",
     "position": "WR",
     "team": "PIT",
-    "projected_points": 11.1,
+    "projected_points": 11.01,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -4512,43 +4549,6 @@
     "assigned_slot": null,
     "adp": 80.2,
     "bye_week": 9
-  },
-  {
-    "id": "5045",
-    "name": "Courtland Sutton",
-    "position": "WR",
-    "team": "DEN",
-    "projected_points": 11.01,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 80.6,
-    "bye_week": 14
   },
   {
     "id": "8167",
@@ -4584,7 +4584,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 81.0,
+    "adp": 80.8,
     "bye_week": 10
   },
   {
@@ -4621,7 +4621,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 84.2,
+    "adp": 83.6,
     "bye_week": 12
   },
   {
@@ -4658,7 +4658,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 90.7,
+    "adp": 92.3,
     "bye_week": 12
   },
   {
@@ -4695,7 +4695,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 92.9,
+    "adp": 93.1,
     "bye_week": 11
   },
   {
@@ -4732,7 +4732,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 96.5,
+    "adp": 97.0,
     "bye_week": 9
   },
   {
@@ -4773,48 +4773,11 @@
     "bye_week": 14
   },
   {
-    "id": "9756",
-    "name": "Jordan Addison",
+    "id": "2449",
+    "name": "Stefon Diggs",
     "position": "WR",
-    "team": "MIN",
+    "team": "WAS",
     "projected_points": 10.47,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": true,
-      "stadium_type": "DOME",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 110.9,
-    "bye_week": 6
-  },
-  {
-    "id": "13294",
-    "name": "Makai Lemon",
-    "position": "WR",
-    "team": "PHI",
-    "projected_points": 10.4,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -4843,14 +4806,51 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 112.1,
-    "bye_week": 5
+    "adp": 109.5,
+    "bye_week": 14
   },
   {
-    "id": "2449",
-    "name": "Stefon Diggs",
+    "id": "9756",
+    "name": "Jordan Addison",
     "position": "WR",
-    "team": "WAS",
+    "team": "MIN",
+    "projected_points": 10.4,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": true,
+      "stadium_type": "DOME",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 111.5,
+    "bye_week": 6
+  },
+  {
+    "id": "4037",
+    "name": "Chris Godwin",
+    "position": "WR",
+    "team": "TB",
     "projected_points": 10.33,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -4880,14 +4880,14 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 113.0,
-    "bye_week": 14
+    "adp": 112.1,
+    "bye_week": 11
   },
   {
-    "id": "4037",
-    "name": "Chris Godwin",
+    "id": "13294",
+    "name": "Makai Lemon",
     "position": "WR",
-    "team": "TB",
+    "team": "PHI",
     "projected_points": 10.27,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -4917,8 +4917,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 114.4,
-    "bye_week": 11
+    "adp": 112.2,
+    "bye_week": 5
   },
   {
     "id": "8126",
@@ -4954,7 +4954,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 115.6,
+    "adp": 116.0,
     "bye_week": 5
   },
   {
@@ -4991,7 +4991,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 117.0,
+    "adp": 118.7,
     "bye_week": 10
   },
   {
@@ -5028,15 +5028,52 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 117.9,
+    "adp": 120.5,
     "bye_week": 12
+  },
+  {
+    "id": "9754",
+    "name": "Quentin Johnston",
+    "position": "WR",
+    "team": "LAC",
+    "projected_points": 10.02,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": true,
+      "stadium_type": "DOME",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 122.6,
+    "bye_week": 5
   },
   {
     "id": "10222",
     "name": "Jayden Reed",
     "position": "WR",
     "team": "GB",
-    "projected_points": 10.02,
+    "projected_points": 9.96,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5065,7 +5102,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 121.5,
+    "adp": 123.4,
     "bye_week": 10
   },
   {
@@ -5073,7 +5110,7 @@
     "name": "Josh Downs",
     "position": "WR",
     "team": "IND",
-    "projected_points": 9.96,
+    "projected_points": 9.9,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5102,45 +5139,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 122.9,
+    "adp": 124.0,
     "bye_week": 14
-  },
-  {
-    "id": "9754",
-    "name": "Quentin Johnston",
-    "position": "WR",
-    "team": "LAC",
-    "projected_points": 9.9,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": true,
-      "stadium_type": "DOME",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 123.4,
-    "bye_week": 5
   },
   {
     "id": "13281",
@@ -5151,7 +5151,7 @@
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
-    "injury_status": "DOUBTFUL",
+    "injury_status": "IR",
     "eligible_slots": [],
     "opponent": null,
     "opponent_rank": null,
@@ -5176,7 +5176,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 129.1,
+    "adp": 130.6,
     "bye_week": 12
   },
   {
@@ -5213,7 +5213,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 133.2,
+    "adp": 133.7,
     "bye_week": 10
   },
   {
@@ -5250,7 +5250,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 133.3,
+    "adp": 134.1,
     "bye_week": 9
   },
   {
@@ -5287,7 +5287,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 134.2,
+    "adp": 134.4,
     "bye_week": 6
   },
   {
@@ -5324,7 +5324,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 137.8,
+    "adp": 140.6,
     "bye_week": 12
   },
   {
@@ -5361,7 +5361,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 140.7,
+    "adp": 141.0,
     "bye_week": 14
   },
   {
@@ -5398,7 +5398,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 142.0,
+    "adp": 141.2,
     "bye_week": 9
   },
   {
@@ -5435,7 +5435,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 143.4,
+    "adp": 142.9,
     "bye_week": 12
   },
   {
@@ -5509,7 +5509,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 152.2,
+    "adp": 153.1,
     "bye_week": 10
   },
   {
@@ -5546,7 +5546,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 162.9,
+    "adp": 162.3,
     "bye_week": 14
   },
   {
@@ -5583,52 +5583,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 167.3,
+    "adp": 168.8,
     "bye_week": 10
-  },
-  {
-    "id": "9502",
-    "name": "Tank Dell",
-    "position": "WR",
-    "team": "HOU",
-    "projected_points": 9.24,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "QUESTIONABLE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": true,
-      "stadium_type": "DOME",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 168.1,
-    "bye_week": 14
   },
   {
     "id": "2078",
     "name": "Odell Beckham",
     "position": "WR",
     "team": "NYG",
-    "projected_points": 9.2,
+    "projected_points": 9.24,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5657,7 +5620,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 169.5,
+    "adp": 169.4,
     "bye_week": 11
   },
   {
@@ -5665,7 +5628,7 @@
     "name": "KaVontae Turpin",
     "position": "WR",
     "team": "DAL",
-    "projected_points": 9.16,
+    "projected_points": 9.2,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5702,7 +5665,7 @@
     "name": "Luke McCaffrey",
     "position": "WR",
     "team": "WAS",
-    "projected_points": 9.11,
+    "projected_points": 9.16,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5739,7 +5702,7 @@
     "name": "Lil'Jordan Humphrey",
     "position": "WR",
     "team": "DEN",
-    "projected_points": 9.07,
+    "projected_points": 9.11,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5772,11 +5735,11 @@
     "bye_week": 14
   },
   {
-    "id": "7437",
-    "name": "Kyle Williams",
+    "id": "13411",
+    "name": "Zavion Thomas",
     "position": "WR",
-    "team": "FA",
-    "projected_points": 9.03,
+    "team": "CHI",
+    "projected_points": 9.07,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5806,14 +5769,14 @@
     "ceiling_points": 0.0,
     "assigned_slot": null,
     "adp": 169.9,
-    "bye_week": null
+    "bye_week": 7
   },
   {
     "id": "7670",
     "name": "Joshua Palmer",
     "position": "WR",
     "team": "BUF",
-    "projected_points": 8.99,
+    "projected_points": 9.03,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5850,7 +5813,7 @@
     "name": "Skyler Bell",
     "position": "WR",
     "team": "BUF",
-    "projected_points": 8.94,
+    "projected_points": 8.99,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5883,11 +5846,11 @@
     "bye_week": 12
   },
   {
-    "id": "638",
-    "name": "Kyle Williams",
+    "id": "13491",
+    "name": "Kaden Wetjen",
     "position": "WR",
-    "team": "FA",
-    "projected_points": 8.9,
+    "team": "PIT",
+    "projected_points": 8.94,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5917,51 +5880,14 @@
     "ceiling_points": 0.0,
     "assigned_slot": null,
     "adp": 169.9,
-    "bye_week": null
-  },
-  {
-    "id": "13380",
-    "name": "Brenen Thompson",
-    "position": "WR",
-    "team": "LAC",
-    "projected_points": 8.86,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "QUESTIONABLE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": true,
-      "stadium_type": "DOME",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 170.0,
-    "bye_week": 5
+    "bye_week": 9
   },
   {
     "id": "3634",
     "name": "Kalif Raymond",
     "position": "WR",
     "team": "CHI",
-    "projected_points": 8.83,
+    "projected_points": 8.9,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -5998,7 +5924,7 @@
     "name": "Roman Wilson",
     "position": "WR",
     "team": "PIT",
-    "projected_points": 8.79,
+    "projected_points": 8.86,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6031,11 +5957,11 @@
     "bye_week": 9
   },
   {
-    "id": "4177",
-    "name": "Mack Hollins",
+    "id": "7437",
+    "name": "Kyle Williams",
     "position": "WR",
-    "team": "NE",
-    "projected_points": 8.75,
+    "team": "FA",
+    "projected_points": 8.83,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6065,14 +5991,14 @@
     "ceiling_points": 0.0,
     "assigned_slot": null,
     "adp": 170.0,
-    "bye_week": 14
+    "bye_week": null
   },
   {
     "id": "13420",
     "name": "Bryce Lance",
     "position": "WR",
     "team": "NO",
-    "projected_points": 8.71,
+    "projected_points": 8.79,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6105,11 +6031,11 @@
     "bye_week": 12
   },
   {
-    "id": "13411",
-    "name": "Zavion Thomas",
+    "id": "13533",
+    "name": "Barion Brown",
     "position": "WR",
-    "team": "CHI",
-    "projected_points": 8.67,
+    "team": "NO",
+    "projected_points": 8.75,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6127,8 +6053,8 @@
       "opponent": "",
       "over_under": null,
       "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
+      "is_dome": true,
+      "stadium_type": "DOME",
       "wind_mph": 0.0,
       "weather_condition": "CLEAR"
     },
@@ -6139,14 +6065,14 @@
     "ceiling_points": 0.0,
     "assigned_slot": null,
     "adp": 170.0,
-    "bye_week": 7
+    "bye_week": 12
   },
   {
     "id": "13477",
     "name": "Colbie Young",
     "position": "WR",
     "team": "CIN",
-    "projected_points": 8.64,
+    "projected_points": 8.71,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6183,7 +6109,7 @@
     "name": "Isaiah Bond",
     "position": "WR",
     "team": "CLE",
-    "projected_points": 8.6,
+    "projected_points": 8.67,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6216,11 +6142,11 @@
     "bye_week": 10
   },
   {
-    "id": "13491",
-    "name": "Kaden Wetjen",
+    "id": "638",
+    "name": "Kyle Williams",
     "position": "WR",
-    "team": "PIT",
-    "projected_points": 8.57,
+    "team": "FA",
+    "projected_points": 8.64,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6250,14 +6176,14 @@
     "ceiling_points": 0.0,
     "assigned_slot": null,
     "adp": 170.0,
-    "bye_week": 9
+    "bye_week": null
   },
   {
     "id": "12485",
     "name": "Tez Johnson",
     "position": "WR",
     "team": "TB",
-    "projected_points": 8.53,
+    "projected_points": 8.6,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6294,7 +6220,7 @@
     "name": "Tutu Atwell",
     "position": "WR",
     "team": "LAR",
-    "projected_points": 8.5,
+    "projected_points": 8.57,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6331,11 +6257,11 @@
     "name": "Savion Williams",
     "position": "WR",
     "team": "GB",
-    "projected_points": 8.46,
+    "projected_points": 8.53,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
-    "injury_status": "ACTIVE",
+    "injury_status": "IR",
     "eligible_slots": [],
     "opponent": null,
     "opponent_rank": null,
@@ -6368,7 +6294,7 @@
     "name": "Andrei Iosivas",
     "position": "WR",
     "team": "CIN",
-    "projected_points": 8.43,
+    "projected_points": 8.5,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6401,48 +6327,11 @@
     "bye_week": 12
   },
   {
-    "id": "10218",
-    "name": "Xavier Hutchinson",
-    "position": "WR",
-    "team": "HOU",
-    "projected_points": 8.39,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": true,
-      "stadium_type": "DOME",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 170.2,
-    "bye_week": 14
-  },
-  {
-    "id": "9501",
-    "name": "DeMario Douglas",
+    "id": "4177",
+    "name": "Mack Hollins",
     "position": "WR",
     "team": "NE",
-    "projected_points": 8.36,
+    "projected_points": 8.46,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6471,7 +6360,81 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 170.3,
+    "adp": 170.1,
+    "bye_week": 14
+  },
+  {
+    "id": "10218",
+    "name": "Xavier Hutchinson",
+    "position": "WR",
+    "team": "HOU",
+    "projected_points": 8.43,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": true,
+      "stadium_type": "DOME",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 170.1,
+    "bye_week": 14
+  },
+  {
+    "id": "9501",
+    "name": "DeMario Douglas",
+    "position": "WR",
+    "team": "NE",
+    "projected_points": 8.39,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 170.4,
     "bye_week": 14
   },
   {
@@ -6479,7 +6442,7 @@
     "name": "Tyquan Thornton",
     "position": "WR",
     "team": "KC",
-    "projected_points": 8.33,
+    "projected_points": 8.36,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6516,7 +6479,7 @@
     "name": "Jalen Tolbert",
     "position": "WR",
     "team": "MIA",
-    "projected_points": 8.3,
+    "projected_points": 8.33,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6553,7 +6516,7 @@
     "name": "Darius Slayton",
     "position": "WR",
     "team": "NYG",
-    "projected_points": 8.26,
+    "projected_points": 8.3,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6590,7 +6553,7 @@
     "name": "Jahan Dotson",
     "position": "WR",
     "team": "ATL",
-    "projected_points": 8.23,
+    "projected_points": 8.26,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6627,7 +6590,7 @@
     "name": "Xavier Legette",
     "position": "WR",
     "team": "CAR",
-    "projected_points": 8.2,
+    "projected_points": 8.23,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6658,6 +6621,43 @@
     "assigned_slot": null,
     "adp": 170.7,
     "bye_week": 11
+  },
+  {
+    "id": "9502",
+    "name": "Tank Dell",
+    "position": "WR",
+    "team": "HOU",
+    "projected_points": 8.2,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "IR",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": true,
+      "stadium_type": "DOME",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 170.8,
+    "bye_week": 14
   },
   {
     "id": "9486",
@@ -6730,7 +6730,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 172.1,
+    "adp": 172.0,
     "bye_week": 6
   },
   {
@@ -6767,7 +6767,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 172.4,
+    "adp": 172.6,
     "bye_week": 6
   },
   {
@@ -6804,7 +6804,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 178.2,
+    "adp": 177.3,
     "bye_week": 10
   },
   {
@@ -6841,7 +6841,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 179.2,
+    "adp": 178.4,
     "bye_week": 10
   },
   {
@@ -6878,7 +6878,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 182.4,
+    "adp": 181.4,
     "bye_week": 14
   },
   {
@@ -6915,44 +6915,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 182.4,
-    "bye_week": 12
-  },
-  {
-    "id": "13320",
-    "name": "Zachariah Branch",
-    "position": "WR",
-    "team": "ATL",
-    "projected_points": 7.96,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": true,
-      "stadium_type": "DOME",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 183.2,
+    "adp": 182.9,
     "bye_week": 12
   },
   {
@@ -6960,7 +6923,7 @@
     "name": "Jayden Higgins",
     "position": "WR",
     "team": "HOU",
-    "projected_points": 7.93,
+    "projected_points": 7.96,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -6989,14 +6952,51 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 183.7,
+    "adp": 183.1,
     "bye_week": 14
   },
   {
-    "id": "7049",
-    "name": "Jauan Jennings",
+    "id": "13296",
+    "name": "Caleb Douglas",
     "position": "WR",
-    "team": "MIN",
+    "team": "MIA",
+    "projected_points": 7.93,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 184.4,
+    "bye_week": 6
+  },
+  {
+    "id": "4039",
+    "name": "Cooper Kupp",
+    "position": "WR",
+    "team": "SEA",
     "projected_points": 7.91,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -7015,8 +7015,8 @@
       "opponent": "",
       "over_under": null,
       "spread": null,
-      "is_dome": true,
-      "stadium_type": "DOME",
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
       "wind_mph": 0.0,
       "weather_condition": "CLEAR"
     },
@@ -7026,8 +7026,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 184.7,
-    "bye_week": 6
+    "adp": 184.4,
+    "bye_week": 10
   },
   {
     "id": "10213",
@@ -7063,7 +7063,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 185.5,
+    "adp": 185.9,
     "bye_week": 10
   },
   {
@@ -7100,19 +7100,19 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 188.0,
+    "adp": 188.7,
     "bye_week": 11
   },
   {
-    "id": "3321",
-    "name": "Tyreek Hill",
+    "id": "13320",
+    "name": "Zachariah Branch",
     "position": "WR",
-    "team": "FA",
+    "team": "ATL",
     "projected_points": 7.82,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
-    "injury_status": "OUT",
+    "injury_status": "ACTIVE",
     "eligible_slots": [],
     "opponent": null,
     "opponent_rank": null,
@@ -7126,8 +7126,8 @@
       "opponent": "",
       "over_under": null,
       "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
+      "is_dome": true,
+      "stadium_type": "DOME",
       "wind_mph": 0.0,
       "weather_condition": "CLEAR"
     },
@@ -7137,14 +7137,14 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 190.4,
-    "bye_week": null
+    "adp": 189.2,
+    "bye_week": 12
   },
   {
-    "id": "13296",
-    "name": "Caleb Douglas",
+    "id": "7049",
+    "name": "Jauan Jennings",
     "position": "WR",
-    "team": "MIA",
+    "team": "MIN",
     "projected_points": 7.8,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -7163,8 +7163,8 @@
       "opponent": "",
       "over_under": null,
       "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
+      "is_dome": true,
+      "stadium_type": "DOME",
       "wind_mph": 0.0,
       "weather_condition": "CLEAR"
     },
@@ -7174,7 +7174,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 191.6,
+    "adp": 191.9,
     "bye_week": 6
   },
   {
@@ -7211,15 +7211,52 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 192.7,
+    "adp": 192.8,
     "bye_week": 14
+  },
+  {
+    "id": "13285",
+    "name": "Malachi Fields",
+    "position": "WR",
+    "team": "NYG",
+    "projected_points": 7.74,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 194.7,
+    "bye_week": 11
   },
   {
     "id": "9494",
     "name": "Marvin Mims",
     "position": "WR",
     "team": "DEN",
-    "projected_points": 7.74,
+    "projected_points": 7.72,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -7252,47 +7289,10 @@
     "bye_week": 14
   },
   {
-    "id": "4039",
-    "name": "Cooper Kupp",
+    "id": "9504",
+    "name": "Kayshon Boutte",
     "position": "WR",
-    "team": "SEA",
-    "projected_points": 7.72,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 194.8,
-    "bye_week": 10
-  },
-  {
-    "id": "13285",
-    "name": "Malachi Fields",
-    "position": "WR",
-    "team": "NYG",
+    "team": "HOU",
     "projected_points": 7.69,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -7311,8 +7311,8 @@
       "opponent": "",
       "over_under": null,
       "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
+      "is_dome": true,
+      "stadium_type": "DOME",
       "wind_mph": 0.0,
       "weather_condition": "CLEAR"
     },
@@ -7322,8 +7322,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 194.9,
-    "bye_week": 11
+    "adp": 195.9,
+    "bye_week": 14
   },
   {
     "id": "12547",
@@ -7363,15 +7363,15 @@
     "bye_week": 14
   },
   {
-    "id": "9504",
-    "name": "Kayshon Boutte",
+    "id": "3321",
+    "name": "Tyreek Hill",
     "position": "WR",
-    "team": "HOU",
+    "team": "FA",
     "projected_points": 7.64,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
-    "injury_status": "ACTIVE",
+    "injury_status": "QUESTIONABLE",
     "eligible_slots": [],
     "opponent": null,
     "opponent_rank": null,
@@ -7385,8 +7385,8 @@
       "opponent": "",
       "over_under": null,
       "spread": null,
-      "is_dome": true,
-      "stadium_type": "DOME",
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
       "wind_mph": 0.0,
       "weather_condition": "CLEAR"
     },
@@ -7396,8 +7396,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 197.2,
-    "bye_week": 14
+    "adp": 197.5,
+    "bye_week": null
   },
   {
     "id": "4984",
@@ -7433,7 +7433,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 20.9,
+    "adp": 20.8,
     "bye_week": 12
   },
   {
@@ -7470,7 +7470,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 34.9,
+    "adp": 33.5,
     "bye_week": 14
   },
   {
@@ -7507,7 +7507,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 48.2,
+    "adp": 47.6,
     "bye_week": 14
   },
   {
@@ -7544,7 +7544,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 54.2,
+    "adp": 53.4,
     "bye_week": 12
   },
   {
@@ -7581,7 +7581,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 56.5,
+    "adp": 56.6,
     "bye_week": 5
   },
   {
@@ -7618,7 +7618,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 57.9,
+    "adp": 58.7,
     "bye_week": 14
   },
   {
@@ -7655,7 +7655,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 79.0,
+    "adp": 76.6,
     "bye_week": 7
   },
   {
@@ -7692,7 +7692,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 82.0,
+    "adp": 81.8,
     "bye_week": 7
   },
   {
@@ -7729,7 +7729,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 84.7,
+    "adp": 86.5,
     "bye_week": 11
   },
   {
@@ -7766,7 +7766,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 89.9,
+    "adp": 87.3,
     "bye_week": 5
   },
   {
@@ -7803,7 +7803,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 91.4,
+    "adp": 92.5,
     "bye_week": 6
   },
   {
@@ -7840,52 +7840,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 97.4,
+    "adp": 99.1,
     "bye_week": 12
-  },
-  {
-    "id": "11563",
-    "name": "Bo Nix",
-    "position": "QB",
-    "team": "DEN",
-    "projected_points": 16.02,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 106.6,
-    "bye_week": 14
   },
   {
     "id": "4046",
     "name": "Patrick Mahomes",
     "position": "QB",
     "team": "KC",
-    "projected_points": 15.76,
+    "projected_points": 16.02,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -7914,8 +7877,45 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 107.5,
+    "adp": 108.1,
     "bye_week": 6
+  },
+  {
+    "id": "11563",
+    "name": "Bo Nix",
+    "position": "QB",
+    "team": "DEN",
+    "projected_points": 15.76,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 108.3,
+    "bye_week": 14
   },
   {
     "id": "8183",
@@ -7951,7 +7951,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 113.9,
+    "adp": 115.5,
     "bye_week": 9
   },
   {
@@ -7988,7 +7988,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 135.6,
+    "adp": 135.4,
     "bye_week": 5
   },
   {
@@ -8025,7 +8025,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 145.7,
+    "adp": 144.9,
     "bye_week": 11
   },
   {
@@ -8062,7 +8062,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 151.0,
+    "adp": 149.5,
     "bye_week": 6
   },
   {
@@ -8099,7 +8099,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 153.0,
+    "adp": 152.9,
     "bye_week": 10
   },
   {
@@ -8136,7 +8136,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 161.5,
+    "adp": 161.1,
     "bye_week": 10
   },
   {
@@ -8173,52 +8173,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 169.7,
+    "adp": 169.8,
     "bye_week": null
-  },
-  {
-    "id": "19",
-    "name": "Joe Flacco",
-    "position": "QB",
-    "team": "CIN",
-    "projected_points": 14.18,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 169.9,
-    "bye_week": 12
   },
   {
     "id": "11557",
     "name": "Joe Milton",
     "position": "QB",
     "team": "DAL",
-    "projected_points": 14.03,
+    "projected_points": 14.18,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -8255,7 +8218,7 @@
     "name": "Tommy DeVito",
     "position": "QB",
     "team": "NE",
-    "projected_points": 13.88,
+    "projected_points": 14.03,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -8288,11 +8251,11 @@
     "bye_week": 14
   },
   {
-    "id": "2306",
-    "name": "Jameis Winston",
+    "id": "19",
+    "name": "Joe Flacco",
     "position": "QB",
-    "team": "NYG",
-    "projected_points": 13.73,
+    "team": "CIN",
+    "projected_points": 13.88,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -8321,15 +8284,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 169.9,
-    "bye_week": 11
+    "adp": 170.0,
+    "bye_week": 12
   },
   {
     "id": "1166",
     "name": "Kirk Cousins",
     "position": "QB",
     "team": "LV",
-    "projected_points": 13.6,
+    "projected_points": 13.73,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -8366,7 +8329,7 @@
     "name": "Carson Beck",
     "position": "QB",
     "team": "ARI",
-    "projected_points": 13.46,
+    "projected_points": 13.6,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -8403,7 +8366,7 @@
     "name": "Justin Fields",
     "position": "QB",
     "team": "KC",
-    "projected_points": 13.34,
+    "projected_points": 13.46,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -8440,7 +8403,7 @@
     "name": "Anthony Richardson",
     "position": "QB",
     "team": "IND",
-    "projected_points": 13.21,
+    "projected_points": 13.34,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -8471,6 +8434,43 @@
     "assigned_slot": null,
     "adp": 170.0,
     "bye_week": 14
+  },
+  {
+    "id": "2306",
+    "name": "Jameis Winston",
+    "position": "QB",
+    "team": "NYG",
+    "projected_points": 13.21,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 170.0,
+    "bye_week": 11
   },
   {
     "id": "7527",
@@ -8617,7 +8617,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 170.6,
+    "adp": 171.0,
     "bye_week": 12
   },
   {
@@ -8654,7 +8654,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 174.7,
+    "adp": 175.5,
     "bye_week": 10
   },
   {
@@ -8691,7 +8691,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 180.7,
+    "adp": 181.0,
     "bye_week": 14
   },
   {
@@ -8728,7 +8728,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 181.6,
+    "adp": 181.2,
     "bye_week": 6
   },
   {
@@ -8765,7 +8765,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 22.1,
+    "adp": 22.5,
     "bye_week": 11
   },
   {
@@ -8839,7 +8839,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 42.1,
+    "adp": 41.2,
     "bye_week": 7
   },
   {
@@ -8876,7 +8876,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 49.3,
+    "adp": 49.7,
     "bye_week": 14
   },
   {
@@ -8913,7 +8913,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 65.8,
+    "adp": 66.0,
     "bye_week": 5
   },
   {
@@ -8950,7 +8950,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 68.1,
+    "adp": 67.7,
     "bye_week": 12
   },
   {
@@ -8987,7 +8987,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 70.9,
+    "adp": 70.7,
     "bye_week": 10
   },
   {
@@ -9024,7 +9024,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 76.1,
+    "adp": 76.9,
     "bye_week": 10
   },
   {
@@ -9061,7 +9061,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 87.2,
+    "adp": 83.5,
     "bye_week": 9
   },
   {
@@ -9098,7 +9098,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 94.0,
+    "adp": 92.9,
     "bye_week": 6
   },
   {
@@ -9135,7 +9135,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 103.9,
+    "adp": 103.8,
     "bye_week": 7
   },
   {
@@ -9172,7 +9172,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 109.0,
+    "adp": 108.9,
     "bye_week": 12
   },
   {
@@ -9209,7 +9209,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 112.6,
+    "adp": 112.7,
     "bye_week": 5
   },
   {
@@ -9246,7 +9246,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 116.5,
+    "adp": 115.7,
     "bye_week": 11
   },
   {
@@ -9283,7 +9283,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 126.0,
+    "adp": 126.4,
     "bye_week": 14
   },
   {
@@ -9320,7 +9320,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 144.8,
+    "adp": 146.3,
     "bye_week": 14
   },
   {
@@ -9357,7 +9357,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 149.9,
+    "adp": 150.8,
     "bye_week": 5
   },
   {
@@ -9394,15 +9394,52 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 152.7,
+    "adp": 154.5,
     "bye_week": 6
+  },
+  {
+    "id": "9480",
+    "name": "Brenton Strange",
+    "position": "TE",
+    "team": "JAX",
+    "projected_points": 8.13,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 160.3,
+    "bye_week": 12
   },
   {
     "id": "13330",
     "name": "Kenyon Sadiq",
     "position": "TE",
     "team": "NYJ",
-    "projected_points": 8.13,
+    "projected_points": 8.01,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -9431,89 +9468,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 154.4,
+    "adp": 161.7,
     "bye_week": 12
-  },
-  {
-    "id": "9480",
-    "name": "Brenton Strange",
-    "position": "TE",
-    "team": "JAX",
-    "projected_points": 8.01,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 160.0,
-    "bye_week": 12
-  },
-  {
-    "id": "9479",
-    "name": "Darnell Washington",
-    "position": "TE",
-    "team": "PIT",
-    "projected_points": 7.89,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 169.7,
-    "bye_week": 9
   },
   {
     "id": "6826",
     "name": "Cole Kmet",
     "position": "TE",
     "team": "CHI",
-    "projected_points": 7.78,
+    "projected_points": 7.89,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -9550,7 +9513,7 @@
     "name": "Dawson Knox",
     "position": "TE",
     "team": "BUF",
-    "projected_points": 7.67,
+    "projected_points": 7.78,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -9581,6 +9544,43 @@
     "assigned_slot": null,
     "adp": 169.8,
     "bye_week": 12
+  },
+  {
+    "id": "9479",
+    "name": "Darnell Washington",
+    "position": "TE",
+    "team": "PIT",
+    "projected_points": 7.67,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 169.8,
+    "bye_week": 9
   },
   {
     "id": "7828",
@@ -9838,7 +9838,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 170.1,
+    "adp": 170.0,
     "bye_week": 12
   },
   {
@@ -9875,7 +9875,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 170.1,
+    "adp": 170.0,
     "bye_week": 14
   },
   {
@@ -9912,7 +9912,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 170.3,
+    "adp": 170.2,
     "bye_week": 12
   },
   {
@@ -9949,7 +9949,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 170.3,
+    "adp": 170.2,
     "bye_week": 10
   },
   {
@@ -10023,7 +10023,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 174.8,
+    "adp": 173.7,
     "bye_week": 12
   },
   {
@@ -10060,52 +10060,15 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 176.8,
+    "adp": 176.6,
     "bye_week": 10
-  },
-  {
-    "id": "8210",
-    "name": "Chig Okonkwo",
-    "position": "TE",
-    "team": "WAS",
-    "projected_points": 6.53,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 179.4,
-    "bye_week": 14
   },
   {
     "id": "5001",
     "name": "Dalton Schultz",
     "position": "TE",
     "team": "HOU",
-    "projected_points": 6.47,
+    "projected_points": 6.53,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -10134,7 +10097,44 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 180.6,
+    "adp": 180.0,
+    "bye_week": 14
+  },
+  {
+    "id": "8210",
+    "name": "Chig Okonkwo",
+    "position": "TE",
+    "team": "WAS",
+    "projected_points": 6.47,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 180.8,
     "bye_week": 14
   },
   {
@@ -10171,7 +10171,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 186.7,
+    "adp": 187.1,
     "bye_week": 6
   },
   {
@@ -10208,7 +10208,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 188.7,
+    "adp": 188.3,
     "bye_week": 5
   },
   {
@@ -10245,7 +10245,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 89.9,
+    "adp": 89.1,
     "bye_week": 7
   },
   {
@@ -10282,7 +10282,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 113.8,
+    "adp": 114.5,
     "bye_week": 5
   },
   {
@@ -10356,7 +10356,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 130.4,
+    "adp": 128.6,
     "bye_week": 14
   },
   {
@@ -10393,7 +10393,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 138.3,
+    "adp": 137.9,
     "bye_week": 12
   },
   {
@@ -10430,7 +10430,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 143.0,
+    "adp": 144.5,
     "bye_week": 6
   },
   {
@@ -10467,7 +10467,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 148.3,
+    "adp": 148.2,
     "bye_week": 5
   },
   {
@@ -10504,7 +10504,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 160.0,
+    "adp": 159.1,
     "bye_week": 6
   },
   {
@@ -10541,14 +10541,14 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 161.4,
+    "adp": 161.1,
     "bye_week": 9
   },
   {
-    "id": "12713",
-    "name": "Andy Borregales",
+    "id": "5189",
+    "name": "Eddy Pineiro",
     "position": "K",
-    "team": "NE",
+    "team": "SF",
     "projected_points": 7.89,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -10578,8 +10578,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 163.4,
-    "bye_week": 14
+    "adp": 168.1,
+    "bye_week": 9
   },
   {
     "id": "11792",
@@ -10619,10 +10619,10 @@
     "bye_week": 6
   },
   {
-    "id": "5189",
-    "name": "Eddy Pineiro",
+    "id": "1264",
+    "name": "Justin Tucker",
     "position": "K",
-    "team": "SF",
+    "team": "FA",
     "projected_points": 7.76,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -10652,44 +10652,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 169.5,
-    "bye_week": 9
-  },
-  {
-    "id": "1264",
-    "name": "Justin Tucker",
-    "position": "K",
-    "team": "FA",
-    "projected_points": 7.7,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 169.6,
+    "adp": 169.7,
     "bye_week": null
   },
   {
@@ -10697,7 +10660,7 @@
     "name": "Jason Sanders",
     "position": "K",
     "team": "NYJ",
-    "projected_points": 7.65,
+    "projected_points": 7.7,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -10734,7 +10697,7 @@
     "name": "Blake Grupe",
     "position": "K",
     "team": "IND",
-    "projected_points": 7.6,
+    "projected_points": 7.65,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -10771,7 +10734,7 @@
     "name": "Daniel Carlson",
     "position": "K",
     "team": "NO",
-    "projected_points": 7.56,
+    "projected_points": 7.6,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -10800,8 +10763,45 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 170.1,
+    "adp": 170.2,
     "bye_week": 12
+  },
+  {
+    "id": "12713",
+    "name": "Andy Borregales",
+    "position": "K",
+    "team": "NE",
+    "projected_points": 7.56,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 171.1,
+    "bye_week": 14
   },
   {
     "id": "12711",
@@ -10837,7 +10837,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 172.2,
+    "adp": 171.4,
     "bye_week": 14
   },
   {
@@ -10874,7 +10874,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 175.2,
+    "adp": 175.5,
     "bye_week": 12
   },
   {
@@ -10911,7 +10911,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 190.3,
+    "adp": 190.7,
     "bye_week": 10
   },
   {
@@ -10948,7 +10948,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 192.5,
+    "adp": 193.0,
     "bye_week": 5
   },
   {
@@ -10985,7 +10985,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 196.1,
+    "adp": 196.2,
     "bye_week": 11
   },
   {
@@ -11022,7 +11022,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 200.7,
+    "adp": 200.3,
     "bye_week": 7
   },
   {
@@ -11133,7 +11133,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 93.8,
+    "adp": 94.0,
     "bye_week": 14
   },
   {
@@ -11170,7 +11170,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 98.8,
+    "adp": 97.2,
     "bye_week": 6
   },
   {
@@ -11207,7 +11207,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 107.9,
+    "adp": 108.7,
     "bye_week": 10
   },
   {
@@ -11244,7 +11244,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 108.7,
+    "adp": 108.9,
     "bye_week": 14
   },
   {
@@ -11281,7 +11281,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 131.4,
+    "adp": 130.7,
     "bye_week": 5
   },
   {
@@ -11318,7 +11318,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 135.0,
+    "adp": 134.5,
     "bye_week": 14
   },
   {
@@ -11326,7 +11326,7 @@
     "name": "Pittsburgh Steelers",
     "position": "D/ST",
     "team": "PIT",
-    "projected_points": 7.89,
+    "projected_points": 7.96,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -11355,7 +11355,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 140.9,
+    "adp": 135.8,
     "bye_week": 9
   },
   {
@@ -11392,7 +11392,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 144.9,
+    "adp": 145.1,
     "bye_week": 14
   },
   {
@@ -11400,7 +11400,7 @@
     "name": "Detroit Lions",
     "position": "D/ST",
     "team": "DET",
-    "projected_points": 7.96,
+    "projected_points": 7.89,
     "actual_points": 0.0,
     "average_points": 0.0,
     "tier": 1,
@@ -11429,7 +11429,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 153.8,
+    "adp": 154.5,
     "bye_week": 5
   },
   {
@@ -11466,7 +11466,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 160.1,
+    "adp": 159.8,
     "bye_week": 6
   },
   {
@@ -11503,7 +11503,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 168.9,
+    "adp": 167.9,
     "bye_week": 12
   },
   {
@@ -11577,7 +11577,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 172.6,
+    "adp": 172.3,
     "bye_week": 5
   },
   {
@@ -11614,7 +11614,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 183.6,
+    "adp": 183.2,
     "bye_week": 7
   },
   {
@@ -11651,14 +11651,14 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 185.1,
+    "adp": 185.3,
     "bye_week": 10
   },
   {
-    "id": "BUF",
-    "name": "Buffalo Bills",
+    "id": "SF",
+    "name": "San Francisco 49ers",
     "position": "D/ST",
-    "team": "BUF",
+    "team": "SF",
     "projected_points": 7.6,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -11688,14 +11688,14 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 192.3,
-    "bye_week": 12
+    "adp": 192.2,
+    "bye_week": 9
   },
   {
-    "id": "SF",
-    "name": "San Francisco 49ers",
+    "id": "BUF",
+    "name": "Buffalo Bills",
     "position": "D/ST",
-    "team": "SF",
+    "team": "BUF",
     "projected_points": 7.56,
     "actual_points": 0.0,
     "average_points": 0.0,
@@ -11725,8 +11725,45 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 193.6,
-    "bye_week": 9
+    "adp": 192.2,
+    "bye_week": 12
+  },
+  {
+    "id": "KC",
+    "name": "Kansas City Chiefs",
+    "position": "D/ST",
+    "team": "KC",
+    "projected_points": 7.44,
+    "actual_points": 0.0,
+    "average_points": 0.0,
+    "tier": 1,
+    "injury_status": "ACTIVE",
+    "eligible_slots": [],
+    "opponent": null,
+    "opponent_rank": null,
+    "matchups_3wk": [],
+    "cheatsheet_notes": null,
+    "cheatsheet_tier": null,
+    "cheatsheet_rank": null,
+    "is_starter": false,
+    "usage": null,
+    "game_context": {
+      "opponent": "",
+      "over_under": null,
+      "spread": null,
+      "is_dome": false,
+      "stadium_type": "OUTDOOR",
+      "wind_mph": 0.0,
+      "weather_condition": "CLEAR"
+    },
+    "practice_status": [],
+    "adjusted_projected_points": 0.0,
+    "projection_adjustment_reasons": [],
+    "floor_points": 0.0,
+    "ceiling_points": 0.0,
+    "assigned_slot": null,
+    "adp": 194.4,
+    "bye_week": 6
   },
   {
     "id": "IND",
@@ -11799,45 +11836,8 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 195.7,
+    "adp": 195.2,
     "bye_week": 7
-  },
-  {
-    "id": "KC",
-    "name": "Kansas City Chiefs",
-    "position": "D/ST",
-    "team": "KC",
-    "projected_points": 7.44,
-    "actual_points": 0.0,
-    "average_points": 0.0,
-    "tier": 1,
-    "injury_status": "ACTIVE",
-    "eligible_slots": [],
-    "opponent": null,
-    "opponent_rank": null,
-    "matchups_3wk": [],
-    "cheatsheet_notes": null,
-    "cheatsheet_tier": null,
-    "cheatsheet_rank": null,
-    "is_starter": false,
-    "usage": null,
-    "game_context": {
-      "opponent": "",
-      "over_under": null,
-      "spread": null,
-      "is_dome": false,
-      "stadium_type": "OUTDOOR",
-      "wind_mph": 0.0,
-      "weather_condition": "CLEAR"
-    },
-    "practice_status": [],
-    "adjusted_projected_points": 0.0,
-    "projection_adjustment_reasons": [],
-    "floor_points": 0.0,
-    "ceiling_points": 0.0,
-    "assigned_slot": null,
-    "adp": 195.7,
-    "bye_week": 6
   },
   {
     "id": "ATL",
@@ -11910,7 +11910,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 201.3,
+    "adp": 201.4,
     "bye_week": 11
   },
   {
@@ -12095,7 +12095,7 @@
     "floor_points": 0.0,
     "ceiling_points": 0.0,
     "assigned_slot": null,
-    "adp": 211.6,
+    "adp": 211.9,
     "bye_week": 10
   },
   {
