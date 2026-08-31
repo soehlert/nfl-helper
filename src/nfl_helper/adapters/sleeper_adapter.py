@@ -153,23 +153,27 @@ class SleeperAdapter(BaseLeagueAdapter):
                 fpts = 10.0
 
         injury_raw = str(raw_meta.get("injury_status") or "").upper()
-        injury_status = (
-            InjuryStatus.QUESTIONABLE
-            if injury_raw in ("QUESTIONABLE", "Q")
-            else (
-                InjuryStatus.DOUBTFUL
-                if injury_raw in ("DOUBTFUL", "D")
-                else (
-                    InjuryStatus.IR
-                    if injury_raw == "IR"
-                    else (
-                        InjuryStatus.OUT
-                        if injury_raw in ("OUT", "O")
-                        else (InjuryStatus.SUSPENDED if injury_raw in ("SUSPENDED", "SUSP") else InjuryStatus.ACTIVE)
-                    )
-                )
-            )
-        )
+        status_raw = str(raw_meta.get("status") or "").upper()
+
+        if injury_raw in ("PUP",) or "PUP" in status_raw or "PHYSICALLY UNABLE" in status_raw:
+            injury_status = InjuryStatus.PUP
+        elif (
+            injury_raw in ("IR",)
+            or "INJURED RESERVE" in status_raw
+            or "NON FOOTBALL" in status_raw
+            or "NFI" in status_raw
+        ):
+            injury_status = InjuryStatus.IR
+        elif injury_raw in ("OUT", "O") or status_raw == "OUT":
+            injury_status = InjuryStatus.OUT
+        elif injury_raw in ("DOUBTFUL", "D") or status_raw == "DOUBTFUL":
+            injury_status = InjuryStatus.DOUBTFUL
+        elif injury_raw in ("QUESTIONABLE", "Q") or status_raw == "QUESTIONABLE":
+            injury_status = InjuryStatus.QUESTIONABLE
+        elif injury_raw in ("SUSPENDED", "SUSP", "SUS") or "SUSPENDED" in status_raw:
+            injury_status = InjuryStatus.SUSPENDED
+        else:
+            injury_status = InjuryStatus.ACTIVE
 
         team_str = str(raw_meta.get("team") or "FA").upper()
         bye_week = get_team_bye_week(team_str)

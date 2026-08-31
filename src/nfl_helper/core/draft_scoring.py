@@ -230,9 +230,12 @@ def generate_draft_suggestions(
         if pos_str == "RB" and user_drafted_players and p.team and p.team != "FA":
             for dp in user_drafted_players:
                 if str(dp.position).upper() == "RB" and dp.team == p.team and dp.id != p.id:
-                    base_score += 0.50  # Small tactical boost for securing backfield handcuff
-                    handcuff_note = f"Handcuff ({dp.name})"
-                    break
+                    dp_tier = dp.cheatsheet_tier or dp.tier or 1
+                    p_tier_val = p.cheatsheet_tier or p.tier or 1
+                    if dp_tier <= p_tier_val and dp.projected_points >= p.projected_points:
+                        base_score += 0.50  # Small tactical boost for securing backfield handcuff
+                        handcuff_note = f"Handcuff ({dp.name})"
+                        break
 
         # Unified, non-stacking roster quota urgency & round deadline weighting
         quota_urgency_bonus = 0.0
@@ -254,7 +257,7 @@ def generate_draft_suggestions(
                             quota_urgency_bonus = calc_bonus
                             quota_urgency_note = f"Quota Urgency: Need {needed_dl} {pos_str} by Rd {dl_round}"
 
-        if pos_str in mins:
+        if cheatsheet_context and pos_str in mins:
             req_min = mins[pos_str]
             curr_pos_cnt = roster.get(pos_str, 0)
             if curr_pos_cnt < req_min and current_round >= 7:
@@ -277,49 +280,46 @@ def generate_draft_suggestions(
 
         # Positional Scarcity Weighting: only when ADP is in reachable range for current pick
         scarcity_bonus = 0.0
-        pos_info = top_tier_info.get(str(p.position))
         is_adp_in_range = (p.adp is None) or (p.adp <= overall_pick + 6)
-        if pos_info and is_adp_in_range:
-            top_num, remaining_in_top, tier_drop = pos_info
-            if p_tier == top_num and remaining_in_top <= 2 and tier_drop >= 0.7:
-                scarcity_val = 1.5 if remaining_in_top == 1 else 0.8
-                scarcity_bonus = scarcity_val * demand_weight
-                base_score += scarcity_bonus
+
+        # Count remaining players in this player's tier
+        remaining_in_tier = 1
+        for t in tiers_by_pos.get(str(p.position), []):
+            if t.tier_num == p_tier:
+                remaining_in_tier = t.count
+                break
+
+        # Tier Depth / Micro-Supply bonus
+        tier_bonus = 0.0
+        if is_adp_in_range and remaining_in_tier > 1:
+            tier_bonus = min(1.0, (remaining_in_tier - 1) * 0.25)
+            base_score += tier_bonus
+
+        # User Cheatsheet Overrides & Target Tier Match
+        rule_delta, rule_note = evaluate_strategy_rule_adjustments(
+            p,
+            cheatsheet_context,
+            current_round=current_round,
+            next_user_pick=next_user_pick,
+            user_drafted_players=user_drafted_players,
+        )
+        base_score += rule_delta
+
+        # Custom Cheatsheet Rank / Top N Bonus
+        adp_delta = 0.0
+        if p.cheatsheet_rank and p.cheatsheet_rank <= 50:
+            adp_delta = overall_pick - p.cheatsheet_rank
+            if adp_delta > 0:
+                base_score += min(1.5, adp_delta * 0.08)
 
         # Market reach penalty / value steal bonus
         reach_penalty = 0.0
-        steal_bonus = 0.0
         if p.adp and p.adp > (overall_pick + 6):
             reach_penalty = min(2.5, (p.adp - (overall_pick + 6)) * 0.08)
             base_score -= reach_penalty
         elif p.adp and overall_pick > p.adp:
             steal_bonus = min(1.5, (overall_pick - p.adp) * 0.08)
             base_score += steal_bonus
-
-        # Count remaining players in this player's tier
-        remaining_in_tier = 1
-        pos_tiers = tiers_by_pos.get(str(p.position), [])
-        for pt in pos_tiers:
-            if pt.tier_num == p_tier:
-                remaining_in_tier = len(pt.players)
-                break
-
-        # Strategy Rules Adjustment with next_user_pick lookahead
-        rule_delta, rule_note = evaluate_strategy_rule_adjustments(
-            p,
-            cheatsheet_context,
-            current_round,
-            user_drafted_players=user_drafted_players,
-            next_user_pick=next_user_pick,
-            remaining_tier_count=remaining_in_tier,
-        )
-        base_score += rule_delta
-
-        adp_delta = 0.0
-        if p.cheatsheet_rank:
-            adp_delta = overall_pick - p.cheatsheet_rank
-            if adp_delta > 0:
-                base_score += min(1.5, adp_delta * 0.08)
 
         # Injury discount penalty based on severity and expected missed time
         injury_penalty = 0.0
@@ -334,7 +334,10 @@ def generate_draft_suggestions(
         elif "OUT" in inj_status_str or inj_status_str == "O":
             injury_penalty = 1.50
             injury_note = "Injury: Out"
-        elif "IR" in inj_status_str:
+        elif "PUP" in inj_status_str:
+            injury_penalty = 2.50
+            injury_note = "Injury: PUP (Out 4+ Wks)"
+        elif "IR" in inj_status_str or "NFI" in inj_status_str:
             injury_penalty = 2.50
             injury_note = "Injury: IR (4+ Wks)"
         elif "SUSPENDED" in inj_status_str or "SUSP" in inj_status_str:

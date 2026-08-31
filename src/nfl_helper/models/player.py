@@ -25,6 +25,7 @@ class InjuryStatus(StrEnum):
     QUESTIONABLE = "QUESTIONABLE"
     DOUBTFUL = "DOUBTFUL"
     OUT = "OUT"
+    PUP = "PUP"
     IR = "IR"
     SUSPENDED = "SUSPENDED"
 

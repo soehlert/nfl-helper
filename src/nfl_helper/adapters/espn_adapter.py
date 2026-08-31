@@ -43,9 +43,19 @@ class ESPNAdapter(BaseLeagueAdapter):
             ) from err
 
         raw_injury = str(getattr(espn_player, "injuryStatus", "ACTIVE") or "ACTIVE").upper()
-        try:
-            injury_enum = InjuryStatus(raw_injury)
-        except ValueError:
+        if "PUP" in raw_injury:
+            injury_enum = InjuryStatus.PUP
+        elif "IR" in raw_injury:
+            injury_enum = InjuryStatus.IR
+        elif "OUT" in raw_injury:
+            injury_enum = InjuryStatus.OUT
+        elif "DOUBTFUL" in raw_injury:
+            injury_enum = InjuryStatus.DOUBTFUL
+        elif "QUESTIONABLE" in raw_injury or raw_injury == "Q":
+            injury_enum = InjuryStatus.QUESTIONABLE
+        elif "SUSP" in raw_injury:
+            injury_enum = InjuryStatus.SUSPENDED
+        else:
             injury_enum = InjuryStatus.ACTIVE
 
         proj_pts = float(getattr(espn_player, "projected_total_points", 0.0) or 0.0)

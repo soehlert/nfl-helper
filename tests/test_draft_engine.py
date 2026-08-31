@@ -968,6 +968,15 @@ def test_season_ending_injury_exclusion_and_active_injury_score_deductions() -> 
         tier=1,
         injury_status=InjuryStatus.QUESTIONABLE,
     )
+    p_pup = Player(
+        id="pup1",
+        name="PUP Player",
+        position=Position.RB,
+        team="SF",
+        projected_points=12.0,
+        tier=1,
+        injury_status=InjuryStatus.PUP,
+    )
     p_ir = Player(
         id="ir1",
         name="IR Player",
@@ -988,12 +997,12 @@ def test_season_ending_injury_exclusion_and_active_injury_score_deductions() -> 
     )
 
     tiers_by_pos = {
-        "RB": cluster_position_tiers([p_healthy, p_ques, p_ir, p_season_out], "RB"),
+        "RB": cluster_position_tiers([p_healthy, p_ques, p_pup, p_ir, p_season_out], "RB"),
     }
     baselines = {"RB": 10.0, "WR": 10.0, "QB": 15.0, "TE": 9.0, "K": 8.0, "D/ST": 8.0}
 
     suggs = generate_draft_suggestions(
-        available_players=[p_season_out, p_ir, p_ques, p_healthy],
+        available_players=[p_season_out, p_ir, p_pup, p_ques, p_healthy],
         tiers_by_pos=tiers_by_pos,
         cliff_warnings=[],
         baselines=baselines,
@@ -1006,15 +1015,18 @@ def test_season_ending_injury_exclusion_and_active_injury_score_deductions() -> 
     # 1. Season-ending injured player must be COMPLETELY excluded
     assert "Season Out Player" not in suggested_names
 
-    # 2. Ranking order: Healthy > Questionable > IR
+    # 2. Ranking order: Healthy > Questionable > PUP / IR
     assert suggested_names[0] == "Healthy Player"
     assert suggested_names[1] == "Questionable Player"
-    assert suggested_names[2] == "IR Player"
+    assert "PUP Player" in suggested_names
+    assert "IR Player" in suggested_names
 
     # 3. Explicit point deduction reasons
     ques_sugg = next(s for s in suggs if s.player.name == "Questionable Player")
+    pup_sugg = next(s for s in suggs if s.player.name == "PUP Player")
     ir_sugg = next(s for s in suggs if s.player.name == "IR Player")
     assert "-0.4 pts Injury: Questionable" in ques_sugg.reason
+    assert "-2.5 pts Injury: PUP (Out 4+ Wks)" in pup_sugg.reason
     assert "-2.5 pts Injury: IR (4+ Wks)" in ir_sugg.reason
 
 
