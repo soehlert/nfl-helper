@@ -1587,7 +1587,7 @@
           let fontWeight = '400';
 
           if (p.cheatsheet_notes && part.includes(p.cheatsheet_notes)) {
-            const cleanedPart = part.replace(p.cheatsheet_notes, '').replace(/^\s*•\s*/, '').replace(/\s*•\s*$/, '').trim();
+            const cleanedPart = part.replace(p.cheatsheet_notes, '').replace(/\s*•\s*•\s*/g, ' • ').replace(/^\s*•\s*/, '').replace(/\s*•\s*$/, '').trim();
             if (cleanedPart) {
               reasonRowsHtml += `<div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.1rem;">${noteBadgeHtml}<span style="color: var(--text-muted); font-size: 0.78rem;">• ${cleanedPart}</span></div>`;
             } else {

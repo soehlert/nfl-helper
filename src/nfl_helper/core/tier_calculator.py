@@ -282,7 +282,11 @@ def _evaluate_waiting_cliff(
         if not in_draft_range:
             return None
 
-    # 4. Only alert for actionable upcoming turn cliffs (tier survives to your pick but depletes during turn gap)
+    # 4. Only alert for actionable upcoming turn cliffs on genuine draining tiers (<= 3 left or <= 40% of tier)
+    is_tier_draining = remaining <= 3 or ((remaining / tier_size) <= 0.40 if tier_size > 0 else False)
+    if not is_tier_draining or (remaining >= 4 and remaining >= tier_size * 0.70):
+        return None
+
     survives_to_turn = remaining > picks_until_turn
     wipes_in_gap = remaining <= (picks_until_turn + max(2, (snake_turn_gap + 2) // 3))
 

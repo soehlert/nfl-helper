@@ -93,35 +93,3 @@ def build_suggestion_rationale(
         lines.append(env_label)
 
     return "\n".join(lines)
-
-
-def calculate_sliding_note_shift(idx: int, note_type: str) -> int:
-    """Calculate calibrated sliding window pick shift tailored for 10-team leagues (2-4 Rd 1, 4-8 Rds 2-3)."""
-    if note_type == "bust":
-        if idx < 10:
-            return 2 + (idx // 4)
-        elif idx < 30:
-            return 4 + int((idx - 10) * 4 / 20)
-        elif idx < 60:
-            return 8 + int((idx - 30) * 6 / 30)
-        else:
-            return 14 + min(6, (idx - 60) // 15)
-    elif note_type == "breakout":
-        if idx < 10:
-            return 2 + (idx // 5)
-        elif idx < 30:
-            return 4 + int((idx - 10) * 3 / 20)
-        elif idx < 60:
-            return 7 + int((idx - 30) * 5 / 30)
-        else:
-            return 12 + min(6, (idx - 60) // 15)
-    elif note_type == "sleeper":
-        if idx < 10:
-            return 1 + (idx // 6)
-        elif idx < 30:
-            return 3 + int((idx - 10) * 2 / 20)
-        elif idx < 60:
-            return 5 + int((idx - 30) * 4 / 30)
-        else:
-            return 9 + min(5, (idx - 60) // 15)
-    return 0

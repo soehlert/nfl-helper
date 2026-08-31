@@ -4,7 +4,6 @@ import re
 
 from nfl_helper.core.draft_rationale import (
     build_suggestion_rationale,
-    calculate_sliding_note_shift,
 )
 from nfl_helper.core.draft_rules import (
     calculate_required_positions,
@@ -407,19 +406,11 @@ def generate_draft_suggestions(
             # Strip bracketed platform prefixes (e.g. [ESPN SLEEPER]) before scanning qualitative tags
             clean_note = re.sub(r"\[.*?\]", "", p.cheatsheet_notes).strip().lower()
             if "breakout" in clean_note:
-                shift = calculate_sliding_note_shift(idx, "breakout")
-                target_idx = max(0, idx - shift)
-                target_score = base_scores[target_idx]
-                note_delta = (target_score - b_score) + 0.0001
+                note_delta = 0.90
             elif "sleeper" in clean_note:
-                shift = calculate_sliding_note_shift(idx, "sleeper")
-                target_idx = max(0, idx - shift)
-                target_score = base_scores[target_idx]
-                note_delta = (target_score - b_score) + 0.0001
+                note_delta = 0.60
             elif "bust" in clean_note or "fade" in clean_note or "avoid" in clean_note:
-                shift = calculate_sliding_note_shift(idx, "bust")
-                target_idx = min(len(base_scores) - 1, idx + shift)
-                note_delta = (base_scores[target_idx] - b_score) - 0.0001
+                note_delta = -0.75
 
         final_score = b_score + note_delta
         scored_players.append(
