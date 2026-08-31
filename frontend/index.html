@@ -1582,19 +1582,12 @@
         // Parse structured multi-line reason rows
         const reasonParts = (s.reason || '').split(/\n/).map(r => r.trim()).filter(Boolean);
         let reasonRowsHtml = '<div style="display: flex; flex-direction: column; gap: 0.18rem; font-size: 0.78rem; line-height: 1.25;">';
+        if (noteBadgeHtml) {
+          reasonRowsHtml += `<div style="margin-bottom: 0.12rem;">${noteBadgeHtml}</div>`;
+        }
         reasonParts.forEach((part, idx) => {
           let rowColor = 'var(--text-muted)';
           let fontWeight = '400';
-
-          if (p.cheatsheet_notes && part.includes(p.cheatsheet_notes)) {
-            const cleanedPart = part.replace(p.cheatsheet_notes, '').replace(/\s*•\s*•\s*/g, ' • ').replace(/^\s*•\s*/, '').replace(/\s*•\s*$/, '').trim();
-            if (cleanedPart) {
-              reasonRowsHtml += `<div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.1rem;">${noteBadgeHtml}<span style="color: var(--text-muted); font-size: 0.78rem;">• ${cleanedPart}</span></div>`;
-            } else {
-              reasonRowsHtml += `<div style="margin-top: 0.1rem;">${noteBadgeHtml}</div>`;
-            }
-            return;
-          }
 
           if (idx === 0) {
             rowColor = 'var(--text-main)';

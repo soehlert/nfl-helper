@@ -1275,3 +1275,86 @@ def test_full_untouched_tier_cliff_suppression() -> None:
     cliff_positions = [c.position for c in state.cliff_warnings]
     assert "RB" not in cliff_positions
     assert "WR" not in cliff_positions
+
+
+def test_tier2_qb_drafted_allows_second_qb_and_no_double_dots() -> None:
+    """Verify drafting a Tier 2 QB does NOT cap QB position under conditional 1-QB rule and reason has no double dots."""
+    rules_text = """
+    QB - Get a tier 1 in round 4 or one from tier 3 and one from tier 4. If you get a tier 1 only one QB total.
+    RB - Get 4 in the first 10 rounds
+    """
+    ctx = parse_plain_text_cheatsheet(rules_text)
+    from nfl_helper.models.cheatsheet import CheatsheetEntry
+
+    ctx.entries["daniels"] = CheatsheetEntry(
+        player_name="Jayden Daniels", normalized_name="jayden daniels", position="QB", tier=2
+    )
+    ctx.entries["jayden daniels"] = CheatsheetEntry(
+        player_name="Jayden Daniels", normalized_name="jayden daniels", position="QB", tier=2
+    )
+
+    # User drafts Tier 2 QB Jayden Daniels in Round 5
+    p_t2_qb = DraftPick(
+        round_num=5,
+        round_pick=7,
+        overall_pick=47,
+        team_id="user_team",
+        team_name="User Team",
+        player_id="daniels",
+        player_name="Jayden Daniels",
+        position="QB",
+    )
+
+    t3_qb = Player(
+        id="qb3",
+        name="Caleb Williams",
+        position=Position.QB,
+        team="CHI",
+        projected_points=16.0,
+        cheatsheet_tier=3,
+        adp=85.0,
+    )
+    t4_qb = Player(
+        id="qb4",
+        name="Drake Maye",
+        position=Position.QB,
+        team="NE",
+        projected_points=14.0,
+        cheatsheet_tier=4,
+        adp=110.0,
+    )
+    rb_sleeper = Player(
+        id="rb_sl",
+        name="Jonathon Brooks",
+        position=Position.RB,
+        team="CAR",
+        projected_points=12.0,
+        cheatsheet_tier=5,
+        adp=105.0,
+        cheatsheet_notes="[ESPN SLEEPER]",
+    )
+
+    state = build_draft_state(
+        league_id="test_league",
+        draft_id="test_draft",
+        overall_pick=62,
+        user_draft_slot=7,
+        total_teams=10,
+        total_rounds=15,
+        recent_picks=[p_t2_qb],
+        all_players=[t3_qb, t4_qb, rb_sleeper],
+        cheatsheet_context=ctx,
+        user_team_id="user_team",
+    )
+
+    # 1. QB is NOT capped because user drafted Tier 2 QB (not Tier 1)
+    assert "QB" not in state.capped_positions
+
+    # 2. QBs remain in suggestions
+    sug_players = [s.player.id for s in state.top_suggestions]
+    assert "qb3" in sug_players or "qb4" in sug_players
+
+    # 3. No double dots in reasons
+    for s in state.top_suggestions:
+        assert "• •" not in s.reason
+        assert " •  • " not in s.reason

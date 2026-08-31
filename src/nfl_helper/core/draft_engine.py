@@ -5,6 +5,7 @@ from nfl_helper.core.lookahead import (
     calculate_lookahead,
     calculate_snake_pick_owner,
 )
+from nfl_helper.core.name_normalizer import normalize_player_name
 from nfl_helper.core.tier_calculator import (
     assign_global_macro_tiers,
     cluster_position_tiers,
@@ -94,11 +95,14 @@ def build_draft_state(
                     )
                 )
             )
-            cs_entry = (
-                cheatsheet_context.entries.get(pick.player_name.lower())
-                if cheatsheet_context and pick.player_name
-                else None
-            )
+            norm_name = normalize_player_name(pick.player_name) if pick.player_name else ""
+            cs_entry = None
+            if cheatsheet_context:
+                cs_entry = (
+                    cheatsheet_context.entries.get(pick.player_name.lower())
+                    or cheatsheet_context.entries.get(norm_name)
+                    or (cheatsheet_context.entries.get(pick.player_id.lower()) if pick.player_id else None)
+                )
             user_drafted_players.append(
                 Player(
                     id=pick.player_id or f"drafted_{pick.overall_pick}",
@@ -106,7 +110,7 @@ def build_draft_state(
                     position=pos_enum,
                     team="FA",
                     cheatsheet_tier=cs_entry.tier if cs_entry else None,
-                    tier=cs_entry.tier if cs_entry else 1,
+                    tier=cs_entry.tier if (cs_entry and cs_entry.tier) else 1,
                     cheatsheet_notes=cs_entry.notes if cs_entry else None,
                 )
             )
@@ -121,22 +125,37 @@ def build_draft_state(
 
     # Calculate completed / capped positions
     capped_pos: set[str] = set()
-    active_rules = cheatsheet_context.strategy_rules if cheatsheet_context else []
     if cheatsheet_context:
         for pr in cheatsheet_context.positional_strategy:
-            if pr.position == "QB" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
-                for dp in user_drafted_players or []:
-                    if str(dp.position).upper() == "QB":
-                        capped_pos.add("QB")
-            elif pr.position == "TE" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
-                for dp in user_drafted_players or []:
-                    if str(dp.position).upper() == "TE":
-                        capped_pos.add("TE")
+            pos_upper = pr.position.upper()
+            drafted_pos = [p for p in (user_drafted_players or []) if str(p.position).upper() == pos_upper]
+            if not drafted_pos:
+                continue
 
-    if any("only one qb" in r.lower() for r in active_rules) and user_roster_counts.get("QB", 0) >= 1:
-        capped_pos.add("QB")
-    if any("no second te" in r.lower() for r in active_rules) and user_roster_counts.get("TE", 0) >= 1:
-        capped_pos.add("TE")
+            # 1. If rule specifies max 1 for Tier 1, cap position ONLY if user drafted a Tier 1 player
+            tier1_drafted = [p for p in drafted_pos if (p.cheatsheet_tier == 1 or p.tier == 1)]
+            if tier1_drafted and (pr.no_second_if_top_tier or pr.conditional_max_count.get(1) == 1):
+                capped_pos.add(pos_upper)
+                continue
+
+            # 2. Check if any branch tier quotas are fully satisfied by drafted players
+            branch_satisfied = False
+            for b in pr.branches:
+                if b.target_tier_quotas:
+                    all_quotas_met = True
+                    for req_tier, req_cnt in b.target_tier_quotas.items():
+                        drafted_in_tier = len(
+                            [p for p in drafted_pos if (p.cheatsheet_tier == req_tier or p.tier == req_tier)]
+                        )
+                        if drafted_in_tier < req_cnt:
+                            all_quotas_met = False
+                            break
+                    if all_quotas_met:
+                        branch_satisfied = True
+                        break
+            if branch_satisfied:
+                capped_pos.add(pos_upper)
+                continue
 
     if user_roster_counts.get("QB", 0) >= 2:
         capped_pos.add("QB")
@@ -207,7 +226,7 @@ def build_draft_state(
         if user_drafted_players:
             for pr in cheatsheet_context.positional_strategy:
                 drafted_pos = [p for p in user_drafted_players if str(p.position).upper() == pr.position.upper()]
-                tier1_drafted = [p for p in drafted_pos if (p.cheatsheet_tier or p.tier or 1) == 1]
+                tier1_drafted = [p for p in drafted_pos if (p.cheatsheet_tier == 1 or p.tier == 1)]
                 if tier1_drafted and (
                     pr.no_second_if_top_tier
                     or pr.conditional_max_count.get(1) == 1

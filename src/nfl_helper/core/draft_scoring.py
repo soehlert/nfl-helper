@@ -59,26 +59,41 @@ def generate_draft_suggestions(
     cliff_by_pos = {w.position: w for w in cliff_warnings}
     current_round = (overall_pick - 1) // total_teams + 1
     roster = user_roster_counts or {}
-    active_rules = cheatsheet_context.strategy_rules if cheatsheet_context else []
     rounds_remaining = max(1, total_rounds - current_round + 1)
 
     # Check conditional caps from strategy rules and single-starter roster limits
     capped_positions: set[str] = set()
     if cheatsheet_context:
         for pr in cheatsheet_context.positional_strategy:
-            if pr.position == "QB" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
-                for dp in user_drafted_players or []:
-                    if str(dp.position).upper() == "QB":
-                        capped_positions.add("QB")
-            elif pr.position == "TE" and (pr.no_second_if_top_tier or 1 in pr.conditional_max_count):
-                for dp in user_drafted_players or []:
-                    if str(dp.position).upper() == "TE":
-                        capped_positions.add("TE")
+            pos_upper = pr.position.upper()
+            drafted_pos = [p for p in (user_drafted_players or []) if str(p.position).upper() == pos_upper]
+            if not drafted_pos:
+                continue
 
-    if any("only one qb" in r.lower() for r in active_rules) and roster.get("QB", 0) >= 1:
-        capped_positions.add("QB")
-    if any("no second te" in r.lower() for r in active_rules) and roster.get("TE", 0) >= 1:
-        capped_positions.add("TE")
+            # 1. If rule specifies max 1 for Tier 1, cap position ONLY if user drafted a Tier 1 player
+            tier1_drafted = [p for p in drafted_pos if (p.cheatsheet_tier == 1 or p.tier == 1)]
+            if tier1_drafted and (pr.no_second_if_top_tier or pr.conditional_max_count.get(1) == 1):
+                capped_positions.add(pos_upper)
+                continue
+
+            # 2. Check if any branch tier quotas are fully satisfied by drafted players
+            branch_satisfied = False
+            for b in pr.branches:
+                if b.target_tier_quotas:
+                    all_quotas_met = True
+                    for req_tier, req_cnt in b.target_tier_quotas.items():
+                        drafted_in_tier = len(
+                            [p for p in drafted_pos if (p.cheatsheet_tier == req_tier or p.tier == req_tier)]
+                        )
+                        if drafted_in_tier < req_cnt:
+                            all_quotas_met = False
+                            break
+                    if all_quotas_met:
+                        branch_satisfied = True
+                        break
+            if branch_satisfied:
+                capped_positions.add(pos_upper)
+                continue
 
     # Hard single-starter and standard maximum position caps once filled (filter completely, no penalties)
     if roster.get("QB", 0) >= 2:

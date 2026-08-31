@@ -82,14 +82,12 @@ def build_suggestion_rationale(
         note_parts.append(f"+{quota_urgency_bonus:.1f} pts {quota_urgency_note}")
     if handcuff_note:
         note_parts.append(handcuff_note)
-    if player.cheatsheet_notes:
-        note_parts.append(player.cheatsheet_notes)
     if rule_note and rule_delta != 0.0:
         sign = "+" if rule_delta > 0 else ""
         note_parts.append(f"{sign}{rule_delta:.1f} pts {rule_note}")
-    if note_parts:
-        lines.append(f"{' • '.join(note_parts)} • {env_label}")
-    else:
-        lines.append(env_label)
+    if env_label:
+        note_parts.append(env_label)
+
+    lines.append(" • ".join(note_parts))
 
     return "\n".join(lines)
