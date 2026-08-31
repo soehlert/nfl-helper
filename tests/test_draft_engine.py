@@ -952,3 +952,177 @@ def test_reason_breakdown_transparency_in_suggestions() -> None:
     assert "+1.5 pts Strategy Target: Top RB in Rd 7" in reason
     assert "+1.8 pts Quota Urgency: Need 2 RB by Rd 10" in reason
     assert "-1.2 pts (Market Reach" in reason
+
+
+def test_season_ending_injury_exclusion_and_active_injury_score_deductions() -> None:
+    """Verify season-ending injured players are completely blanked out, and recovering players receive calibrated deductions."""
+    from nfl_helper.models.player import InjuryStatus
+
+    p_healthy = Player(id="h1", name="Healthy Player", position=Position.RB, team="SF", projected_points=12.0, tier=1)
+    p_ques = Player(
+        id="q1",
+        name="Questionable Player",
+        position=Position.RB,
+        team="SF",
+        projected_points=12.0,
+        tier=1,
+        injury_status=InjuryStatus.QUESTIONABLE,
+    )
+    p_ir = Player(
+        id="ir1",
+        name="IR Player",
+        position=Position.RB,
+        team="SF",
+        projected_points=12.0,
+        tier=1,
+        injury_status=InjuryStatus.IR,
+    )
+    p_season_out = Player(
+        id="so1",
+        name="Season Out Player",
+        position=Position.RB,
+        team="SF",
+        projected_points=15.0,
+        tier=1,
+        cheatsheet_notes="Torn ACL - out for the season",
+    )
+
+    tiers_by_pos = {
+        "RB": cluster_position_tiers([p_healthy, p_ques, p_ir, p_season_out], "RB"),
+    }
+    baselines = {"RB": 10.0, "WR": 10.0, "QB": 15.0, "TE": 9.0, "K": 8.0, "D/ST": 8.0}
+
+    suggs = generate_draft_suggestions(
+        available_players=[p_season_out, p_ir, p_ques, p_healthy],
+        tiers_by_pos=tiers_by_pos,
+        cliff_warnings=[],
+        baselines=baselines,
+        overall_pick=15,
+        total_teams=10,
+        total_rounds=15,
+    )
+
+    suggested_names = [s.player.name for s in suggs]
+    # 1. Season-ending injured player must be COMPLETELY excluded
+    assert "Season Out Player" not in suggested_names
+
+    # 2. Ranking order: Healthy > Questionable > IR
+    assert suggested_names[0] == "Healthy Player"
+    assert suggested_names[1] == "Questionable Player"
+    assert suggested_names[2] == "IR Player"
+
+    # 3. Explicit point deduction reasons
+    ques_sugg = next(s for s in suggs if s.player.name == "Questionable Player")
+    ir_sugg = next(s for s in suggs if s.player.name == "IR Player")
+    assert "-0.4 pts Injury: Questionable" in ques_sugg.reason
+    assert "-2.5 pts Injury: IR (4+ Wks)" in ir_sugg.reason
+
+
+def test_universal_strategy_alert_banners_for_arbitrary_rules() -> None:
+    """Verify strategy alerts generate clear, informative banners across round targets, target tiers, and tier caps."""
+    rules_text = """
+    Rounds 1-2 - only RB/WR and at least 1 RB
+    TE - Target the top 4 in rounds 3-5, no second TE if you have a tier 1 TE
+    QB - Get a tier 1 in round 4 or one from tier 3 and one from tier 4. If you get a tier 1 only one QB total.
+    RB - Get 4 in the first 10 rounds
+    """
+    ctx = parse_plain_text_cheatsheet(rules_text)
+
+    p_burrow = Player(
+        id="burrow", name="Joe Burrow", position=Position.QB, team="CIN", projected_points=22.0, cheatsheet_tier=1
+    )
+    p_wr1 = Player(id="wr1", name="CeeDee Lamb", position=Position.WR, team="DAL", projected_points=18.0)
+
+    # 1. In Round 2 with 1 WR drafted: alerts user to prioritize RB in Round 2
+    pick_wr1 = DraftPick(
+        round_num=1,
+        round_pick=1,
+        overall_pick=1,
+        team_id="user_team",
+        team_name="User Team",
+        player_id="wr1",
+        player_name="CeeDee Lamb",
+        position="WR",
+    )
+    dummy_picks_r1 = [
+        DraftPick(
+            round_num=1,
+            round_pick=i,
+            overall_pick=i,
+            team_id=f"team_{i}",
+            team_name=f"Team {i}",
+            player_id=f"p_{i}",
+            player_name=f"Player {i}",
+            position="RB",
+        )
+        for i in range(2, 11)
+    ]
+    state_r2 = build_draft_state(
+        league_id="test_league",
+        draft_id="test_draft",
+        overall_pick=11,
+        user_draft_slot=1,
+        total_teams=10,
+        total_rounds=15,
+        recent_picks=[pick_wr1, *dummy_picks_r1],  # 10 picks completed, now at pick 11 (Round 2)
+        all_players=[p_burrow, p_wr1],
+        cheatsheet_context=ctx,
+        user_team_id="user_team",
+    )
+    alerts_r2 = " ".join(state_r2.strategy_alerts)
+    assert "Rule 'Rounds 1-2' prioritizes RB in Round 2" in alerts_r2
+
+    # 2. In Round 3 with no TE drafted: alerts user about Top 4 TE target window
+    dummy_picks_20 = [
+        DraftPick(
+            round_num=(i - 1) // 10 + 1,
+            round_pick=(i - 1) % 10 + 1,
+            overall_pick=i,
+            team_id="other_team",
+            team_name="Other Team",
+            player_id=f"dummy_{i}",
+            player_name=f"Dummy {i}",
+            position="WR",
+        )
+        for i in range(1, 21)
+    ]
+    state_r3 = build_draft_state(
+        league_id="test_league",
+        draft_id="test_draft",
+        overall_pick=21,
+        user_draft_slot=1,
+        total_teams=10,
+        total_rounds=15,
+        recent_picks=dummy_picks_20,  # Pick 21 (Round 3)
+        all_players=[p_burrow, p_wr1],
+        cheatsheet_context=ctx,
+        user_team_id="user_team",
+    )
+    alerts_r3 = " ".join(state_r3.strategy_alerts)
+    assert "Rule targets Top 4 TE in Rounds 3-5" in alerts_r3
+
+    # 3. After drafting Tier 1 QB Burrow: alerts user that no more QBs are needed
+    p_pick = DraftPick(
+        round_num=1,
+        round_pick=1,
+        overall_pick=1,
+        team_id="user_team",
+        team_name="User Team",
+        player_id="burrow",
+        player_name="Joe Burrow",
+        position="QB",
+    )
+    state_capped = build_draft_state(
+        league_id="test_league",
+        draft_id="test_draft",
+        overall_pick=2,
+        user_draft_slot=1,
+        total_teams=10,
+        total_rounds=15,
+        recent_picks=[p_pick],
+        all_players=[p_burrow, p_wr1],
+        cheatsheet_context=ctx,
+        user_team_id="user_team",
+    )
+    alerts_capped = " ".join(state_capped.strategy_alerts)
+    assert "Drafted Tier 1 Joe Burrow. You don't need any more QBs." in alerts_capped

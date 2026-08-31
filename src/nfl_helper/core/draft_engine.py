@@ -162,6 +162,7 @@ def build_draft_state(
     current_round = min(total_rounds, (overall_pick - 1) // total_teams + 1)
     strategy_alerts: list[str] = []
     if cheatsheet_context:
+        # 1. Positional Quota Deadlines (e.g. 4 RBs by Round 10)
         for qd in cheatsheet_context.quota_deadlines:
             curr_cnt = user_roster_counts.get(qd.position, 0)
             if curr_cnt < qd.required_count and current_round <= qd.deadline_round:
@@ -171,6 +172,8 @@ def build_draft_state(
                     strategy_alerts.append(
                         f"⚠️ Quota Deadline Alert: Need {needed} more {qd.position}s across next {rounds_left} rounds to meet Round {qd.deadline_round} deadline ({curr_cnt}/{qd.required_count} drafted)."
                     )
+
+        # 2. Round Target Windows (e.g. Rounds 1-2 only RB/WR and at least 1 RB)
         for rt in cheatsheet_context.round_targets:
             if current_round in rt.target_rounds:
                 window_end = max(rt.target_rounds)
@@ -185,6 +188,38 @@ def build_draft_state(
                         strategy_alerts.append(
                             f"⚠️ Strategy Rule Focus: Rule 'Rounds {min(rt.target_rounds)}-{window_end}' prioritizes {pos_req} in Round {current_round}{other_text} ({curr_cnt}/{min_cnt} drafted)."
                         )
+
+        # 3. Positional Strategy Target Windows & Tiers (e.g. Top 4 TE in Rds 3-5, Tier 1 QB in Rd 4)
+        for pr in cheatsheet_context.positional_strategy:
+            curr_pos_cnt = user_roster_counts.get(pr.position, 0)
+            if pr.target_rounds and current_round in pr.target_rounds and curr_pos_cnt == 0:
+                if pr.top_n_target:
+                    strategy_alerts.append(
+                        f"🎯 Strategy Target Window: Rule targets Top {pr.top_n_target} {pr.position} in Rounds {min(pr.target_rounds)}-{max(pr.target_rounds)}."
+                    )
+                elif pr.target_tiers:
+                    strategy_alerts.append(
+                        f"🎯 Strategy Target Window: Rule targets Tier {','.join(map(str, pr.target_tiers))} {pr.position} in Round {current_round}."
+                    )
+
+        # 4. Conditional Tier Caps (e.g. Drafted Tier 1 Burrow -> Max 1 QB)
+        if user_drafted_players:
+            for pr in cheatsheet_context.positional_strategy:
+                drafted_pos = [p for p in user_drafted_players if str(p.position).upper() == pr.position.upper()]
+                tier1_drafted = [p for p in drafted_pos if (p.cheatsheet_tier or p.tier or 1) == 1]
+                if tier1_drafted and (
+                    pr.no_second_if_top_tier
+                    or pr.conditional_max_count.get(1) == 1
+                    or any(b.max_position_cap == 1 for b in pr.branches)
+                ):
+                    pos_label = (
+                        "QBs"
+                        if pr.position.upper() == "QB"
+                        else ("TEs" if pr.position.upper() == "TE" else f"{pr.position}s")
+                    )
+                    strategy_alerts.append(
+                        f"🔔 Strategy Notice: Drafted Tier 1 {tier1_drafted[0].name}. You don't need any more {pos_label}."
+                    )
 
     baselines = calculate_vorp_baselines(all_players, total_teams)
     suggestions = generate_draft_suggestions(

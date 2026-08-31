@@ -18,6 +18,26 @@ from nfl_helper.models.draft import DraftSuggestion, PlayerTier, TierCliffWarnin
 from nfl_helper.models.player import Player
 
 
+def _is_season_ending_injury(player: Player) -> bool:
+    """Check if player has a season-ending injury to completely exclude from redraft boards."""
+    if player.cheatsheet_notes:
+        n_low = player.cheatsheet_notes.lower()
+        if any(
+            phrase in n_low
+            for phrase in (
+                "out for season",
+                "out for the season",
+                "season-ending",
+                "season ending",
+                "torn acl",
+                "torn achilles",
+                "achilles tear",
+            )
+        ):
+            return True
+    return False
+
+
 def generate_draft_suggestions(
     available_players: list[Player],
     tiers_by_pos: dict[str, list[PlayerTier]],
@@ -33,6 +53,9 @@ def generate_draft_suggestions(
     next_user_pick: int | None = None,
 ) -> list[DraftSuggestion]:
     """Generate ranked tactical draft suggestions balancing VORP, cliffs, rules, roster needs, and ADP value."""
+    # Completely filter out players with season-ending injuries in redraft leagues
+    available_players = [p for p in available_players if not _is_season_ending_injury(p)]
+
     vorp_scores = calculate_vorp(available_players, baselines)
     cliff_by_pos = {w.position: w for w in cliff_warnings}
     current_round = (overall_pick - 1) // total_teams + 1
@@ -284,6 +307,28 @@ def generate_draft_suggestions(
             if adp_delta > 0:
                 base_score += min(1.5, adp_delta * 0.08)
 
+        # Injury discount penalty based on severity and expected missed time
+        injury_penalty = 0.0
+        injury_note: str | None = None
+        inj_status_str = (p.injury_status.value if hasattr(p.injury_status, "value") else str(p.injury_status)).upper()
+        if "QUESTIONABLE" in inj_status_str or inj_status_str == "Q":
+            injury_penalty = 0.40
+            injury_note = "Injury: Questionable"
+        elif "DOUBTFUL" in inj_status_str or inj_status_str == "D":
+            injury_penalty = 1.00
+            injury_note = "Injury: Doubtful"
+        elif "OUT" in inj_status_str or inj_status_str == "O":
+            injury_penalty = 1.50
+            injury_note = "Injury: Out"
+        elif "IR" in inj_status_str:
+            injury_penalty = 2.50
+            injury_note = "Injury: IR (4+ Wks)"
+        elif "SUSPENDED" in inj_status_str or "SUSP" in inj_status_str:
+            injury_penalty = 2.50
+            injury_note = "Suspended"
+
+        base_score -= injury_penalty
+
         raw_scored.append(
             (
                 base_score,
@@ -299,6 +344,8 @@ def generate_draft_suggestions(
                 quota_urgency_bonus,
                 quota_urgency_note,
                 reach_penalty,
+                injury_penalty,
+                injury_note,
             )
         )
 
@@ -322,6 +369,8 @@ def generate_draft_suggestions(
             float,
             str | None,
             float,
+            float,
+            str | None,
         ]
     ] = []
 
@@ -339,6 +388,8 @@ def generate_draft_suggestions(
         q_bonus,
         q_note,
         reach_pen,
+        inj_pen,
+        inj_note,
     ) in enumerate(raw_scored):
         note_delta = 0.0
 
@@ -386,6 +437,8 @@ def generate_draft_suggestions(
                 q_bonus,
                 q_note,
                 reach_pen,
+                inj_pen,
+                inj_note,
             )
         )
 
@@ -406,6 +459,8 @@ def generate_draft_suggestions(
         q_bonus,
         q_note,
         reach_pen,
+        inj_pen,
+        inj_note,
     ) in enumerate(scored_players[:top_n], start=1):
         reason = build_suggestion_rationale(
             player,
@@ -422,6 +477,8 @@ def generate_draft_suggestions(
             quota_urgency_bonus=q_bonus,
             quota_urgency_note=q_note,
             reach_penalty=reach_pen,
+            injury_penalty=inj_pen,
+            injury_note=inj_note,
             total_teams=total_teams,
         )
 

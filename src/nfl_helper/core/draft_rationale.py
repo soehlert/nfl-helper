@@ -19,6 +19,8 @@ def build_suggestion_rationale(
     quota_urgency_bonus: float = 0.0,
     quota_urgency_note: str | None = None,
     reach_penalty: float = 0.0,
+    injury_penalty: float = 0.0,
+    injury_note: str | None = None,
     total_teams: int = 12,
 ) -> str:
     """Generate concise, factual 4-row structured justification showing exact points made/lost."""
@@ -70,10 +72,12 @@ def build_suggestion_rationale(
         else:
             lines.append(f"Market Consensus: Round {target_round}, Pick {target_pick} (ADP {player.adp:.1f})")
 
-    # Row 4: Tactical Note, Strategy Delta, Quota Urgency & Stadium Environment
+    # Row 4: Tactical Note, Strategy Delta, Quota Urgency, Injury & Stadium Environment
     is_dome = player.game_context and player.game_context.is_dome
     env_label = "Dome Stadium" if is_dome else f"Outdoor ({player.team})"
     note_parts = []
+    if injury_note and injury_penalty > 0.0:
+        note_parts.append(f"-{injury_penalty:.1f} pts {injury_note}")
     if quota_urgency_note and quota_urgency_bonus > 0.0:
         note_parts.append(f"+{quota_urgency_bonus:.1f} pts {quota_urgency_note}")
     if handcuff_note:
