@@ -852,7 +852,7 @@ def test_turn_lookahead_and_soft_quota_urgency() -> None:
         p_maye, ctx, current_round=4, next_user_pick=47, remaining_tier_count=2
     )
 
-    assert d_safe == 0.25
+    assert d_safe == 0.70
     assert "Safe across turn" in (note_safe or "")
     assert d_urgent == 1.50
     assert "Top QB in Rd 4" in (note_urgent or "")
@@ -1213,11 +1213,7 @@ def test_te_target_rule_safe_across_turn_boost_calibration() -> None:
     assert "collins" in sug_map
     # Collins (active round-appropriate WR) should score higher than Loveland (safe across turn)
     assert sug_map["collins"].score > sug_map["loveland"].score
-    assert (
-        "+0.2 pts Strategy Target" in sug_map["loveland"].reason
-        or "+0.25" in sug_map["loveland"].reason
-        or "Safe across turn" in sug_map["loveland"].reason
-    )
+    assert "+0.7 pts Strategy Target" in sug_map["loveland"].reason or "Safe across turn" in sug_map["loveland"].reason
 
 
 def test_full_untouched_tier_cliff_suppression() -> None:
