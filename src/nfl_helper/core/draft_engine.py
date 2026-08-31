@@ -69,15 +69,7 @@ def build_draft_state(
         if is_user_pick:
             user_picks.append(pick)
 
-    user_roster_counts: dict[str, int] = {}
-    for pick in user_picks:
-        p_pos = (pick.position or "").upper()
-        if p_pos in ("DEF", "DST", "D/ST"):
-            p_pos = "D/ST"
-        if p_pos:
-            user_roster_counts[p_pos] = user_roster_counts.get(p_pos, 0) + 1
-
-    # Resolve user_drafted_players with attached tiers and notes
+    # Resolve user_drafted_players with attached canonical positions, tiers, and notes
     players_by_id = {p.id: p for p in all_players}
     players_by_name = {p.name.lower(): p for p in all_players}
     user_drafted_players: list[Player] = []
@@ -109,14 +101,23 @@ def build_draft_state(
             )
             user_drafted_players.append(
                 Player(
-                    id=pick.player_id,
-                    name=pick.player_name,
+                    id=pick.player_id or f"drafted_{pick.overall_pick}",
+                    name=pick.player_name or "Drafted Player",
                     position=pos_enum,
-                    team="NFL",
-                    projected_points=10.0,
+                    team="FA",
                     cheatsheet_tier=cs_entry.tier if cs_entry else None,
+                    tier=cs_entry.tier if cs_entry else 1,
+                    cheatsheet_notes=cs_entry.notes if cs_entry else None,
                 )
             )
+
+    user_roster_counts: dict[str, int] = {}
+    for p in user_drafted_players:
+        p_pos = str(p.position.value if hasattr(p.position, "value") else p.position).upper()
+        if p_pos in ("DEF", "DST", "D/ST"):
+            p_pos = "D/ST"
+        if p_pos:
+            user_roster_counts[p_pos] = user_roster_counts.get(p_pos, 0) + 1
 
     # Calculate completed / capped positions
     capped_pos: set[str] = set()
