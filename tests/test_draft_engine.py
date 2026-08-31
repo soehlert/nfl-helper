@@ -886,3 +886,69 @@ def test_turn_lookahead_and_soft_quota_urgency() -> None:
     suggested_names = [s.player.name for s in suggs]
     assert "Mike Evans" in suggested_names
     assert "Rhamondre Stevenson" in suggested_names
+
+
+def test_round_14_preserves_skill_positions_alongside_kickers() -> None:
+    """Verify that in Round 14 with 1 D/ST and 0 K (2 picks left), skill players remain visible alongside top kickers."""
+    p_kicker = Player(
+        id="k1", name="Brandon Aubrey", position=Position.K, team="DAL", projected_points=8.5, adp=135.0, tier=1
+    )
+    p_wr_sleeper = Player(
+        id="w_sleep", name="Jalil Farooq", position=Position.WR, team="FA", projected_points=10.0, adp=136.0, tier=4
+    )
+    p_rb_backup = Player(
+        id="r_back", name="Blake Corum", position=Position.RB, team="LAR", projected_points=9.5, adp=137.0, tier=4
+    )
+
+    tiers_by_pos = {
+        "K": cluster_position_tiers([p_kicker], "K"),
+        "WR": cluster_position_tiers([p_wr_sleeper], "WR"),
+        "RB": cluster_position_tiers([p_rb_backup], "RB"),
+    }
+    baselines = {"RB": 10.0, "WR": 10.0, "QB": 15.0, "TE": 9.0, "K": 8.0, "D/ST": 8.0}
+
+    suggs = generate_draft_suggestions(
+        available_players=[p_kicker, p_wr_sleeper, p_rb_backup],
+        tiers_by_pos=tiers_by_pos,
+        cliff_warnings=[],
+        baselines=baselines,
+        overall_pick=134,  # Round 14, Pick 4 in 10-team league (2 picks left: Rd 14, Rd 15)
+        user_roster_counts={"QB": 1, "TE": 1, "WR": 5, "RB": 5, "D/ST": 1, "K": 0},
+        total_teams=10,
+        total_rounds=15,
+    )
+
+    suggested_names = [s.player.name for s in suggs]
+    # Kicker is present and elevated, but skill players are NOT hard-filtered or removed
+    assert "Brandon Aubrey" in suggested_names
+    assert "Jalil Farooq" in suggested_names
+    assert "Blake Corum" in suggested_names
+
+
+def test_reason_breakdown_transparency_in_suggestions() -> None:
+    """Verify that reason strings contain explicit point breakdown line items for strategy, quota urgency, and reaches."""
+    from nfl_helper.core.draft_rationale import build_suggestion_rationale
+
+    p = Player(id="p1", name="Test Player", position=Position.RB, team="CIN", projected_points=12.0, adp=85.0)
+    top_tier_info = {"RB": (1, 3, 1.2)}
+
+    reason = build_suggestion_rationale(
+        player=p,
+        vorp=2.5,
+        tier_bonus=1.5,
+        scarcity_bonus=0.0,
+        cliff=None,
+        adp_delta=0.0,
+        overall_pick=67,
+        top_tier_info=top_tier_info,
+        rule_delta=1.5,
+        rule_note="Strategy Target: Top RB in Rd 7",
+        quota_urgency_bonus=1.8,
+        quota_urgency_note="Quota Urgency: Need 2 RB by Rd 10",
+        reach_penalty=1.2,
+    )
+
+    assert "+2.5 pts VORP (Tier 1 RB)" in reason
+    assert "+1.5 pts Strategy Target: Top RB in Rd 7" in reason
+    assert "+1.8 pts Quota Urgency: Need 2 RB by Rd 10" in reason
+    assert "-1.2 pts (Market Reach" in reason

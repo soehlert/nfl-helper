@@ -16,6 +16,9 @@ def build_suggestion_rationale(
     rule_delta: float = 0.0,
     rule_note: str | None = None,
     handcuff_note: str | None = None,
+    quota_urgency_bonus: float = 0.0,
+    quota_urgency_note: str | None = None,
+    reach_penalty: float = 0.0,
     total_teams: int = 12,
 ) -> str:
     """Generate concise, factual 4-row structured justification showing exact points made/lost."""
@@ -44,7 +47,7 @@ def build_suggestion_rationale(
     else:
         lines.append(f"+{tier_bonus:.1f} pts (Tier {p_tier})")
 
-    # Row 3: ADP Market Context (Market Consensus Round & Pick / Value Steal)
+    # Row 3: ADP Market Context (Market Consensus Round & Pick / Value Steal / Reach)
     if player.adp:
         discount = overall_pick - player.adp
         target_round = int((player.adp - 1) // max(1, total_teams)) + 1
@@ -60,13 +63,19 @@ def build_suggestion_rationale(
             lines.append(
                 f"+{adp_pts:.1f} pts (Market Value • Available +{discount:.0f} picks past ADP {player.adp:.1f})"
             )
+        elif reach_penalty > 0.0:
+            lines.append(
+                f"-{reach_penalty:.1f} pts (Market Reach • ADP {player.adp:.1f} is +{player.adp - overall_pick:.0f} picks ahead)"
+            )
         else:
             lines.append(f"Market Consensus: Round {target_round}, Pick {target_pick} (ADP {player.adp:.1f})")
 
-    # Row 4: Tactical Note, Strategy Delta & Stadium Environment
+    # Row 4: Tactical Note, Strategy Delta, Quota Urgency & Stadium Environment
     is_dome = player.game_context and player.game_context.is_dome
     env_label = "Dome Stadium" if is_dome else f"Outdoor ({player.team})"
     note_parts = []
+    if quota_urgency_note and quota_urgency_bonus > 0.0:
+        note_parts.append(f"+{quota_urgency_bonus:.1f} pts {quota_urgency_note}")
     if handcuff_note:
         note_parts.append(handcuff_note)
     if player.cheatsheet_notes:

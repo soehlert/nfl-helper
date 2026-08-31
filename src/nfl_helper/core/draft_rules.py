@@ -97,12 +97,7 @@ def evaluate_strategy_rule_adjustments(
                             or (branch.target_tiers and p_tier in branch.target_tiers)
                             or p_tier == 1
                         ):
-                            if (
-                                next_user_pick
-                                and player.adp
-                                and player.adp >= next_user_pick
-                                and remaining_tier_count > 1
-                            ):
+                            if next_user_pick and player.adp and player.adp >= next_user_pick:
                                 delta += 0.70
                                 specific_notes.append(
                                     f"Strategy Target: {pos_rule.position} in Rd {current_round} (Safe across turn)"
@@ -153,7 +148,7 @@ def evaluate_strategy_rule_adjustments(
                     if (
                         pos_rule.top_n_target and (player.cheatsheet_rank or 99) <= pos_rule.top_n_target
                     ) or p_tier == 1:
-                        if next_user_pick and player.adp and player.adp >= next_user_pick and remaining_tier_count > 1:
+                        if next_user_pick and player.adp and player.adp >= next_user_pick:
                             delta += 0.70
                             specific_notes.append(
                                 f"Strategy Target: {pos_rule.position} in Rd {current_round} (Safe across turn)"

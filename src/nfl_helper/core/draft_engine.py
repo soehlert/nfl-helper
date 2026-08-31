@@ -178,8 +178,12 @@ def build_draft_state(
                 for pos_req, min_cnt in rt.min_counts.items():
                     curr_cnt = user_roster_counts.get(pos_req, 0)
                     if curr_cnt < min_cnt and rounds_left_window <= (min_cnt - curr_cnt):
+                        drafted_other = [
+                            f"{cnt} {pos}" for pos, cnt in user_roster_counts.items() if pos != pos_req and cnt > 0
+                        ]
+                        other_text = f" (Drafted {', '.join(drafted_other)})" if drafted_other else ""
                         strategy_alerts.append(
-                            f"⚠️ Strategy Alert: Rule requires at least {min_cnt} {pos_req} in Rounds {min(rt.target_rounds)}-{window_end} ({curr_cnt}/{min_cnt} drafted)."
+                            f"⚠️ Strategy Rule Focus: Rule 'Rounds {min(rt.target_rounds)}-{window_end}' prioritizes {pos_req} in Round {current_round}{other_text} ({curr_cnt}/{min_cnt} drafted)."
                         )
 
     baselines = calculate_vorp_baselines(all_players, total_teams)

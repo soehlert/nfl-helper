@@ -121,7 +121,7 @@ def generate_draft_suggestions(
                 calculate_tier_drop(top_t, next_t),
             )
 
-    mins: dict[str, int] = {}
+    mins: dict[str, int] = {"K": 1, "D/ST": 1}
     deadline_quotas: list[tuple[str, int, int]] = []
     if cheatsheet_context:
         for pr in cheatsheet_context.positional_strategy:
@@ -140,7 +140,21 @@ def generate_draft_suggestions(
 
     # Pass 1: Compute baseline score without note_delta to establish board density & ranks
     raw_scored: list[
-        tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None, str | None]
+        tuple[
+            float,
+            Player,
+            float,
+            float,
+            float,
+            TierCliffWarning | None,
+            float,
+            float,
+            str | None,
+            str | None,
+            float,
+            str | None,
+            float,
+        ]
     ] = []
 
     for p in available_players:
@@ -148,7 +162,11 @@ def generate_draft_suggestions(
         cliff = cliff_by_pos.get(str(p.position))
         is_cliff_defense = cliff is not None and (cliff.current_tier == (p.cheatsheet_tier or p.tier or 1))
 
-        demand_weight = POSITION_DEMAND_WEIGHTS.get(str(p.position), 1.0)
+        pos_str = (p.position.value if hasattr(p.position, "value") else str(p.position)).upper()
+        if pos_str in ("D/ST", "DEF", "DST") or "DST" in pos_str or "DEF" in pos_str:
+            pos_str = "D/ST"
+
+        demand_weight = POSITION_DEMAND_WEIGHTS.get(pos_str, 1.0)
         p_tier = p.cheatsheet_tier or p.tier or 1
 
         base_score = vorp + (p.projected_points * 0.005)
@@ -163,15 +181,12 @@ def generate_draft_suggestions(
         base_score += tier_bonus
 
         # Position-specific final round elevation for unfilled mandatory single-starters
-        pos_str = str(p.position).upper()
-        if pos_str in ("D/ST", "DEF", "DST"):
-            pos_str = "D/ST"
 
-        if pos_str in ("K", "D/ST"):
-            if rounds_remaining == 2:
-                base_score += 3.0  # Elevate top D/ST or K in penultimate round (Round 14 of 15)
+        if pos_str in ("K", "D/ST") and roster.get(pos_str, 0) < 1:
+            if rounds_remaining == 2 and p_tier == 1:
+                base_score += 1.20  # Mild boost for top K/DST in penultimate round without crowding out skill depth
             elif rounds_remaining <= 1:
-                base_score += 8.0  # Highest priority to fill mandatory starter in final round (Round 15)
+                base_score += 8.00  # Highest priority to fill mandatory starter in final round
 
         # Handcuff synergy bonus for backup / committee RBs on same NFL team as drafted starter
         handcuff_note: str | None = None
@@ -182,9 +197,13 @@ def generate_draft_suggestions(
                     handcuff_note = f"Handcuff ({dp.name})"
                     break
 
-        # Roster quota urgency & round deadline weighting
+        # Unified, non-stacking roster quota urgency & round deadline weighting
+        quota_urgency_bonus = 0.0
+        quota_urgency_note: str | None = None
+
         if pos_str in urgent_quota_positions or (pos_str in ("DEF", "DST") and "D/ST" in urgent_quota_positions):
-            base_score += 2.50  # Strong urgency bonus while allowing extreme falling value steals to surface
+            quota_urgency_bonus = 1.80
+            quota_urgency_note = f"Quota Urgency: {pos_str} required by deadline"
 
         for pos_dl, q_dl, dl_round in deadline_quotas:
             if pos_str == pos_dl and current_round <= dl_round:
@@ -193,17 +212,20 @@ def generate_draft_suggestions(
                     rounds_left = dl_round - current_round + 1
                     needed_dl = q_dl - curr_dl_cnt
                     if rounds_left <= needed_dl + 2:
-                        urgency_bonus = min(3.5, 1.5 + (needed_dl / max(1, rounds_left)) * 1.5)
-                        base_score += urgency_bonus
+                        calc_bonus = min(1.80, 0.8 + (needed_dl / max(1, rounds_left)) * 0.8)
+                        if calc_bonus > quota_urgency_bonus:
+                            quota_urgency_bonus = calc_bonus
+                            quota_urgency_note = f"Quota Urgency: Need {needed_dl} {pos_str} by Rd {dl_round}"
 
         if pos_str in mins:
             req_min = mins[pos_str]
             curr_pos_cnt = roster.get(pos_str, 0)
-            if curr_pos_cnt < req_min:
-                if current_round >= 7:
-                    needed_min = req_min - curr_pos_cnt
-                    urgency_bonus = min(3.5, 1.0 + (needed_min * 0.8) + (current_round - 7) * 0.2)
-                    base_score += urgency_bonus
+            if curr_pos_cnt < req_min and current_round >= 7:
+                needed_min = req_min - curr_pos_cnt
+                calc_bonus = min(1.60, 0.6 + (needed_min * 0.4))
+                if calc_bonus > quota_urgency_bonus:
+                    quota_urgency_bonus = calc_bonus
+                    quota_urgency_note = f"Quota Urgency: Need {needed_min} {pos_str}"
             elif curr_pos_cnt >= req_min + 1:
                 has_unmet_mins = (
                     any(roster.get(p, 0) < m for p, m in mins.items() if p != pos_str)
@@ -211,8 +233,10 @@ def generate_draft_suggestions(
                     or (roster.get("K", 0) < 1)
                 )
                 if has_unmet_mins and current_round >= 7:
-                    surplus_penalty = 3.5 if current_round >= 12 else 2.5
+                    surplus_penalty = 2.5 if current_round >= 12 else 1.5
                     base_score -= surplus_penalty
+
+        base_score += quota_urgency_bonus
 
         # Positional Scarcity Weighting: only when ADP is in reachable range for current pick
         scarcity_bonus = 0.0
@@ -226,6 +250,8 @@ def generate_draft_suggestions(
                 base_score += scarcity_bonus
 
         # Market reach penalty / value steal bonus
+        reach_penalty = 0.0
+        steal_bonus = 0.0
         if p.adp and p.adp > (overall_pick + 6):
             reach_penalty = min(2.5, (p.adp - (overall_pick + 6)) * 0.08)
             base_score -= reach_penalty
@@ -270,6 +296,9 @@ def generate_draft_suggestions(
                 rule_delta,
                 rule_note,
                 handcuff_note,
+                quota_urgency_bonus,
+                quota_urgency_note,
+                reach_penalty,
             )
         )
 
@@ -279,10 +308,38 @@ def generate_draft_suggestions(
 
     # Pass 2: Apply realistic sliding-window note adjustments
     scored_players: list[
-        tuple[float, Player, float, float, float, TierCliffWarning | None, float, float, str | None, str | None]
+        tuple[
+            float,
+            Player,
+            float,
+            float,
+            float,
+            TierCliffWarning | None,
+            float,
+            float,
+            str | None,
+            str | None,
+            float,
+            str | None,
+            float,
+        ]
     ] = []
 
-    for idx, (b_score, p, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note, h_note) in enumerate(raw_scored):
+    for idx, (
+        b_score,
+        p,
+        vorp,
+        t_bonus,
+        s_bonus,
+        cliff,
+        adp_delta,
+        r_delta,
+        r_note,
+        h_note,
+        q_bonus,
+        q_note,
+        reach_pen,
+    ) in enumerate(raw_scored):
         note_delta = 0.0
 
         # Check strategy target round anchoring when pick is earlier than designated target round
@@ -326,15 +383,30 @@ def generate_draft_suggestions(
                 r_delta,
                 r_note,
                 h_note,
+                q_bonus,
+                q_note,
+                reach_pen,
             )
         )
 
     scored_players.sort(key=lambda item: item[0], reverse=True)
 
     suggestions: list[DraftSuggestion] = []
-    for rank, (score_val, player, vorp, t_bonus, s_bonus, cliff, adp_delta, r_delta, r_note, h_note) in enumerate(
-        scored_players[:top_n], start=1
-    ):
+    for rank, (
+        score_val,
+        player,
+        vorp,
+        t_bonus,
+        s_bonus,
+        cliff,
+        adp_delta,
+        r_delta,
+        r_note,
+        h_note,
+        q_bonus,
+        q_note,
+        reach_pen,
+    ) in enumerate(scored_players[:top_n], start=1):
         reason = build_suggestion_rationale(
             player,
             vorp,
@@ -344,9 +416,12 @@ def generate_draft_suggestions(
             adp_delta,
             overall_pick,
             top_tier_info,
-            r_delta,
-            r_note,
+            rule_delta=r_delta,
+            rule_note=r_note,
             handcuff_note=h_note,
+            quota_urgency_bonus=q_bonus,
+            quota_urgency_note=q_note,
+            reach_penalty=reach_pen,
             total_teams=total_teams,
         )
 
