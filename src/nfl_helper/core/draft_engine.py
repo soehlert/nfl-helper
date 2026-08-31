@@ -222,25 +222,6 @@ def build_draft_state(
                         f"Strategy Target Window: Rule targets Tier {','.join(map(str, pr.target_tiers))} {pr.position} in Round {current_round}."
                     )
 
-        # 4. Conditional Tier Caps (e.g. Drafted Tier 1 Burrow -> Max 1 QB)
-        if user_drafted_players:
-            for pr in cheatsheet_context.positional_strategy:
-                drafted_pos = [p for p in user_drafted_players if str(p.position).upper() == pr.position.upper()]
-                tier1_drafted = [p for p in drafted_pos if (p.cheatsheet_tier == 1 or p.tier == 1)]
-                if tier1_drafted and (
-                    pr.no_second_if_top_tier
-                    or pr.conditional_max_count.get(1) == 1
-                    or any(b.max_position_cap == 1 for b in pr.branches)
-                ):
-                    pos_label = (
-                        "QBs"
-                        if pr.position.upper() == "QB"
-                        else ("TEs" if pr.position.upper() == "TE" else f"{pr.position}s")
-                    )
-                    strategy_alerts.append(
-                        f"Strategy Notice: Drafted Tier 1 {tier1_drafted[0].name}. You don't need any more {pos_label}."
-                    )
-
     baselines = calculate_vorp_baselines(all_players, total_teams)
     suggestions = generate_draft_suggestions(
         available_players,

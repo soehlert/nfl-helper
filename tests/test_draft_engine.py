@@ -1124,8 +1124,8 @@ def test_universal_strategy_alert_banners_for_arbitrary_rules() -> None:
         cheatsheet_context=ctx,
         user_team_id="user_team",
     )
-    alerts_capped = " ".join(state_capped.strategy_alerts)
-    assert "Drafted Tier 1 Joe Burrow. You don't need any more QBs." in alerts_capped
+    assert "QB" in state_capped.capped_positions
+    assert not any("You don't need any more" in a for a in state_capped.strategy_alerts)
 
 
 def test_te_target_rule_safe_across_turn_boost_calibration() -> None:
