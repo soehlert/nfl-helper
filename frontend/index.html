@@ -20,7 +20,7 @@
       <span id="platform-badge" class="badge badge-espn">ESPN</span>
     </div>
     <div class="header-actions">
-      <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted);">Team: <strong id="current-team-name" style="color: var(--text-main);">—</strong></span>
+      <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer;" onclick="promptTeamSelection()" title="Click to select or change your squad">Team: <strong id="current-team-name" style="color: var(--text-main); text-decoration: underline dotted;">—</strong></span>
       <button id="settings-header-btn" class="btn btn-secondary" onclick="switchTab('settings')">📋 Cheatsheets</button>
     </div>
   </header>
@@ -703,7 +703,19 @@
       return q ? `?${q}` : '';
     }
 
-    async function syncSessionLeagueTeams() {
+    let cachedLeagueTeams = [];
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function syncSessionLeagueTeams(forcePrompt = false) {
       if (!activeSession.league_id) return;
       try {
         let url = `/api/league/teams?platform=${activeSession.platform}&league_id=${activeSession.league_id}`;
@@ -712,17 +724,70 @@
 
         const res = await fetch(url);
         if (res.ok) {
-          const teams = await res.json();
+          cachedLeagueTeams = await res.json();
           if (activeSession.team_id) {
-            const matched = teams.find(t => String(t.team_id) === String(activeSession.team_id));
+            const matched = cachedLeagueTeams.find(t => String(t.team_id) === String(activeSession.team_id));
             if (matched) {
               activeSession.team_name = matched.team_name;
               const nameEl = document.getElementById('current-team-name');
               if (nameEl) nameEl.textContent = matched.team_name;
             }
+          } else if (cachedLeagueTeams.length > 0) {
+            openTeamSelectModal(cachedLeagueTeams);
           }
         }
       } catch (e) {}
+    }
+
+    function promptTeamSelection() {
+      if (cachedLeagueTeams.length > 0) {
+        openTeamSelectModal(cachedLeagueTeams);
+      } else {
+        syncSessionLeagueTeams(true);
+      }
+    }
+
+    function openTeamSelectModal(teams) {
+      const modal = document.getElementById('team-select-modal');
+      const listEl = document.getElementById('team-select-list');
+      if (!modal || !listEl) return;
+
+      const teamList = teams || cachedLeagueTeams;
+      if (!teamList || teamList.length === 0) {
+        listEl.innerHTML = '<p style="color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 1rem;">No teams found in this league.</p>';
+      } else {
+        listEl.innerHTML = teamList.map(t => {
+          const isSelected = String(activeSession.team_id) === String(t.team_id);
+          const ownerStr = t.owner_name && t.owner_name !== t.team_name ? `<span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.35rem;">(${escapeHtml(t.owner_name)})</span>` : '';
+          return `
+            <button class="btn" onclick="selectTeam('${t.team_id}', '${escapeHtml(t.team_name)}')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; margin-bottom: 0.5rem; background: ${isSelected ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.04)'}; border: 1px solid ${isSelected ? 'var(--accent-blue)' : 'var(--border-color)'}; border-radius: 8px; text-align: left; cursor: pointer;">
+              <span style="font-weight: ${isSelected ? '600' : '400'}; color: ${isSelected ? 'var(--accent-blue)' : 'var(--text-main)'}; font-size: 0.92rem;">🏈 ${escapeHtml(t.team_name)}${ownerStr}</span>
+              ${isSelected ? '<span style="font-size: 0.75rem; color: var(--accent-green); font-weight: 700; background: rgba(16, 185, 129, 0.15); padding: 0.2rem 0.5rem; border-radius: 4px;">ACTIVE</span>' : ''}
+            </button>
+          `;
+        }).join('');
+      }
+      modal.style.display = 'flex';
+    }
+
+    function closeTeamSelectModal() {
+      const modal = document.getElementById('team-select-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function selectTeam(teamId, teamName) {
+      activeSession.team_id = String(teamId);
+      activeSession.team_name = teamName;
+      try {
+        localStorage.setItem('fwr_session', JSON.stringify(activeSession));
+      } catch (e) {}
+      const nameEl = document.getElementById('current-team-name');
+      if (nameEl) nameEl.textContent = teamName;
+      closeTeamSelectModal();
+      fetchDraftState();
+      fetchLineupOptimization();
+      fetchWaiverRecommendations();
+      showToast(`Active squad: ${teamName}`, 'success');
     }
 
     let selectedCheatsheetFile = null;
@@ -2320,6 +2385,22 @@
       <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
         <button id="confirm-modal-cancel" class="btn btn-secondary" style="font-size: 0.85rem;" onclick="closeConfirmModal(false)">Cancel</button>
         <button id="confirm-modal-ok" class="btn-danger-pill" style="font-size: 0.85rem; padding: 0.35rem 1rem;" onclick="closeConfirmModal(true)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1-Click Team / Squad Selection Modal -->
+  <div id="team-select-modal" style="display: none; position: fixed; inset: 0; background: rgba(10, 15, 29, 0.85); backdrop-filter: blur(6px); z-index: 100002; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div style="background: #111a2e; border: 1px solid var(--border-color); border-radius: 14px; max-width: 480px; width: 100%; max-height: 80vh; display: flex; flex-direction: column; padding: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+        <div>
+          <h3 style="font-size: 1.15rem; margin: 0; font-weight: 700; color: var(--text-main);">Select Your Squad</h3>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0.25rem 0 0 0;">Choose your team in this league to personalize draft advice and lineup planning.</p>
+        </div>
+        <button class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.85rem;" onclick="closeTeamSelectModal()">✕</button>
+      </div>
+      <div id="team-select-list" style="overflow-y: auto; max-height: 55vh; padding-right: 0.25rem; margin-top: 0.5rem;">
+        <!-- Injected team buttons -->
       </div>
     </div>
   </div>
