@@ -2175,7 +2175,7 @@
     }
 
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       const params = new URLSearchParams(window.location.search);
       const inviteCode = params.get('invite');
       const platformParam = params.get('platform');
@@ -2183,6 +2183,18 @@
       const teamParam = params.get('team');
       const swidParam = params.get('swid');
       const espnS2Param = params.get('espn_s2');
+
+      // Check QA mode status from server
+      let isQAMode = false;
+      try {
+        const configRes = await fetch('/api/config');
+        if (configRes.ok) {
+          const cfg = await configRes.json();
+          isQAMode = Boolean(cfg.qa_mode);
+          const simWrapper = document.getElementById('simulation-controls-wrapper');
+          if (simWrapper) simWrapper.style.display = isQAMode ? 'flex' : 'none';
+        }
+      } catch (e) {}
 
       if (inviteCode || (platformParam && leagueParam)) {
         activeSession = {
@@ -2215,6 +2227,20 @@
             }
           }
         } catch (e) {}
+      }
+
+      // If QA Mode is active, bypass invite verification and initialize QA sandbox session if empty
+      if (isQAMode && (!activeSession.is_valid || !activeSession.league_id)) {
+        activeSession = {
+          invite: 'qa_sandbox',
+          platform: 'sleeper',
+          league_id: 'qa_league',
+          team_id: '1',
+          team_name: 'QA Testing Squad',
+          swid: '',
+          espn_s2: '',
+          is_valid: true,
+        };
       }
 
       const gateOverlay = document.getElementById('invite-gate-overlay');
