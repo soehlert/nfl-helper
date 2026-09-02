@@ -20,8 +20,8 @@
       <span id="platform-badge" class="badge badge-espn">ESPN</span>
     </div>
     <div class="header-actions">
-      <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted);">Team: <strong id="current-team-name" style="color: var(--text-main);">My Squad</strong></span>
-      <button id="settings-header-btn" class="btn btn-primary" onclick="switchTab('settings')">⚙️ Settings</button>
+      <span id="session-info" style="font-size: 0.85rem; color: var(--text-muted);">Team: <strong id="current-team-name" style="color: var(--text-main);">—</strong></span>
+      <button id="settings-header-btn" class="btn btn-secondary" onclick="switchTab('settings')">📋 Cheatsheets</button>
     </div>
   </header>
 
@@ -484,55 +484,8 @@
 
 
 
-    <!-- TAB 4: FULL-PAGE SETTINGS (Clean & Identical for All Users) -->
+    <!-- TAB 4: CHEATSHEETS & INGESTION -->
     <div id="tab-settings" class="tab-content">
-      <!-- Active League Configuration -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">League Configuration</div>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; align-items: start;">
-          <!-- Col 1: Platform -->
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">Platform</label>
-            <select id="session-platform" class="form-control" style="height: 44px; font-size: 0.92rem; padding: 0.6rem 0.85rem;" onchange="toggleCookieFields()">
-              <option value="sleeper">Sleeper (Requires League ID only)</option>
-              <option value="espn">ESPN (Requires League ID; SWID and espn_s2 if private)</option>
-            </select>
-          </div>
-          <!-- Col 2: League ID -->
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">League ID</label>
-            <input type="text" id="session-league-id" class="form-control" style="height: 44px; font-size: 0.92rem; padding: 0.6rem 0.85rem;" value="12345678" onchange="loadLeagueTeams(true)" onkeydown="if(event.key==='Enter'){event.preventDefault(); loadLeagueTeams(true);}">
-          </div>
-          <!-- Col 3: Select Your Team -->
-          <div class="form-group" style="margin-bottom: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-              <label class="form-label" style="margin-bottom: 0;">Select Your Team</label>
-              <button type="button" style="background: none; border: none; color: var(--accent-blue); font-size: 0.78rem; font-weight: 600; cursor: pointer;" onclick="loadLeagueTeams(true)">🔄 Refresh</button>
-            </div>
-            <select id="session-team-select" class="form-control" style="height: 44px; font-size: 0.92rem; padding: 0.6rem 0.85rem;" onchange="onTeamSelectChange(true)">
-              <option value="">-- Connect League to Select Team --</option>
-            </select>
-            <input type="hidden" id="session-team-id" value="">
-          </div>
-        </div>
-
-        <!-- Optional ESPN Credentials Drawer (Collapsible) -->
-        <div id="espn-cookie-inputs" style="display: none; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed var(--border-color);">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label">ESPN SWID (Private leagues only)</label>
-              <input type="text" id="session-swid" class="form-control" style="height: 42px;" placeholder="{12345678-ABCD-1234-ABCD-1234567890AB}">
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label">ESPN espn_s2 Cookie (Private leagues only)</label>
-              <input type="text" id="session-espn-s2" class="form-control" style="height: 42px;" placeholder="AECb...">
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Cheatsheet & File Ingestion -->
       <div class="card">
         <div class="card-header">
@@ -724,95 +677,50 @@
 
       if (tabId === 'waivers') {
         fetchWaiverRecommendations();
-      }
+    let activeSession = {
+      invite: '',
+      platform: 'sleeper',
+      league_id: '',
+      team_id: '',
+      team_name: '',
+      swid: '',
+      espn_s2: '',
+      is_valid: false,
+    };
+
+    function getLeagueQueryString() {
+      const params = new URLSearchParams();
+      if (activeSession.platform) params.append('platform', activeSession.platform);
+      if (activeSession.league_id) params.append('league_id', activeSession.league_id);
+      if (activeSession.swid) params.append('swid', activeSession.swid);
+      if (activeSession.espn_s2) params.append('espn_s2', activeSession.espn_s2);
+      if (activeSession.team_id) params.append('team_id', activeSession.team_id);
+      if (activeSession.invite) params.append('session_id', activeSession.invite);
+      const q = params.toString();
+      return q ? `?${q}` : '';
     }
 
-    function onTeamSelectChange(userTriggered = false) {
-      const select = document.getElementById('session-team-select');
-      if (!select || select.selectedIndex < 0) return;
-      const selectedOption = select.options[select.selectedIndex];
-      const teamId = select.value;
-      const teamName = selectedOption.text.split('(')[0].trim();
-      document.getElementById('session-team-id').value = teamId;
-      document.getElementById('current-team-name').textContent = teamName;
+    async function syncSessionLeagueTeams() {
+      if (!activeSession.league_id) return;
       try {
-        localStorage.setItem('fwr_team_id', teamId);
-        localStorage.setItem('fwr_team_name', teamName);
-      } catch (e) {}
-      if (userTriggered) {
-        showToast(`Active team updated: ${selectedOption.text}`, 'info');
-      }
-      fetchDraftState();
-    }
-
-    async function loadLeagueTeams(userTriggered = false) {
-      const platform = document.getElementById('session-platform').value;
-      const leagueId = document.getElementById('session-league-id').value.trim();
-      const swid = document.getElementById('session-swid').value.trim();
-      const espnS2 = document.getElementById('session-espn-s2').value.trim();
-
-      try {
-        localStorage.setItem('fwr_platform', platform);
-        localStorage.setItem('fwr_league_id', leagueId);
-        if (swid) localStorage.setItem('fwr_swid', swid);
-        if (espnS2) localStorage.setItem('fwr_espn_s2', espnS2);
-      } catch (e) {}
-
-      try {
-        let url = `/api/league/teams?platform=${platform}&league_id=${leagueId}`;
-        if (swid) url += `&swid=${encodeURIComponent(swid)}`;
-        if (espnS2) url += `&espn_s2=${encodeURIComponent(espnS2)}`;
+        let url = `/api/league/teams?platform=${activeSession.platform}&league_id=${activeSession.league_id}`;
+        if (activeSession.swid) url += `&swid=${encodeURIComponent(activeSession.swid)}`;
+        if (activeSession.espn_s2) url += `&espn_s2=${encodeURIComponent(activeSession.espn_s2)}`;
 
         const res = await fetch(url);
         if (res.ok) {
           const teams = await res.json();
-          const select = document.getElementById('session-team-select');
-          select.innerHTML = '';
-          const savedTeamId = localStorage.getItem('fwr_team_id');
-          teams.forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.team_id;
-            opt.textContent = t.owner_name ? `${t.team_name} (${t.owner_name})` : t.team_name;
-            if (savedTeamId && String(t.team_id) === String(savedTeamId)) {
-              opt.selected = true;
+          if (activeSession.team_id) {
+            const matched = teams.find(t => String(t.team_id) === String(activeSession.team_id));
+            if (matched) {
+              activeSession.team_name = matched.team_name;
+              const nameEl = document.getElementById('current-team-name');
+              if (nameEl) nameEl.textContent = matched.team_name;
             }
-            select.appendChild(opt);
-          });
-          onTeamSelectChange();
-          const badge = document.getElementById('platform-badge');
-          if (badge) {
-            badge.textContent = platform.toUpperCase();
-            badge.className = 'badge badge-' + platform;
-          }
-          if (userTriggered) {
-            showToast(`Saved ${platform.toUpperCase()} League ID: ${leagueId} (${teams.length} teams synced)`, 'success');
-          }
-          fetchDraftState();
-        } else {
-          if (userTriggered) {
-            showToast(`Saved League ID: ${leagueId}`, 'info');
           }
         }
-      } catch (e) {
-        if (userTriggered) {
-          showToast(`Saved League ID: ${leagueId}`, 'info');
-        }
-      }
+      } catch (e) {}
     }
-
-
-    function toggleCookieFields() {
-      const platform = document.getElementById('session-platform').value;
-      const cookieBox = document.getElementById('espn-cookie-inputs');
-      if (platform === 'sleeper') {
-        cookieBox.style.display = 'none';
-      } else {
-        cookieBox.style.display = 'block';
-      }
-    }
-
-
-
 
     let selectedCheatsheetFile = null;
 
@@ -832,20 +740,6 @@
       if (nameInput && !nameInput.value.trim()) {
         nameInput.value = file.name.replace(/\.[^/.]+$/, "");
       }
-    }
-
-    function getLeagueQueryString() {
-      const platform = document.getElementById('session-platform')?.value || '';
-      const leagueId = document.getElementById('session-league-id')?.value || '';
-      const swid = document.getElementById('session-swid')?.value || '';
-      const espnS2 = document.getElementById('session-espn-s2')?.value || '';
-      const params = new URLSearchParams();
-      if (platform) params.append('platform', platform);
-      if (leagueId) params.append('league_id', leagueId);
-      if (swid) params.append('swid', swid);
-      if (espnS2) params.append('espn_s2', espnS2);
-      const q = params.toString();
-      return q ? `?${q}` : '';
     }
 
     async function previewFileCheatsheetDiff(file) {
@@ -1813,8 +1707,7 @@
     function ensureDraftPolling() {
       if (!draftAutoPoller) {
         draftAutoPoller = setInterval(() => {
-          const leagueId = document.getElementById('session-league-id')?.value;
-          if (leagueId && leagueId !== '12345678') {
+          if (activeSession.league_id) {
             fetchDraftState();
           }
         }, 2000);
@@ -1824,16 +1717,11 @@
     async function fetchDraftState() {
       try {
         let url = '/api/draft/state?';
-        const platform = document.getElementById('session-platform')?.value;
-        const leagueId = document.getElementById('session-league-id')?.value;
-        const teamId = document.getElementById('session-team-select')?.value || document.getElementById('session-team-id')?.value;
-        const swid = document.getElementById('session-swid')?.value;
-        const espnS2 = document.getElementById('session-espn-s2')?.value;
-        if (platform && leagueId && leagueId !== '12345678') {
-          url += `platform=${encodeURIComponent(platform)}&league_id=${encodeURIComponent(leagueId)}&`;
-          if (teamId) url += `team_id=${encodeURIComponent(teamId)}&`;
-          if (swid) url += `swid=${encodeURIComponent(swid)}&`;
-          if (espnS2) url += `espn_s2=${encodeURIComponent(espnS2)}&`;
+        if (activeSession.platform && activeSession.league_id) {
+          url += `platform=${encodeURIComponent(activeSession.platform)}&league_id=${encodeURIComponent(activeSession.league_id)}&`;
+          if (activeSession.team_id) url += `team_id=${encodeURIComponent(activeSession.team_id)}&`;
+          if (activeSession.swid) url += `swid=${encodeURIComponent(activeSession.swid)}&`;
+          if (activeSession.espn_s2) url += `espn_s2=${encodeURIComponent(activeSession.espn_s2)}&`;
           ensureDraftPolling();
         }
         if (isCliffSimulated) url += 'simulate_cliff=true&';
@@ -1967,11 +1855,11 @@
 
       const strategyElem = document.getElementById('lineup-strategy');
       const strategy = strategyElem ? strategyElem.value : 'BALANCED';
-      const platform = document.getElementById('session-platform')?.value || 'espn';
-      const leagueId = document.getElementById('session-league-id')?.value || '12345678';
-      const teamId = document.getElementById('session-team-id')?.value || '1';
-      const swid = document.getElementById('session-swid')?.value || '';
-      const espnS2 = document.getElementById('session-espn-s2')?.value || '';
+      const platform = activeSession.platform || 'sleeper';
+      const leagueId = activeSession.league_id || '';
+      const teamId = activeSession.team_id || '';
+      const swid = activeSession.swid || '';
+      const espnS2 = activeSession.espn_s2 || '';
 
       const randBtn = document.getElementById('lineup-randomize-btn');
       if (randomize && randBtn) {
@@ -2145,7 +2033,8 @@
       if (scanBtn) scanBtn.textContent = 'Scanning Free Agents...';
 
       try {
-        const res = await fetch('/api/waiver/recommendations');
+        const queryStr = getLeagueQueryString();
+        const res = await fetch('/api/waiver/recommendations' + queryStr);
         if (!res.ok) throw new Error('Waivers fetch failed');
         const data = await res.json();
 
@@ -2289,61 +2178,62 @@
       const platformParam = params.get('platform');
       const leagueParam = params.get('league');
       const teamParam = params.get('team');
+      const swidParam = params.get('swid');
+      const espnS2Param = params.get('espn_s2');
 
-      if (inviteCode) {
-        document.getElementById('platform-badge').textContent = (platformParam || 'LEAGUE').toUpperCase();
-        document.getElementById('platform-badge').className = 'badge badge-' + (platformParam || 'sleeper');
-        if (platformParam) {
-          document.getElementById('session-platform').value = platformParam;
-          toggleCookieFields();
-        }
-        if (leagueParam) {
-          document.getElementById('session-league-id').value = leagueParam;
-        }
-        if (teamParam) {
-          document.getElementById('session-team-id').value = teamParam;
-          document.getElementById('current-team-name').textContent = 'Team ' + teamParam;
-        }
-        const swidParam = params.get('swid');
-        const espnS2Param = params.get('espn_s2');
-        if (swidParam) {
-          document.getElementById('session-swid').value = swidParam;
-        }
-        if (espnS2Param) {
-          document.getElementById('session-espn-s2').value = espnS2Param;
+      if (inviteCode || (platformParam && leagueParam)) {
+        activeSession = {
+          invite: inviteCode || '',
+          platform: platformParam || 'sleeper',
+          league_id: leagueParam || '',
+          team_id: teamParam || '',
+          team_name: teamParam ? 'Team ' + teamParam : 'My Squad',
+          swid: swidParam || '',
+          espn_s2: espnS2Param || '',
+          is_valid: true,
+        };
+        try {
+          localStorage.setItem('fwr_session', JSON.stringify(activeSession));
+        } catch (e) {}
+        if (inviteCode) {
+          fetch('/api/sessions/claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invite_code: inviteCode }),
+          }).catch(() => {});
         }
       } else {
         try {
-          const savedPlat = localStorage.getItem('fwr_platform');
-          const savedLid = localStorage.getItem('fwr_league_id');
-          const savedSwid = localStorage.getItem('fwr_swid');
-          const savedS2 = localStorage.getItem('fwr_espn_s2');
-          if (savedPlat) {
-            document.getElementById('session-platform').value = savedPlat;
-            toggleCookieFields();
-            const badge = document.getElementById('platform-badge');
-            if (badge) {
-              badge.textContent = savedPlat.toUpperCase();
-              badge.className = 'badge badge-' + savedPlat;
+          const saved = localStorage.getItem('fwr_session');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && parsed.league_id) {
+              activeSession = Object.assign(activeSession, parsed, { is_valid: true });
             }
-          }
-          if (savedLid) {
-            document.getElementById('session-league-id').value = savedLid;
-          }
-          if (savedSwid) document.getElementById('session-swid').value = savedSwid;
-          if (savedS2) document.getElementById('session-espn-s2').value = savedS2;
-          const savedTeamId = localStorage.getItem('fwr_team_id');
-          const savedTeamName = localStorage.getItem('fwr_team_name');
-          if (savedTeamId) {
-            document.getElementById('session-team-id').value = savedTeamId;
-          }
-          if (savedTeamName) {
-            document.getElementById('current-team-name').textContent = savedTeamName;
           }
         } catch (e) {}
       }
 
-      loadLeagueTeams();
+      const gateOverlay = document.getElementById('invite-gate-overlay');
+      if (!activeSession.is_valid || !activeSession.league_id) {
+        if (gateOverlay) gateOverlay.style.display = 'flex';
+        return;
+      }
+
+      if (gateOverlay) gateOverlay.style.display = 'none';
+
+      const platBadge = document.getElementById('platform-badge');
+      if (platBadge && activeSession.platform) {
+        platBadge.textContent = activeSession.platform.toUpperCase();
+        platBadge.className = 'badge badge-' + activeSession.platform.toLowerCase();
+      }
+
+      const teamNameEl = document.getElementById('current-team-name');
+      if (teamNameEl) {
+        teamNameEl.textContent = activeSession.team_name || (activeSession.team_id ? 'Team ' + activeSession.team_id : 'My Squad');
+      }
+
+      syncSessionLeagueTeams();
       fetchDraftState();
       checkQAConfig();
 
@@ -2352,7 +2242,6 @@
       fetchCheatsheet();
       loadCheatsheetHistory();
       initWebSocket();
-
 
       autoRefreshInterval = setInterval(() => {
         fetchDraftState();
@@ -2402,6 +2291,20 @@
       <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
         <button id="confirm-modal-cancel" class="btn btn-secondary" style="font-size: 0.85rem;" onclick="closeConfirmModal(false)">Cancel</button>
         <button id="confirm-modal-ok" class="btn-danger-pill" style="font-size: 0.85rem; padding: 0.35rem 1rem;" onclick="closeConfirmModal(true)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invite Gate Modal for Unauthenticated / Direct Visits -->
+  <div id="invite-gate-overlay" style="display: none; position: fixed; inset: 0; background: rgba(10, 15, 29, 0.95); backdrop-filter: blur(8px); z-index: 100000; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div style="background: #111a2e; border: 1px solid var(--border-color); border-radius: 16px; max-width: 500px; width: 100%; padding: 2.25rem 2rem; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);">
+      <div style="font-size: 3rem; margin-bottom: 0.75rem;">🏈</div>
+      <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">Private Draftroom</h2>
+      <p style="color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; margin-bottom: 1.5rem;">
+        Access to this draft room and lineup optimizer requires a personal magic invite link generated by your league commissioner.
+      </p>
+      <div style="background: rgba(255, 255, 255, 0.04); border: 1px dashed var(--border-color); border-radius: 8px; padding: 1rem; font-size: 0.82rem; color: var(--accent-blue);">
+        💡 Please open the personalized link you received (e.g. <code>https://nfl.soehlert.com/?invite=...</code>) to access your squad.
       </div>
     </div>
   </div>
