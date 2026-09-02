@@ -21,8 +21,8 @@ class LeagueProfile(BaseModel):
     league_id: str
     league_name: str = "Fantasy League"
     season_year: int | None = None
-    team_id: str = "1"
-    team_name: str = "My Squad"
+    team_id: str | None = None
+    team_name: str | None = None
     user_draft_slot: int | None = None
     espn_s2: str | None = None
     swid: str | None = None

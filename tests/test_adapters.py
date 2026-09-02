@@ -335,3 +335,47 @@ def test_sleeper_adapter_username_and_display_name_resolution() -> None:
     assert draft_state.user_team_id == "10"
     assert draft_state.user_draft_slot == 10
     assert len(draft_state.recent_picks) == 1
+
+
+def test_sleeper_adapter_draft_state_with_no_team_id() -> None:
+    """Verify SleeperAdapter handles draft state lookup when team_id is None."""
+
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if "/draft/league_200" in path:
+            return httpx.Response(404)
+        if "/league/league_200/drafts" in path:
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "draft_id": "d_200",
+                        "status": "drafting",
+                        "settings": {"teams": 12, "rounds": 16},
+                        "draft_order": {},
+                    }
+                ],
+            )
+        if "/draft/d_200/picks" in path:
+            return httpx.Response(200, json=[])
+        if "/league/league_200/rosters" in path:
+            return httpx.Response(200, json=[])
+        if "/league/league_200/users" in path:
+            return httpx.Response(200, json=[])
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler), base_url="https://api.sleeper.app/v1")
+    profile = LeagueProfile(
+        session_id="sess_no_team",
+        platform=PlatformType.SLEEPER,
+        league_id="league_200",
+        team_id=None,
+    )
+    adapter = SleeperAdapter(profile, client=client, player_db={})
+    draft_state = adapter.get_draft_state(include_player_pool=False)
+
+    assert draft_state.league_id == "league_200"
+    assert draft_state.draft_id == "d_200"
+    assert draft_state.user_team_id is None
+    assert draft_state.total_teams == 12
+    assert draft_state.total_rounds == 16
