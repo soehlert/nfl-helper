@@ -18,6 +18,14 @@ def test_health_endpoint() -> None:
     assert data["version"] == "0.1.0"
 
 
+def test_robots_txt_endpoint() -> None:
+    """Verify robots.txt endpoint disallows bot indexing."""
+    response = client.get("/robots.txt")
+    assert response.status_code == 200
+    assert "text/plain" in response.headers["content-type"]
+    assert "Disallow: /" in response.text
+
+
 def test_root_serves_html() -> None:
     """Verify root URL serves the single-page frontend application."""
     response = client.get("/")

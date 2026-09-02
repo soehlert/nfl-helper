@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -106,6 +106,12 @@ class ClaimInviteRequest(BaseModel):
     """Request model for claiming a one-time magic invite code."""
 
     invite_code: str
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def serve_robots_txt() -> str:
+    """Instruct search engine crawlers and bots not to index the application."""
+    return "User-agent: *\nDisallow: /\n"
 
 
 @app.get("/", response_class=HTMLResponse)
