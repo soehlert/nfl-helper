@@ -191,7 +191,7 @@ def get_current_player_pool(
                 return all_p
 
     # Check connected platform/league
-    if platform and league_id and league_id not in ("12345678", "demo", ""):
+    if platform and league_id:
         if league_id in _CONNECTED_LEAGUE_PLAYERS:
             return _CONNECTED_LEAGUE_PLAYERS[league_id]
 
@@ -273,11 +273,13 @@ async def preview_cheatsheet_diff(
 @app.get("/api/league/teams")
 async def get_league_teams(
     platform: PlatformType = PlatformType.ESPN,
-    league_id: str = "12345678",
+    league_id: str | None = None,
     swid: str | None = None,
     espn_s2: str | None = None,
 ) -> list[dict[str, str]]:
     """Fetch all teams in a league for friendly dropdown selection."""
+    if not league_id:
+        return []
     profile = LeagueProfile(
         session_id="temp_lookup",
         platform=platform,
@@ -290,7 +292,7 @@ async def get_league_teams(
         adapter = get_adapter_for_profile(profile)
         return adapter.get_league_teams()
     except Exception:
-        if _QA_MODE or league_id in ("12345678", "demo"):
+        if _QA_MODE:
             return [
                 {"team_id": "1", "team_name": "Lamar Squad", "owner_name": "You"},
                 {"team_id": "2", "team_name": "Gridiron Kings", "owner_name": "Friend"},
@@ -325,7 +327,7 @@ async def get_draft_state(
             return poller.latest_state
 
     # If real league platform & league_id are specified (e.g. Sleeper or ESPN)
-    if platform and league_id and league_id not in ("12345678", "demo", ""):
+    if platform and league_id:
         try:
             plat_type = PlatformType.SLEEPER if platform.lower() == "sleeper" else PlatformType.ESPN
             profile = LeagueProfile(
@@ -534,7 +536,7 @@ async def get_lineup_optimization(
 ) -> LineupSolution:
     """Solve the mathematically optimal starting lineup using Integer Linear Programming (PuLP)."""
     # Live platform connection if real league credentials supplied
-    if platform and league_id and not demo and league_id not in ["12345678", "demo"]:
+    if platform and league_id and not demo:
         try:
             profile = LeagueProfile(
                 session_id=session_id or "temp",

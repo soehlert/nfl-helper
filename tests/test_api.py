@@ -1,6 +1,7 @@
 """Integration tests for FastAPI application endpoints and static UI mounting."""
 
 import io
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -198,14 +199,25 @@ def test_cheatsheet_file_upload_endpoint() -> None:
 
 
 def test_get_league_teams_endpoint() -> None:
-    """Verify /api/league/teams returns list of teams with IDs and names."""
-    res = client.get("/api/league/teams?platform=espn&league_id=12345678")
-    assert res.status_code == 200
-    teams = res.json()
-    assert isinstance(teams, list)
-    assert len(teams) >= 1
-    assert "team_id" in teams[0]
-    assert "team_name" in teams[0]
+    """Verify /api/league/teams returns list of teams with IDs and names when adapter resolves."""
+    mock_adapter = MagicMock()
+    mock_adapter.get_league_teams.return_value = [
+        {"team_id": "1", "team_name": "Team One", "owner_name": "Alice"},
+        {"team_id": "2", "team_name": "Team Two", "owner_name": "Bob"},
+    ]
+    with patch("nfl_helper.main.get_adapter_for_profile", return_value=mock_adapter):
+        res = client.get("/api/league/teams?platform=espn&league_id=999888")
+        assert res.status_code == 200
+        teams = res.json()
+        assert isinstance(teams, list)
+        assert len(teams) == 2
+        assert teams[0]["team_id"] == "1"
+        assert teams[0]["team_name"] == "Team One"
+
+    # Verify empty list when no league_id is provided
+    empty_res = client.get("/api/league/teams?platform=espn")
+    assert empty_res.status_code == 200
+    assert empty_res.json() == []
 
 
 def test_multi_cheatsheet_layering_and_toggle_endpoints() -> None:

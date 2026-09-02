@@ -2215,7 +2215,7 @@
       }
 
       const gateOverlay = document.getElementById('invite-gate-overlay');
-      if (!activeSession.is_valid || !activeSession.league_id || activeSession.league_id === '12345678') {
+      if (!activeSession.is_valid || !activeSession.league_id) {
         if (gateOverlay) gateOverlay.style.display = 'flex';
         return;
       }
