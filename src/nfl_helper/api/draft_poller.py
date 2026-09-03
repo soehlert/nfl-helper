@@ -46,7 +46,7 @@ class DraftPoller:
             if current_pick_count == self.last_pick_count and self.latest_state is not None:
                 return False
 
-            all_players = self.adapter.get_free_agents(limit=700)
+            all_players = self.adapter.get_free_agents(limit=None)
             if self.cheatsheet_context:
                 all_players = apply_cheatsheet_context(all_players, self.cheatsheet_context)
 

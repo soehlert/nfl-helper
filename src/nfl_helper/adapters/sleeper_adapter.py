@@ -1,5 +1,6 @@
 """Sleeper fantasy football league adapter via official Sleeper REST API."""
 
+import contextlib
 import math
 
 import httpx
@@ -364,7 +365,7 @@ class SleeperAdapter(BaseLeagueAdapter):
         current_pick = len(picks_list) + 1
         is_complete = (len(picks_list) >= (total_teams * total_rounds)) or (active_draft.get("status") == "complete")
         current_round = min(total_rounds, ((current_pick - 1) // total_teams) + 1)
-        by_pos = self.get_available_players_by_position(limit=700) if include_player_pool else {}
+        by_pos = self.get_available_players_by_position(limit=None) if include_player_pool else {}
 
         user_slot = self.profile.user_draft_slot
         resolved_team_id: str | None = str(self.profile.team_id) if self.profile.team_id else None
@@ -438,17 +439,27 @@ class SleeperAdapter(BaseLeagueAdapter):
             available_players_by_pos=by_pos,
         )
 
-    def get_free_agents(self, limit: int = 700) -> list[Player]:
-        """Fetch available free agents from Sleeper sorted by multi-platform consensus ADP with guaranteed positional quotas."""
+    def get_free_agents(self, limit: int | None = None) -> list[Player]:
+        """Fetch all available players from Sleeper sorted by multi-platform consensus ADP with zero arbitrary quotas."""
         players = self._ensure_player_db()
         projections = self._ensure_proj_db()
         espn_adps = self._ensure_espn_adp_db()
         valid_candidates: list[tuple[float, str, dict[str, object]]] = []
+
         for player_id, player_data in players.items():
             if not isinstance(player_data, dict):
                 continue
             position_raw = str(player_data.get("position", "")).upper()
             if position_raw in ("QB", "RB", "FB", "WR", "TE", "K", "DEF", "DST", "D/ST"):
+                team = player_data.get("team")
+                status = str(player_data.get("status", "")).lower()
+                has_proj = str(player_id) in projections
+                is_def = position_raw in ("DEF", "DST", "D/ST")
+
+                # Include all players on an active NFL roster, with projections, active status, or team defenses
+                if not (team or has_proj or is_def or status in ("active", "questionable", "doubtful", "ir", "pup")):
+                    continue
+
                 player_proj = projections.get(str(player_id), {}) if isinstance(projections, dict) else {}
                 sleeper_adp_raw = (
                     player_proj.get("adp_ppr")
@@ -479,7 +490,7 @@ class SleeperAdapter(BaseLeagueAdapter):
 
                 valid_candidates.append((blended_adp, player_id, player_data))
 
-        # Group by canonical position to guarantee depth across all positions (including all 32 D/ST teams)
+        # Group by canonical position to calculate positional rank within full pool
         candidates_by_pos: dict[str, list[tuple[float, str, dict[str, object]]]] = {}
         for rank_val, player_id, player_data in valid_candidates:
             position_raw = str(player_data.get("position", "")).upper()
@@ -488,13 +499,14 @@ class SleeperAdapter(BaseLeagueAdapter):
             )
             candidates_by_pos.setdefault(position_key, []).append((rank_val, player_id, player_data))
 
-        pos_quotas = {"QB": 80, "RB": 200, "WR": 280, "TE": 100, "K": 40, "D/ST": 32}
         mapped_players: list[Player] = []
-        for pos_key, candidates in candidates_by_pos.items():
+        for candidates in candidates_by_pos.values():
             candidates.sort(key=lambda item: item[0])
-            quota = pos_quotas.get(pos_key, 50)
-            for pos_rank, (_, player_id, player_data) in enumerate(candidates[:quota], start=1):
-                mapped_players.append(self._map_player(player_id, meta_override=player_data, pos_rank=pos_rank))
+            for pos_rank, (_, player_id, player_data) in enumerate(candidates, start=1):
+                with contextlib.suppress(Exception):
+                    mapped_players.append(self._map_player(player_id, meta_override=player_data, pos_rank=pos_rank))
 
         mapped_players.sort(key=lambda p: p.adp if p.adp is not None else 999)
+        if limit is not None and limit > 0:
+            return mapped_players[:limit]
         return mapped_players
