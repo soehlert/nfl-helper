@@ -158,7 +158,7 @@ class ESPNAdapter(BaseLeagueAdapter):
         current_pick = len(picks_list) + 1
         is_complete = len(picks_list) >= (total_teams * total_rounds)
         current_round = min(total_rounds, ((current_pick - 1) // total_teams) + 1)
-        by_pos = self.get_available_players_by_position(limit=300)
+        by_pos = self.get_available_players_by_position(limit=700)
 
         return DraftState(
             league_id=self.profile.league_id,
@@ -172,7 +172,7 @@ class ESPNAdapter(BaseLeagueAdapter):
             available_players_by_pos=by_pos,
         )
 
-    def get_free_agents(self, limit: int = 300) -> list[Player]:
+    def get_free_agents(self, limit: int = 700) -> list[Player]:
         """Fetch top available free agent players from ESPN."""
         league = self._get_league()
         try:
