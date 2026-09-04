@@ -111,6 +111,16 @@ class SleeperAdapter(BaseLeagueAdapter):
                 pass
         return self._espn_adp_db
 
+    def _get_scoring_type(self) -> str:
+        """Determine league scoring format ('ppr', 'half_ppr', or 'std') from profile custom_scoring."""
+        rec = self.profile.custom_scoring.get("rec")
+        if rec is not None:
+            if rec == 0.0:
+                return "std"
+            if rec == 0.5:
+                return "half_ppr"
+        return "ppr"
+
     def _map_player(
         self,
         player_id: str,
@@ -118,18 +128,14 @@ class SleeperAdapter(BaseLeagueAdapter):
         is_starter: bool = False,
         pos_rank: int | None = None,
     ) -> Player:
-        """Convert Sleeper player ID and metadata dictionary into canonical Player model."""
+        """Map raw Sleeper player dict into canonical Player domain model."""
         db = self._ensure_player_db()
         raw_meta = meta_override or db.get(str(player_id), {})
-
         first_name = str(raw_meta.get("first_name", ""))
         last_name = str(raw_meta.get("last_name", ""))
-        full_name = f"{first_name} {last_name}".strip() or str(raw_meta.get("full_name", f"Player {player_id}"))
+        full_name = f"{first_name} {last_name}".strip() or str(raw_meta.get("full_name", "Unknown Player"))
 
-        raw_pos = str(raw_meta.get("position", "")).upper()
-        if not raw_pos:
-            raise ValueError(f"Missing position on Sleeper player {player_id} ({full_name})")
-
+        raw_pos = str(raw_meta.get("position", "WR")).upper()
         pos_enum = (
             Position.DST
             if raw_pos in ("DEF", "DST", "D/ST")
@@ -144,15 +150,52 @@ class SleeperAdapter(BaseLeagueAdapter):
             else {}
         )
 
-        raw_season_fpts = float(
-            proj_meta.get("pts_ppr")
-            or proj_meta.get("pts_half_ppr")
-            or proj_meta.get("pts_std")
-            or stats.get("pts_ppr", 0.0)
-            or stats.get("pts_half_ppr", 0.0)
-            or stats.get("pts_std", 0.0)
-            or 0.0
-        )
+        scoring_type = self._get_scoring_type()
+        if scoring_type == "half_ppr":
+            raw_season_fpts = float(
+                proj_meta.get("pts_half_ppr")
+                or proj_meta.get("pts_ppr")
+                or proj_meta.get("pts_std")
+                or stats.get("pts_half_ppr", 0.0)
+                or stats.get("pts_ppr", 0.0)
+                or 0.0
+            )
+            sleeper_adp_raw = (
+                proj_meta.get("adp_half_ppr")
+                or proj_meta.get("adp_dd_half_ppr")
+                or proj_meta.get("adp_ppr")
+                or proj_meta.get("adp_std")
+            )
+        elif scoring_type == "std":
+            raw_season_fpts = float(
+                proj_meta.get("pts_std")
+                or proj_meta.get("pts_half_ppr")
+                or proj_meta.get("pts_ppr")
+                or stats.get("pts_std", 0.0)
+                or stats.get("pts_ppr", 0.0)
+                or 0.0
+            )
+            sleeper_adp_raw = (
+                proj_meta.get("adp_std")
+                or proj_meta.get("adp_dd_std")
+                or proj_meta.get("adp_half_ppr")
+                or proj_meta.get("adp_ppr")
+            )
+        else:
+            raw_season_fpts = float(
+                proj_meta.get("pts_ppr")
+                or proj_meta.get("pts_half_ppr")
+                or proj_meta.get("pts_std")
+                or stats.get("pts_ppr", 0.0)
+                or 0.0
+            )
+            sleeper_adp_raw = (
+                proj_meta.get("adp_ppr")
+                or proj_meta.get("adp_dd_ppr")
+                or proj_meta.get("adp_half_ppr")
+                or proj_meta.get("adp_std")
+            )
+
         gp = max(1.0, float(proj_meta.get("gp") or stats.get("gp") or 17.0))
         fpts = round(raw_season_fpts / gp, 2) if raw_season_fpts > 0.0 else 0.0
 
@@ -183,16 +226,6 @@ class SleeperAdapter(BaseLeagueAdapter):
         bye_week = get_team_bye_week(team_str)
         is_dome = is_dome_stadium(team_str)
         espn_adps = self._ensure_espn_adp_db()
-        projections = self._ensure_proj_db()
-        player_proj = projections.get(str(player_id), {}) if isinstance(projections, dict) else {}
-        sleeper_adp_raw = (
-            player_proj.get("adp_ppr")
-            or player_proj.get("adp_half_ppr")
-            or player_proj.get("adp_std")
-            or player_proj.get("adp_dd_ppr")
-            or player_proj.get("adp_dd_half_ppr")
-            or player_proj.get("adp_dd_std")
-        )
         sleeper_adp = float(sleeper_adp_raw) if sleeper_adp_raw is not None and float(sleeper_adp_raw) < 900.0 else None
 
         normalized_name = normalize_player_name(full_name)

@@ -217,17 +217,12 @@ def generate_draft_suggestions(
             tier_bonus = 0.8 * demand_weight
         base_score += tier_bonus
 
-        # Position-specific final round elevation and early-round suppression for K and D/ST
-        if pos_str in ("K", "D/ST"):
-            if current_round <= 9:
-                base_score -= 8.0  # Heavily suppress K/DST in rounds 1-9
-            elif current_round <= 11:
-                base_score -= 4.0  # Suppress K/DST in rounds 10-11
-            elif roster.get(pos_str, 0) < 1:
-                if rounds_remaining == 2 and p_tier == 1:
-                    base_score += 1.20  # Mild boost for top K/DST in penultimate round without crowding out skill depth
-                elif rounds_remaining <= 1:
-                    base_score += 8.00  # Highest priority to fill mandatory starter in final round
+        # Position-specific final round elevation for unfilled mandatory single-starters
+        if pos_str in ("K", "D/ST") and roster.get(pos_str, 0) < 1:
+            if rounds_remaining == 2 and p_tier == 1:
+                base_score += 1.20  # Mild boost for top K/DST in penultimate round without crowding out skill depth
+            elif rounds_remaining <= 1:
+                base_score += 8.00  # Highest priority to fill mandatory starter in final round
 
         # Handcuff synergy bonus for backup / committee RBs on same NFL team as drafted starter
         handcuff_note: str | None = None
