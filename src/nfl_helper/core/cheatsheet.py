@@ -72,14 +72,22 @@ def apply_cheatsheet_context(players: list[Player], context: CheatsheetContext) 
     for player in players:
         norm = normalize_player_name(player.name)
         entry = context.entries.get(norm)
+        if entry and entry.position:
+            player_pos_str = player.position.value if hasattr(player.position, "value") else str(player.position)
+            clean_entry_pos = "D/ST" if entry.position.upper() in ("DEF", "DST", "D/ST") else entry.position.upper()
+            clean_player_pos = "D/ST" if player_pos_str.upper() in ("DEF", "DST", "D/ST") else player_pos_str.upper()
+            if clean_entry_pos != clean_player_pos:
+                entry = None
 
         # If not exact match, check partial/last-name match with strict team and position validation
         if not entry:
             for k, e in context.entries.items():
-                pos_match = not e.position or e.position == (
-                    player.position.value if hasattr(player.position, "value") else str(player.position)
+                pos_match = (
+                    not e.position
+                    or e.position.upper()
+                    == (player.position.value if hasattr(player.position, "value") else str(player.position)).upper()
                 )
-                team_match = not e.team or not player.team or e.team == player.team
+                team_match = not e.team or not player.team or e.team.upper() == player.team.upper()
                 if pos_match and team_match and (norm.endswith(k) or k in norm):
                     entry = e
                     break

@@ -83,6 +83,7 @@ class SleeperAdapter(BaseLeagueAdapter):
                 self._espn_adp_db = _GLOBAL_ESPN_ADP_DB
                 return self._espn_adp_db
             season = self.profile.season_year or get_current_nfl_season_year()
+            espn_pos_map = {1: "QB", 2: "RB", 3: "WR", 4: "TE", 5: "K", 16: "D/ST"}
             try:
                 url = f"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{season}/segments/0/leaguedefaults/1?view=kona_player_info"
                 headers = {
@@ -97,11 +98,15 @@ class SleeperAdapter(BaseLeagueAdapter):
                         adp_num = p_info.get("ownership", {}).get("averageDraftPosition")
                         if full_name and adp_num is not None and float(adp_num) > 0.0:
                             adp_float = round(float(adp_num), 2)
-                            self._espn_adp_db[normalize_player_name(full_name)] = adp_float
+                            norm_name = normalize_player_name(full_name)
+                            self._espn_adp_db[norm_name] = adp_float
+                            if pos_id in espn_pos_map:
+                                self._espn_adp_db[f"{espn_pos_map[pos_id]}:{norm_name}"] = adp_float
                             # For team defenses (pos_id == 16), index by team nickname (e.g. 'texans', 'rams')
                             if pos_id == 16:
                                 clean_name = full_name.replace(" D/ST", "").strip().lower()
                                 self._espn_adp_db[clean_name] = adp_float
+                                self._espn_adp_db[f"D/ST:{clean_name}"] = adp_float
                     _GLOBAL_ESPN_ADP_DB = self._espn_adp_db
             except Exception:
                 pass
@@ -194,7 +199,13 @@ class SleeperAdapter(BaseLeagueAdapter):
 
         normalized_name = normalize_player_name(full_name)
         defense_key = last_name.strip().lower()
-        espn_adp = espn_adps.get(normalized_name) or (espn_adps.get(defense_key) if pos_enum == Position.DST else None)
+        pos_str = "D/ST" if pos_enum == Position.DST else pos_enum.value
+        espn_adp = (
+            espn_adps.get(f"{pos_str}:{normalized_name}")
+            or espn_adps.get(normalized_name)
+            or (espn_adps.get(f"D/ST:{defense_key}") if pos_enum == Position.DST else None)
+            or (espn_adps.get(defense_key) if pos_enum == Position.DST else None)
+        )
 
         if sleeper_adp is not None and espn_adp is not None:
             blended_adp = round(0.5 * sleeper_adp + 0.5 * espn_adp, 1)
@@ -453,11 +464,15 @@ class SleeperAdapter(BaseLeagueAdapter):
             if position_raw in ("QB", "RB", "FB", "WR", "TE", "K", "DEF", "DST", "D/ST"):
                 team = player_data.get("team")
                 status = str(player_data.get("status", "")).lower()
-                has_proj = str(player_id) in projections
+                is_active = player_data.get("active", True)
                 is_def = position_raw in ("DEF", "DST", "D/ST")
 
-                # Include all players on an active NFL roster, with projections, active status, or team defenses
-                if not (team or has_proj or is_def or status in ("active", "questionable", "doubtful", "ir", "pup")):
+                # Strictly ignore historical inactive/retired players who have active: False and no team
+                if (
+                    not is_def
+                    and not team
+                    and (is_active is False or status not in ("active", "questionable", "doubtful", "ir", "pup"))
+                ):
                     continue
 
                 player_proj = projections.get(str(player_id), {}) if isinstance(projections, dict) else {}
@@ -477,7 +492,12 @@ class SleeperAdapter(BaseLeagueAdapter):
                 last_name = str(player_data.get("last_name", ""))
                 full_name = f"{first_name} {last_name}".strip() or str(player_data.get("full_name", ""))
                 normalized_name = normalize_player_name(full_name)
-                espn_adp = espn_adps.get(normalized_name)
+                norm_pos = (
+                    "D/ST"
+                    if position_raw in ("DEF", "DST", "D/ST")
+                    else ("RB" if position_raw == "FB" else position_raw)
+                )
+                espn_adp = espn_adps.get(f"{norm_pos}:{normalized_name}") or espn_adps.get(normalized_name)
 
                 if sleeper_adp is not None and espn_adp is not None:
                     blended_adp = round(0.5 * sleeper_adp + 0.5 * espn_adp, 1)

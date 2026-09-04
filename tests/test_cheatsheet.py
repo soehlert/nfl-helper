@@ -6,6 +6,7 @@ from nfl_helper.core.cheatsheet import (
     parse_json_cheatsheet,
     parse_plain_text_cheatsheet,
 )
+from nfl_helper.models.cheatsheet import CheatsheetContext, CheatsheetEntry
 from nfl_helper.models.player import Player, Position
 
 
@@ -297,3 +298,42 @@ def test_parse_composite_and_conditional_strategy_rules() -> None:
     assert rb_rule.position == "RB"
     wr_rule = next(r for r in ctx.positional_strategy if r.position == "WR")
     assert wr_rule.position == "WR"
+
+
+def test_apply_cheatsheet_context_position_mismatch_isolation() -> None:
+    """Verify that exact name match does not apply cheatsheet data if position is mismatched."""
+    p_rb = Player(
+        id="8151",
+        name="Kenneth Walker",
+        position=Position.RB,
+        team="KC",
+        projected_points=14.7,
+        adp=22.4,
+        bye_week=6,
+    )
+    p_wr = Player(
+        id="4634",
+        name="Kenneth Walker",
+        position=Position.WR,
+        team="FA",
+        projected_points=5.0,
+        adp=999.0,
+    )
+
+    ctx = CheatsheetContext(
+        entries={
+            "kenneth walker": CheatsheetEntry(
+                player_name="Kenneth Walker",
+                normalized_name="kenneth walker",
+                position="RB",
+                tier=2,
+                notes="Bellcow back",
+            )
+        }
+    )
+
+    applied = apply_cheatsheet_context([p_rb, p_wr], ctx)
+    assert applied[0].cheatsheet_tier == 2
+    assert applied[0].cheatsheet_notes == "Bellcow back"
+    assert applied[1].cheatsheet_tier is None
+    assert applied[1].cheatsheet_notes is None

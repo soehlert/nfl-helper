@@ -379,3 +379,44 @@ def test_sleeper_adapter_draft_state_with_no_team_id() -> None:
     assert draft_state.user_team_id is None
     assert draft_state.total_teams == 12
     assert draft_state.total_rounds == 16
+
+
+def test_sleeper_adapter_filters_retired_ghost_players_and_preserves_active() -> None:
+    """Verify SleeperAdapter filters historical inactive players (active=False, team=None) and maps active players."""
+    mock_db = {
+        "4634": {
+            "player_id": "4634",
+            "first_name": "Kenneth",
+            "last_name": "Walker",
+            "position": "WR",
+            "team": None,
+            "active": False,
+            "status": "Active",
+            "search_rank": 9999999,
+        },
+        "8151": {
+            "player_id": "8151",
+            "first_name": "Kenneth",
+            "last_name": "Walker",
+            "position": "RB",
+            "team": "KC",
+            "active": True,
+            "status": "Active",
+            "search_rank": 18,
+        },
+    }
+    profile = LeagueProfile(
+        session_id="sess_kw_test",
+        platform=PlatformType.SLEEPER,
+        league_id="league_kw",
+    )
+    adapter = SleeperAdapter(profile, player_db=mock_db, proj_db={}, espn_adp_db={"RB:kenneth walker": 22.4})
+    free_agents = adapter.get_free_agents()
+
+    assert len(free_agents) == 1
+    assert free_agents[0].id == "8151"
+    assert free_agents[0].name == "Kenneth Walker"
+    assert free_agents[0].position == Position.RB
+    assert free_agents[0].team == "KC"
+    assert free_agents[0].bye_week == 6
+    assert free_agents[0].adp == 21.2
