@@ -1370,3 +1370,52 @@ def test_tier2_qb_drafted_allows_second_qb_and_no_double_dots() -> None:
     for s in state.top_suggestions:
         assert "• •" not in s.reason
         assert " •  • " not in s.reason
+
+
+def test_early_round_kicker_and_defense_suppression() -> None:
+    """Verify kickers and defenses are heavily suppressed in rounds 1-9 (e.g. pick 55) and cannot displace skill players."""
+    k_aubrey = Player(
+        id="k1",
+        name="Brandon Aubrey",
+        position=Position.K,
+        team="DAL",
+        projected_points=9.5,
+        adp=125.0,
+        tier=1,
+    )
+    rb_flex = Player(
+        id="rb1",
+        name="Tyjae Spears",
+        position=Position.RB,
+        team="TEN",
+        projected_points=11.2,
+        adp=85.0,
+        tier=4,
+    )
+    wr_flex = Player(
+        id="wr1",
+        name="Courtland Sutton",
+        position=Position.WR,
+        team="DEN",
+        projected_points=12.1,
+        adp=80.0,
+        tier=3,
+    )
+
+    state = build_draft_state(
+        league_id="test_league",
+        draft_id="test_draft",
+        overall_pick=55,
+        user_draft_slot=7,
+        total_teams=12,
+        total_rounds=15,
+        recent_picks=[],
+        all_players=[k_aubrey, rb_flex, wr_flex],
+        user_team_id="user_team",
+    )
+
+    sug_ids = [s.player.id for s in state.top_suggestions]
+    # Kicker must NOT be the top suggestion at Pick 55 (Round 5)
+    assert sug_ids[0] != "k1"
+    # Skill players must rank ahead of the kicker
+    assert "rb1" in sug_ids or "wr1" in sug_ids

@@ -1,7 +1,6 @@
 """Sleeper fantasy football league adapter via official Sleeper REST API."""
 
 import contextlib
-import math
 
 import httpx
 
@@ -138,25 +137,24 @@ class SleeperAdapter(BaseLeagueAdapter):
         )
 
         projs = self._ensure_proj_db()
-        proj_meta = projs.get(str(player_id), {})
-        stats = proj_meta.get("stats", {}) if isinstance(proj_meta, dict) else {}
-        fpts = float(stats.get("pts_ppr", 0.0) or stats.get("pts_half_ppr", 0.0) or stats.get("pts_std", 0.0) or 0.0)
+        proj_meta = projs.get(str(player_id), {}) if isinstance(projs, dict) else {}
+        stats = (
+            proj_meta.get("stats", {})
+            if isinstance(proj_meta, dict) and isinstance(proj_meta.get("stats"), dict)
+            else {}
+        )
 
-        # Derive realistic baseline fantasy projection differentiated by positional rank
-        if fpts <= 0.0:
-            r = max(1.0, float(pos_rank) if pos_rank is not None else 40.0)
-            if pos_enum == Position.QB:
-                fpts = round(max(11.0, 25.0 - 3.5 * math.log(r)), 2)
-            elif pos_enum == Position.RB:
-                fpts = round(max(6.0, 21.5 - 3.2 * math.log(r)), 2)
-            elif pos_enum == Position.WR:
-                fpts = round(max(6.0, 20.8 - 2.8 * math.log(r)), 2)
-            elif pos_enum == Position.TE:
-                fpts = round(max(5.0, 15.2 - 2.4 * math.log(r)), 2)
-            elif pos_enum in (Position.K, Position.DST):
-                fpts = round(max(5.0, 9.5 - 0.7 * math.log(r)), 2)
-            else:
-                fpts = 10.0
+        raw_season_fpts = float(
+            proj_meta.get("pts_ppr")
+            or proj_meta.get("pts_half_ppr")
+            or proj_meta.get("pts_std")
+            or stats.get("pts_ppr", 0.0)
+            or stats.get("pts_half_ppr", 0.0)
+            or stats.get("pts_std", 0.0)
+            or 0.0
+        )
+        gp = max(1.0, float(proj_meta.get("gp") or stats.get("gp") or 17.0))
+        fpts = round(raw_season_fpts / gp, 2) if raw_season_fpts > 0.0 else 0.0
 
         injury_raw = str(raw_meta.get("injury_status") or "").upper()
         status_raw = str(raw_meta.get("status") or "").upper()
@@ -463,16 +461,20 @@ class SleeperAdapter(BaseLeagueAdapter):
             position_raw = str(player_data.get("position", "")).upper()
             if position_raw in ("QB", "RB", "FB", "WR", "TE", "K", "DEF", "DST", "D/ST"):
                 team = player_data.get("team")
-                status = str(player_data.get("status", "")).lower()
                 is_active = player_data.get("active", True)
                 is_def = position_raw in ("DEF", "DST", "D/ST")
 
-                # Strictly ignore historical inactive/retired players who have active: False and no team
-                if (
-                    not is_def
-                    and not team
-                    and (is_active is False or status not in ("active", "questionable", "doubtful", "ir", "pup"))
-                ):
+                has_real_team = bool(team and str(team).upper() not in ("", "FA", "NONE"))
+                has_proj_points = False
+                if str(player_id) in projections:
+                    pm = projections[str(player_id)]
+                    if isinstance(pm, dict) and (
+                        pm.get("pts_ppr", 0) > 0 or pm.get("pts_half_ppr", 0) > 0 or pm.get("pts_std", 0) > 0
+                    ):
+                        has_proj_points = True
+
+                # Must be on an active NFL team, be a team defense, or be an active player with valid projection
+                if not (has_real_team or is_def or (has_proj_points and is_active is not False)):
                     continue
 
                 player_proj = projections.get(str(player_id), {}) if isinstance(projections, dict) else {}
